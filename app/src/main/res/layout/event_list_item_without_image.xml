@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                                                   xmlns:app="http://schemas.android.com/apk/res-auto"
+                                                   xmlns:tools="http://schemas.android.com/tools"
+                                                   android:background="@drawable/rounded_corners"
+                                                   android:layout_width="match_parent"
+                                                   android:layout_height="wrap_content"
+                                                   android:id="@+id/constraintLayoutWithoutImage"
+                                                   android:layout_marginTop="8dp" android:layout_marginBottom="8dp">
+    <TextView
+            android:text="TextView"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content" app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginTop="8dp"
+            android:layout_marginStart="8dp" android:id="@+id/titleWithoutImage"
+            android:maxLines="1" android:ellipsize="end"/>
+    <TextView
+            android:text="TextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/founderWithoutImage"
+            app:layout_constraintTop_toBottomOf="@+id/titleWithoutImage" android:layout_marginTop="8dp"
+            app:layout_constraintEnd_toEndOf="@+id/titleWithoutImage" android:gravity="start"
+            app:layout_constraintStart_toEndOf="@+id/founderImageWithoutImageView" android:layout_marginStart="8dp"
+            app:layout_constraintHorizontal_bias="0.0" app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginBottom="8dp"/>
+    <TextView
+            android:text="TextView"
+            android:layout_width="180dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/dateWithoutImage" android:layout_marginTop="8dp"
+            app:layout_constraintTop_toTopOf="parent" app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="8dp" android:gravity="end"/>
+    <ImageView
+            android:layout_width="25dp"
+            android:layout_height="19dp" app:srcCompat="@drawable/landmark"
+            android:id="@+id/landmarkWithoutImageView"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="8dp" android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@+id/dateWithoutImage"
+            app:layout_constraintBottom_toBottomOf="@+id/founderWithoutImage"/>
+    <TextView
+            android:text="TextView"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/locationWithoutImage" android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@+id/dateWithoutImage"
+            app:layout_constraintEnd_toStartOf="@+id/landmarkWithoutImageView"
+            android:layout_marginEnd="8dp"
+            android:gravity="end" app:layout_constraintStart_toStartOf="@+id/dateWithoutImage"
+            android:layout_marginStart="8dp" app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintBottom_toBottomOf="@+id/founderWithoutImage"/>
+    <ImageView
+            android:layout_width="25dp"
+            android:layout_height="19dp" app:srcCompat="@drawable/imageplaceholder"
+            android:id="@+id/founderImageWithoutImageView"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@+id/titleWithoutImage" app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginBottom="8dp"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

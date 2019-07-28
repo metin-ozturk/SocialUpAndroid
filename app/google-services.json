@@ -1,0 +1,55 @@
+{
+  "project_info": {
+    "project_number": "600844983013",
+    "firebase_url": "https://socialup-c05d8.firebaseio.com",
+    "project_id": "socialup-c05d8",
+    "storage_bucket": "socialup-c05d8.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:600844983013:android:4cf04c88be42c5e2",
+        "android_client_info": {
+          "package_name": "com.jora.socialup"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "600844983013-hg3b8k3u7m52he3g3gp21ns0ielb5ve7.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jora.socialup",
+            "certificate_hash": "c01ac4d744114256b8c7e372c37e7ffdb17615cb"
+          }
+        },
+        {
+          "client_id": "600844983013-hbtdqhedmfbudf9d30qavb2faf1akefk.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBm3I6KSFsi_usniA7PC9JALxiIBtCw1JA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "600844983013-hbtdqhedmfbudf9d30qavb2faf1akefk.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "600844983013-k5kc1stfdke13gn8c4kkfckmdihqmc2h.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.jora.SocialUp"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
