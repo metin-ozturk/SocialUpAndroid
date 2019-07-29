@@ -1,12 +1,12 @@
-package com.jora.socialup
+package com.jora.socialup.adapters
 
 import android.graphics.Color
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
+import com.jora.socialup.R
 import kotlin.collections.ArrayList
 
 class ListLikeRecyclerViewAdapter(private var titleData: ArrayList<String>, private var subtitleData : ArrayList<String>? = null,

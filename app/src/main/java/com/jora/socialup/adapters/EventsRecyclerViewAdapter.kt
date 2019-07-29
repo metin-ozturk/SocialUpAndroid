@@ -1,20 +1,13 @@
-package com.jora.socialup
+package com.jora.socialup.adapters
 
-import android.app.Application
-import android.content.Context
-import android.graphics.Color
-import android.media.Image
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ImageView
-import android.widget.LinearLayout
 import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintLayout
-import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.android.synthetic.main.fragment_event_detail.*
+import com.jora.socialup.R
+import com.jora.socialup.models.Event
 import java.lang.IllegalArgumentException
 
 open class BaseViewHolder(view: View) : RecyclerView.ViewHolder(view) {

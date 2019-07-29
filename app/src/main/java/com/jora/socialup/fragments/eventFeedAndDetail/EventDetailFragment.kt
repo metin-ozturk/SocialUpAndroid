@@ -1,8 +1,7 @@
-package com.jora.socialup
+package com.jora.socialup.fragments.eventFeedAndDetail
 
 import android.graphics.Color
 import android.graphics.Point
-import android.opengl.Visibility
 import android.os.Bundle
 import android.util.Log
 import android.view.*
@@ -13,6 +12,12 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.jora.socialup.adapters.ListLikeRecyclerViewAdapter
+import com.jora.socialup.helpers.OnSwipeTouchListener
+import com.jora.socialup.R
+import com.jora.socialup.helpers.RecyclerItemClickListener
+import com.jora.socialup.models.Event
+import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event_detail.*
 import java.lang.Exception
 
@@ -39,7 +44,8 @@ class EventDetailFragment : Fragment() {
 
     private var votedForDates = mutableMapOf<String, Boolean>()
 
-    private var eventResponseStatus : EventResponseStatus = EventResponseStatus.notResponded
+    private var eventResponseStatus : EventResponseStatus =
+        EventResponseStatus.notResponded
 
     private val dateVotesChangedBy : ArrayList<Int> by lazy {
         val arraySize = event?.dateVote?.size ?: 0
@@ -69,7 +75,13 @@ class EventDetailFragment : Fragment() {
         isFavorite = viewModel.isFavorite.value ?: false
         votedForDates = viewModel.votedForDates.value ?: mutableMapOf()
 
-        customDatesAdapter = ListLikeRecyclerViewAdapter(ArrayList(), event?.dateVote, votedForDates, event?.date)
+        customDatesAdapter =
+            ListLikeRecyclerViewAdapter(
+                ArrayList(),
+                event?.dateVote,
+                votedForDates,
+                event?.date
+            )
 
 
         return inflater.inflate(R.layout.fragment_event_detail, container,false)
@@ -82,11 +94,15 @@ class EventDetailFragment : Fragment() {
         setCustomDatesToVoteRecyclerViewListeners()
         setTextViewsButtonsAndImages()
 
-        view.setOnTouchListener( OnSwipeTouchListener(context!!, object: OnSwipeTouchListener.OnGestureInitiated {
-            override fun swipedLeft() {
-                swipedToLeft()
-            }
-        }))
+        view.setOnTouchListener(
+            OnSwipeTouchListener(
+                context!!,
+                object : OnSwipeTouchListener.OnGestureInitiated {
+                    override fun swipedLeft() {
+                        swipedToLeft()
+                    }
+                })
+        )
 
         setEventResponseStatusToButtons()
         setFavoriteImageView()
@@ -213,7 +229,9 @@ class EventDetailFragment : Fragment() {
     }
 
     private fun setFavoriteImageView() {
-        if (isFavorite) eventDetailFavoriteImageView.setImageResource(R.drawable.favorite_selected) else eventDetailFavoriteImageView.setImageResource(R.drawable.favorite)
+        if (isFavorite) eventDetailFavoriteImageView.setImageResource(R.drawable.favorite_selected) else eventDetailFavoriteImageView.setImageResource(
+            R.drawable.favorite
+        )
 
         eventDetailFavoriteImageView.setOnClickListener {
             isFavorite = if (isFavorite) {
@@ -238,32 +256,36 @@ class EventDetailFragment : Fragment() {
 
     private fun setCustomDatesToVoteRecyclerViewListeners() {
         datesToVoteRecyclerView.addOnItemTouchListener(
-            RecyclerItemClickListener(context!!, datesToVoteRecyclerView, object: RecyclerItemClickListener.OnItemClickListener {
-                override fun onItemClick(view: View, position: Int) {
-                    view.apply {
-                        isSelected = !isSelected
-                        if (isSelected) setBackgroundColor(Color.GREEN) else setBackgroundColor(Color.WHITE)
-                    }.also {
-                        var vote = event?.dateVote?.get(position)?.toInt() ?: return
-                        if (it.isSelected) {
-                            vote++
-                            dateVotesChangedBy[position] = 1
-                        } else {
-                            vote--
-                            dateVotesChangedBy[position] = -1
+            RecyclerItemClickListener(
+                context!!,
+                datesToVoteRecyclerView,
+                object : RecyclerItemClickListener.OnItemClickListener {
+                    override fun onItemClick(view: View, position: Int) {
+                        view.apply {
+                            isSelected = !isSelected
+                            if (isSelected) setBackgroundColor(Color.GREEN) else setBackgroundColor(Color.WHITE)
+                        }.also {
+                            var vote = event?.dateVote?.get(position)?.toInt() ?: return
+                            if (it.isSelected) {
+                                vote++
+                                dateVotesChangedBy[position] = 1
+                            } else {
+                                vote--
+                                dateVotesChangedBy[position] = -1
+                            }
+                            event?.dateVote!![position] = vote.toString()
+                            customDatesAdapter?.showResults(datesConvertedToReadableFormat, event?.dateVote)
+                            customDatesAdapter?.notifyItemChanged(event?.dateVote!!.count() - 1)
+
+                            val eventDate = event?.date!![position]
+                            votedForDates[eventDate] = it.isSelected
                         }
-                        event?.dateVote!![position] = vote.toString()
-                        customDatesAdapter?.showResults(datesConvertedToReadableFormat, event?.dateVote)
-                        customDatesAdapter?.notifyItemChanged(event?.dateVote!!.count() - 1)
-
-                        val eventDate = event?.date!![position]
-                        votedForDates[eventDate] = it.isSelected
                     }
-                }
 
-                override fun onLongItemClick(view: View, position: Int) {
-                }
-            }))
+                    override fun onLongItemClick(view: View, position: Int) {
+                    }
+                })
+        )
     }
 
     private fun setTextViewsButtonsAndImages() {

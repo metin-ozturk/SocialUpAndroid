@@ -1,7 +1,8 @@
-package com.jora.socialup
+package com.jora.socialup.fragments.eventFeedAndDetail
 
 import android.app.SearchManager
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Point
 import android.os.Bundle
@@ -13,7 +14,6 @@ import android.widget.ImageView
 import android.widget.SearchView
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -21,6 +21,14 @@ import androidx.recyclerview.widget.RecyclerView
 import com.algolia.search.saas.Client
 import com.algolia.search.saas.Query
 import com.google.firebase.firestore.FirebaseFirestore
+import com.jora.socialup.adapters.EventsRecyclerViewAdapter
+import com.jora.socialup.adapters.ListLikeRecyclerViewAdapter
+import com.jora.socialup.R
+import com.jora.socialup.helpers.RecyclerItemClickListener
+import com.jora.socialup.activities.EventCreateActivity
+import com.jora.socialup.activities.MainActivity
+import com.jora.socialup.models.Event
+import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event.*
 
 class EventFragment : Fragment() {
@@ -71,7 +79,7 @@ class EventFragment : Fragment() {
         setEventRecyclerView()
         setSearchView()
 
-        val customSearchAdapter = ListLikeRecyclerViewAdapter(ArrayList() )
+        val customSearchAdapter = ListLikeRecyclerViewAdapter(ArrayList())
         searchRecyclerView.adapter = customSearchAdapter
 
         setSearchRecyclerView()
@@ -79,6 +87,10 @@ class EventFragment : Fragment() {
         setSearchViewListeners(customSearchAdapter)
         setEventRecyclerViewListener()
         getEventsLiveDataFromEventViewModel()
+
+        eventCreateEventImageView.setOnClickListener {
+            startActivity(Intent(activity!!, EventCreateActivity::class.java))
+        }
 
     }
 
@@ -156,20 +168,24 @@ class EventFragment : Fragment() {
         activity?.windowManager?.defaultDisplay?.getSize(point)
         val heightOfEventsRecycler = point.x * 9 / 16
 
-        eventsRecyclerViewAdapter = EventsRecyclerViewAdapter(eventsArray, heightOfEventsRecycler)
+        eventsRecyclerViewAdapter =
+            EventsRecyclerViewAdapter(eventsArray, heightOfEventsRecycler)
         eventsRecyclerView.adapter = eventsRecyclerViewAdapter
     }
 
     private fun setEventRecyclerViewListener() {
         eventsRecyclerView.addOnItemTouchListener(
-            RecyclerItemClickListener(context!!, eventsRecyclerView, object: RecyclerItemClickListener.OnItemClickListener {
-                override fun onItemClick(view: View, position: Int) {
-                    downloadEventSpecificInformationAndUpdateViewModel(position)
-                }
+            RecyclerItemClickListener(
+                context!!,
+                eventsRecyclerView,
+                object : RecyclerItemClickListener.OnItemClickListener {
+                    override fun onItemClick(view: View, position: Int) {
+                        downloadEventSpecificInformationAndUpdateViewModel(position)
+                    }
 
-                override fun onLongItemClick(view: View, position: Int) {
-                }
-            })
+                    override fun onLongItemClick(view: View, position: Int) {
+                    }
+                })
         )
     }
 
@@ -212,28 +228,33 @@ class EventFragment : Fragment() {
         searchRecyclerView.layoutManager = LinearLayoutManager(context!!)
 
         searchRecyclerView.addOnItemTouchListener(
-            RecyclerItemClickListener(context!!, searchRecyclerView, object: RecyclerItemClickListener.OnItemClickListener {
-                override fun onItemClick(view: View, position: Int) {
-                    val isEvent = combinedSearchResult[1] as ArrayList<Boolean>
-                    val searchedEventID = combinedSearchResult[2] as ArrayList<String>
+            RecyclerItemClickListener(
+                context!!,
+                searchRecyclerView,
+                object : RecyclerItemClickListener.OnItemClickListener {
+                    override fun onItemClick(view: View, position: Int) {
+                        val isEvent = combinedSearchResult[1] as ArrayList<Boolean>
+                        val searchedEventID = combinedSearchResult[2] as ArrayList<String>
 
-                    if (!isEvent[position]) return
+                        if (!isEvent[position]) return
 
-                    searchView.clearFocus()
-                    Event.downloadEventInformation(searchedEventID[position]){
-                        viewModel.assertWhichViewToBeShowed(it)
+                        searchView.clearFocus()
+                        Event.downloadEventInformation(searchedEventID[position]) {
+                            viewModel.assertWhichViewToBeShowed(it)
 
-                        val eventDetailFragment = EventDetailFragment()
-                        val transaction = activity?.supportFragmentManager?.beginTransaction()
-                        transaction?.replace(R.id.homeRootFrameLayout, eventDetailFragment)
-                        transaction?.commit()
+                            val eventDetailFragment =
+                                EventDetailFragment()
+                            val transaction = activity?.supportFragmentManager?.beginTransaction()
+                            transaction?.replace(R.id.homeRootFrameLayout, eventDetailFragment)
+                            transaction?.commit()
+                        }
+
                     }
 
-                }
-
-                override fun onLongItemClick(view: View, position: Int) {
-                }
-            }))
+                    override fun onLongItemClick(view: View, position: Int) {
+                    }
+                })
+        )
 
     }
 

@@ -1,7 +1,9 @@
-package com.jora.socialup
+package com.jora.socialup.activities
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import com.jora.socialup.fragments.eventFeedAndDetail.EventFragment
+import com.jora.socialup.R
 import kotlin.collections.ArrayList
 
 

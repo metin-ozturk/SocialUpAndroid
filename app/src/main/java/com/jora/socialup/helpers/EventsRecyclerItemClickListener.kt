@@ -1,15 +1,14 @@
-package com.jora.socialup
+package com.jora.socialup.helpers
 
 import android.content.Context
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
-import android.widget.AdapterView
 import androidx.recyclerview.widget.RecyclerView
 
 class RecyclerItemClickListener(context: Context, private val recyclerView: RecyclerView,
-                                      private val listener: OnItemClickListener) : RecyclerView.OnItemTouchListener {
+                                      private val listener: OnItemClickListener
+) : RecyclerView.OnItemTouchListener {
 
     private var gestureDetector : GestureDetector? = null
 

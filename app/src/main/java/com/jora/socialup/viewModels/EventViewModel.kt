@@ -1,13 +1,12 @@
-package com.jora.socialup
+package com.jora.socialup.viewModels
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import com.jora.socialup.models.Event
 import kotlin.collections.ArrayList
 
 
@@ -82,7 +81,7 @@ class EventViewModel : ViewModel() {
                 Event.downloadEventInformation(docID) {
                     tempArray.add(it)
                     eventData.value = it
-                    if (tempArray.size == docIDs.size ) {
+                    if (tempArray.size == docIDs.size) {
                         eventsArrayData.value = tempArray
 
                     }

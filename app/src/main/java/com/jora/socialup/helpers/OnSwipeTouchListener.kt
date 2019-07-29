@@ -1,7 +1,6 @@
-package com.jora.socialup
+package com.jora.socialup.helpers
 
 import android.content.Context
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
@@ -23,11 +22,25 @@ class OnSwipeTouchListener(context: Context, private val listener: OnGestureInit
         fun swipedLeft() {}
         fun swipedDown() {}
         fun swipedUp() {}
+        fun singleTappedConfirmed() {}
+        fun longPressed() {}
     }
 
 
     init {
         gestureDetector = GestureDetector(context, object: GestureDetector.SimpleOnGestureListener() {
+
+            override fun onSingleTapConfirmed(e: MotionEvent?): Boolean {
+                if (e == null) return false
+                listener.singleTappedConfirmed()
+                return true
+            }
+
+            override fun onLongPress(e: MotionEvent?) {
+                super.onLongPress(e)
+                if (e == null) return
+                listener.longPressed()
+            }
 
             override fun onDown(e: MotionEvent?): Boolean {
                 return true

@@ -1,25 +1,16 @@
-package com.jora.socialup
+package com.jora.socialup.models
 
-import android.app.Activity
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Parcel
 import android.os.Parcelable
 import android.util.Log
-import android.widget.ImageView
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProviders
-import androidx.recyclerview.widget.RecyclerView
 import com.google.firebase.Timestamp
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
-import kotlinx.android.synthetic.main.fragment_event.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.asDeferred
-import java.io.ByteArrayOutputStream
 
 
 class Event(parcel: Parcel? = null) : Parcelable {
