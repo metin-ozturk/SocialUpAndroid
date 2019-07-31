@@ -13,8 +13,8 @@ class RecyclerItemClickListener(context: Context, private val recyclerView: Recy
     private var gestureDetector : GestureDetector? = null
 
     interface OnItemClickListener {
-        fun onItemClick(view: View, position: Int)
-        fun onLongItemClick(view: View, position: Int)
+        fun onItemClick(view: View, position: Int) {}
+        fun onLongItemClick(view: View, position: Int) {}
     }
 
     init {
@@ -36,6 +36,8 @@ class RecyclerItemClickListener(context: Context, private val recyclerView: Recy
                 if (child != null) listener.onLongItemClick(child, recyclerView.getChildAdapterPosition(child))
 
             }
+
+
         })
     }
 

@@ -1,5 +1,7 @@
 package com.jora.socialup.fragments.eventFeedAndDetail
 
+// FIX : WHEN DOWNLOADING SEARCH EVENTS, DOWNLOAD EVENT AND EVENT SPECIFIC INFORMATIN TOGETHER
+
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
@@ -22,7 +24,7 @@ import com.algolia.search.saas.Client
 import com.algolia.search.saas.Query
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jora.socialup.adapters.EventsRecyclerViewAdapter
-import com.jora.socialup.adapters.ListLikeRecyclerViewAdapter
+import com.jora.socialup.adapters.EventSearchRecyclerViewAdapter
 import com.jora.socialup.R
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.activities.EventCreateActivity
@@ -35,11 +37,11 @@ class EventFragment : Fragment() {
     private val eventTag = "EventTag"
 
     private val eventsRecyclerView : RecyclerView by lazy {
-        view!!.findViewById<RecyclerView>(R.id.eventsRecyclerView)
+        view!!.findViewById<RecyclerView>(R.id.eventFeedRecyclerView)
     }
 
     private val searchRecyclerView : RecyclerView by lazy {
-        view!!.findViewById<RecyclerView>(R.id.searchRecycleView)
+        view!!.findViewById<RecyclerView>(R.id.eventFeedSearchRecycleView)
     }
 
     private val viewModel : EventViewModel by lazy {
@@ -79,7 +81,7 @@ class EventFragment : Fragment() {
         setEventRecyclerView()
         setSearchView()
 
-        val customSearchAdapter = ListLikeRecyclerViewAdapter(ArrayList())
+        val customSearchAdapter = EventSearchRecyclerViewAdapter(ArrayList())
         searchRecyclerView.adapter = customSearchAdapter
 
         setSearchRecyclerView()
@@ -88,7 +90,7 @@ class EventFragment : Fragment() {
         setEventRecyclerViewListener()
         getEventsLiveDataFromEventViewModel()
 
-        eventCreateEventImageView.setOnClickListener {
+        eventFeedCreateEventImageView.setOnClickListener {
             startActivity(Intent(activity!!, EventCreateActivity::class.java))
         }
 
@@ -96,9 +98,15 @@ class EventFragment : Fragment() {
 
     private fun getEventsLiveDataFromEventViewModel() {
 
-        viewModel.currentUserImage.observe(activity!!, Observer<Bitmap> { userImage ->
-            eventFounderImageView.setImageBitmap(userImage)
-        })
+        if (viewModel.currentUserImage.value == null) {
+            viewModel.currentUserImage.observe(activity!!, Observer<Bitmap> { userImage ->
+                eventFeedFounderImageView.setImageBitmap(userImage)
+            })
+        } else {
+            val userImageToBeRetrieved = viewModel.currentUserImage.value!!
+            eventFeedFounderImageView.setImageBitmap(userImageToBeRetrieved)
+        }
+
 
         if (viewModel.eventsArray.value == null) {
             viewModel.event.observe(activity!!, Observer<Event> { event ->
@@ -189,19 +197,27 @@ class EventFragment : Fragment() {
         )
     }
 
-    private fun downloadEventSpecificInformationAndUpdateViewModel(position: Int) {
+    private fun downloadEventSpecificInformationAndUpdateViewModel(position: Int? = null) {
 
-        val eventsArray = viewModel.eventsArray.value ?: ArrayList()
-        viewModel.assertWhichViewToBeShowed(eventsArray[position])
-        viewModel.assertWhichRowToBeFocused(position)
+        var event : Event? = null
+        if (position != null) {
+            val eventsArray = viewModel.eventsArray.value ?: ArrayList()
+            event = eventsArray[position]
+            viewModel.assertWhichViewToBeShowed(event)
+        } else {
+            event = viewModel.event.value
+        }
 
-        val eventID = eventsArray[position].iD ?: return
+
+        viewModel.assertWhichRowToBeFocused(position ?: 0)
+
+        val eventID = event?.iD ?: return
 
         FirebaseFirestore.getInstance().collection("users").document("MKbCN5M1gnZ9Yi427rPf2SzyvqM2")
             .collection("events").document(eventID).get().addOnSuccessListener {
                 val data = it.data
 
-                val eventDates = eventsArray[position].date
+                val eventDates = event.date
                 val eventResponseStatus = (data?.get("EventStatus") as Long?)?.toInt() ?: 0
                 val votedDates = mutableMapOf<String, Boolean>() // [DATE, WHETHER THIS DATED IS VOTED AS BOOLEAN]
 
@@ -238,20 +254,13 @@ class EventFragment : Fragment() {
 
                         if (!isEvent[position]) return
 
-                        searchView.clearFocus()
+                        eventFeedSearchView.clearFocus()
                         Event.downloadEventInformation(searchedEventID[position]) {
                             viewModel.assertWhichViewToBeShowed(it)
+                            downloadEventSpecificInformationAndUpdateViewModel()
 
-                            val eventDetailFragment =
-                                EventDetailFragment()
-                            val transaction = activity?.supportFragmentManager?.beginTransaction()
-                            transaction?.replace(R.id.homeRootFrameLayout, eventDetailFragment)
-                            transaction?.commit()
                         }
 
-                    }
-
-                    override fun onLongItemClick(view: View, position: Int) {
                     }
                 })
         )
@@ -260,7 +269,7 @@ class EventFragment : Fragment() {
 
     private fun setSearchView(){
         val searchManager = context?.getSystemService(Context.SEARCH_SERVICE) as SearchManager
-        val searchView = view?.findViewById<SearchView>(R.id.searchView)
+        val searchView = view?.findViewById<SearchView>(R.id.eventFeedSearchView)
         val searchableInfo = searchManager.getSearchableInfo(activity?.componentName)
         searchView?.setSearchableInfo(searchableInfo)
 
@@ -269,37 +278,37 @@ class EventFragment : Fragment() {
         searchView?.clearFocus()
     }
 
-    private fun setSearchViewListeners(listLikeRecyclerViewAdapter: ListLikeRecyclerViewAdapter) {
-        searchView.setOnClickListener {
-            searchView.requestFocus()
+    private fun setSearchViewListeners(eventSearchRecyclerViewAdapter: EventSearchRecyclerViewAdapter) {
+        eventFeedSearchView.setOnClickListener {
+            eventFeedSearchView.requestFocus()
         }
 
-        val searchCloseButtonID = searchView.context.resources.getIdentifier("android:id/search_close_btn", null, null)
-        val searchCloseButton = searchView.findViewById<ImageView>(searchCloseButtonID)
+        val searchCloseButtonID = eventFeedSearchView.context.resources.getIdentifier("android:id/search_close_btn", null, null)
+        val searchCloseButton = eventFeedSearchView.findViewById<ImageView>(searchCloseButtonID)
         searchCloseButton.setOnClickListener {
-            searchView.setQuery("", true)
-            searchView.clearFocus()
+            eventFeedSearchView.setQuery("", true)
+            eventFeedSearchView.clearFocus()
         }
 
 
-        searchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
+        eventFeedSearchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
             override fun onQueryTextSubmit(query: String?): Boolean {
-                searchView.clearFocus()
-                searchView.setQuery("", true)
+                eventFeedSearchView.clearFocus()
+                eventFeedSearchView.setQuery("", true)
                 return false
             }
 
             override fun onQueryTextChange(newText: String?): Boolean {
                 if (newText?.isEmpty() == true) {
-                    searchView.clearFocus()
-                    listLikeRecyclerViewAdapter.showResults(ArrayList())
+                    eventFeedSearchView.clearFocus()
+                    eventSearchRecyclerViewAdapter.showResults(ArrayList())
                     return false
 
                 }
 
                 downloadSearchResult(newText ?: "") {
                     combinedSearchResult = it
-                    listLikeRecyclerViewAdapter.showResults(combinedSearchResult[0] as ArrayList<String>)
+                    eventSearchRecyclerViewAdapter.showResults(combinedSearchResult[0] as ArrayList<String>)
                 }
 
                 return false

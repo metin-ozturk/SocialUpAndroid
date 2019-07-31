@@ -12,9 +12,9 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.jora.socialup.adapters.ListLikeRecyclerViewAdapter
 import com.jora.socialup.helpers.OnSwipeTouchListener
 import com.jora.socialup.R
+import com.jora.socialup.adapters.EventDatesVoteRecyclerViewAdapter
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.EventViewModel
@@ -32,7 +32,7 @@ enum class EventResponseStatus {
 class EventDetailFragment : Fragment() {
     private val eventDetailTag = "EventDetailTag"
     private var event : Event? = null
-    private var customDatesAdapter : ListLikeRecyclerViewAdapter? = null
+    private var customDatesAdapter : EventDatesVoteRecyclerViewAdapter? = null
 
     private val viewModel : EventViewModel by lazy {
         ViewModelProviders.of(activity!!).get(EventViewModel::class.java)
@@ -75,14 +75,8 @@ class EventDetailFragment : Fragment() {
         isFavorite = viewModel.isFavorite.value ?: false
         votedForDates = viewModel.votedForDates.value ?: mutableMapOf()
 
-        customDatesAdapter =
-            ListLikeRecyclerViewAdapter(
-                ArrayList(),
-                event?.dateVote,
-                votedForDates,
-                event?.date
-            )
-
+        val eventReceived = event ?: return null
+        customDatesAdapter = EventDatesVoteRecyclerViewAdapter(eventReceived, votedForDates)
 
         return inflater.inflate(R.layout.fragment_event_detail, container,false)
     }
@@ -106,11 +100,9 @@ class EventDetailFragment : Fragment() {
 
         setEventResponseStatusToButtons()
         setFavoriteImageView()
-
     }
 
     private fun swipedToLeft() {
-
         val eventID = event?.iD ?: return
 
         FirebaseFirestore.getInstance().runTransaction { transaction ->
@@ -247,7 +239,8 @@ class EventDetailFragment : Fragment() {
     private fun setCustomDatesToVoteRecyclerView() {
         datesToVoteRecyclerView.adapter = customDatesAdapter
 
-        customDatesAdapter?.showResults(datesConvertedToReadableFormat, event?.dateVote)
+        val eventReceived = event ?: return
+        customDatesAdapter?.loadData(eventReceived, votedForDates)
 
         val layoutManager = LinearLayoutManager(activity)
         datesToVoteRecyclerView.layoutManager = layoutManager
@@ -261,6 +254,8 @@ class EventDetailFragment : Fragment() {
                 datesToVoteRecyclerView,
                 object : RecyclerItemClickListener.OnItemClickListener {
                     override fun onItemClick(view: View, position: Int) {
+                        val eventReceived = event ?: return
+
                         view.apply {
                             isSelected = !isSelected
                             if (isSelected) setBackgroundColor(Color.GREEN) else setBackgroundColor(Color.WHITE)
@@ -274,11 +269,12 @@ class EventDetailFragment : Fragment() {
                                 dateVotesChangedBy[position] = -1
                             }
                             event?.dateVote!![position] = vote.toString()
-                            customDatesAdapter?.showResults(datesConvertedToReadableFormat, event?.dateVote)
-                            customDatesAdapter?.notifyItemChanged(event?.dateVote!!.count() - 1)
 
                             val eventDate = event?.date!![position]
                             votedForDates[eventDate] = it.isSelected
+
+                            customDatesAdapter?.loadData(eventReceived, votedForDates)
+                            customDatesAdapter?.notifyItemChanged(event?.dateVote!!.count() - 1)
                         }
                     }
 
