@@ -29,8 +29,8 @@ class EventDatesVoteRecyclerViewAdapter(private var event: Event,
     override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
         val castedHolder = holder as DateItemHolder
 
-        val receivedDate = event.date?.get(position)
-        castedHolder.date.text = receivedDate
+        val receivedDate = event.date?.get(position) ?: return
+        castedHolder.date.text = Event.convertDateToReadableFormat(receivedDate)
         castedHolder.vote.text = event.dateVote?.get(position)
 
         val isViewSelected = votedForDate.get(receivedDate) ?: false

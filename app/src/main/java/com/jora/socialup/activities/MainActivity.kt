@@ -6,6 +6,7 @@ import com.jora.socialup.fragments.eventFeedAndDetail.EventFragment
 import com.jora.socialup.R
 import kotlin.collections.ArrayList
 
+// When activities are changes, it is downloading events again - FIX
 
 class ObservableArrayList<Element>(private val observer : () -> Unit):ArrayList<Element>() {
 

@@ -18,6 +18,9 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
+import com.google.firebase.firestore.DocumentSnapshot
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.R
 import com.jora.socialup.adapters.SearchFriendsRecyclerViewAdapter
 import com.jora.socialup.helpers.OnSwipeTouchListener
@@ -28,6 +31,10 @@ import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_who.*
 import kotlinx.android.synthetic.main.fragment_create_event_who.view.*
 import kotlinx.android.synthetic.main.fragment_create_event_who.view.createEventWhoRecyclerView
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.asDeferred
 
 class FriendInfo(internal var name : String? = null, internal var image : Bitmap? = null,
                  internal var isSelected : Boolean? = null)
@@ -169,7 +176,6 @@ class CreateEventWhoFragment : Fragment() {
                         customSearchAdapter.notifyItemChanged(friends.size - 1)
                     } else {
 
-                        Log.d("OSMAN", eventToBeReceived?.eventWithWhomID.toString())
                         val friend = if (eventToBeReceived?.eventWithWhomID?.contains(friendID) == true) {
                             FriendInfo(friendName,
                                 BitmapFactory.decodeByteArray(friendImage, 0, friendImage.size),

@@ -107,11 +107,13 @@ class EventFragment : Fragment() {
             eventFeedFounderImageView.setImageBitmap(userImageToBeRetrieved)
         }
 
-
         if (viewModel.eventsArray.value == null) {
-            viewModel.event.observe(activity!!, Observer<Event> { event ->
-                eventsArray.add(event)
-                eventsRecyclerViewAdapter?.notifyItemChanged(eventsArray.count() - 1)
+            viewModel.eventsArray.observe(activity!!, Observer<ArrayList<Event>> { retrievedEventsArray ->
+                if (!retrievedEventsArray.isNullOrEmpty()) {
+                    eventsArray.add(retrievedEventsArray.last())
+                    eventsRecyclerViewAdapter?.notifyItemChanged(eventsArray.count() - 1)
+                }
+
             })
         } else {
             val eventsRetrieved = viewModel.eventsArray.value ?: ArrayList()
@@ -157,9 +159,9 @@ class EventFragment : Fragment() {
                 objectIDsArray.add(downloadedObjectID)
             }
             val combinedArray =  ArrayList<ArrayList<Any>>()
-            combinedArray.add(resultArray as ArrayList<Any>)
-            combinedArray.add(isEvent as ArrayList<Any>)
-            combinedArray.add(objectIDsArray as ArrayList<Any>)
+            combinedArray.add(resultArray as ArrayList<Any>) //  event or user name
+            combinedArray.add(isEvent as ArrayList<Any>) //  true if is event
+            combinedArray.add(objectIDsArray as ArrayList<Any>) //  event's or user's id
             completion(combinedArray)
         }
 
@@ -191,15 +193,15 @@ class EventFragment : Fragment() {
                         downloadEventSpecificInformationAndUpdateViewModel(position)
                     }
 
-                    override fun onLongItemClick(view: View, position: Int) {
-                    }
                 })
         )
     }
 
     private fun downloadEventSpecificInformationAndUpdateViewModel(position: Int? = null) {
 
-        var event : Event? = null
+        val event : Event?
+
+        // If event is selected from search results - it is else block, else if it is selected from feed - it is the first block.
         if (position != null) {
             val eventsArray = viewModel.eventsArray.value ?: ArrayList()
             event = eventsArray[position]
@@ -219,7 +221,7 @@ class EventFragment : Fragment() {
 
                 val eventDates = event.date
                 val eventResponseStatus = (data?.get("EventStatus") as Long?)?.toInt() ?: 0
-                val votedDates = mutableMapOf<String, Boolean>() // [DATE, WHETHER THIS DATED IS VOTED AS BOOLEAN]
+                val votedDates = mutableMapOf<String, Boolean>() // [DATE, WHETHER THIS DATE IS VOTED AS BOOLEAN]
 
                 eventDates?.forEach { date ->
                     votedDates[date] = (data?.get(date) as Boolean?) ?: false
@@ -249,7 +251,7 @@ class EventFragment : Fragment() {
                 searchRecyclerView,
                 object : RecyclerItemClickListener.OnItemClickListener {
                     override fun onItemClick(view: View, position: Int) {
-                        val isEvent = combinedSearchResult[1] as ArrayList<Boolean>
+                        val isEvent = combinedSearchResult[1] as ArrayList<Boolean> // true if it is event
                         val searchedEventID = combinedSearchResult[2] as ArrayList<String>
 
                         if (!isEvent[position]) return

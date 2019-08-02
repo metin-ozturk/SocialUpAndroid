@@ -2,6 +2,7 @@ package com.jora.socialup.viewModels
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -40,9 +41,6 @@ class EventViewModel : ViewModel() {
     val isFavorite : LiveData<Boolean>
         get() = isFavoriteData
 
-    private val isInitialLoad : Boolean by lazy {
-        eventsArray.value == null
-    }
 
     fun assertWhichViewToBeShowed(eventToBeShowed: Event) {
         eventData.value = eventToBeShowed
@@ -64,8 +62,17 @@ class EventViewModel : ViewModel() {
         isFavoriteData.value = isEventFavorite
     }
 
+
+    fun updateEventsArrayWithViewedEvent(updateEventsArrayTo:Event) {
+        //updates events array by adding changes that were made to event which was viewed in detail.
+
+        val arrayToBeUpdated = eventsArrayData.value ?: return
+        val position = lastFocusedRowData.value ?: return
+        arrayToBeUpdated[position] = updateEventsArrayTo
+        eventsArrayData.value = arrayToBeUpdated
+    }
+
     fun downloadCurrentUserProfilePhoto() {
-        if (!isInitialLoad) return
 
         FirebaseStorage.getInstance().reference.child("Images/Users/MKbCN5M1gnZ9Yi427rPf2SzyvqM2/profilePhoto.jpeg").getBytes(1024 * 1024).addOnSuccessListener {
             currentUserImageData.value = BitmapFactory.decodeByteArray(it, 0, it.size)
@@ -73,18 +80,13 @@ class EventViewModel : ViewModel() {
     }
 
     fun downloadEvents() {
-        if (!isInitialLoad) return
 
         Event.downloadEventIDs { docIDs ->
-            val tempArray = ArrayList<Event>()
             docIDs.forEach { docID ->
                 Event.downloadEventInformation(docID) {
-                    tempArray.add(it)
-                    eventData.value = it
-                    if (tempArray.size == docIDs.size) {
-                        eventsArrayData.value = tempArray
-
-                    }
+                    val arrayToBeUpdated = eventsArrayData.value ?: ArrayList()
+                    arrayToBeUpdated.add(it)
+                    eventsArrayData.value = arrayToBeUpdated
                 }
             }
         }

@@ -22,10 +22,10 @@ import kotlinx.android.synthetic.main.fragment_event_detail.*
 import java.lang.Exception
 
 enum class EventResponseStatus {
-    notResponded,
-    notGoing,
-    maybe,
-    going
+    NotResponded,
+    NotGoing,
+    Maybe,
+    Going
 }
 
 
@@ -45,7 +45,7 @@ class EventDetailFragment : Fragment() {
     private var votedForDates = mutableMapOf<String, Boolean>()
 
     private var eventResponseStatus : EventResponseStatus =
-        EventResponseStatus.notResponded
+        EventResponseStatus.NotResponded
 
     private val dateVotesChangedBy : ArrayList<Int> by lazy {
         val arraySize = event?.dateVote?.size ?: 0
@@ -66,10 +66,10 @@ class EventDetailFragment : Fragment() {
         event = ViewModelProviders.of(activity!!).get(EventViewModel::class.java).event.value
 
         eventResponseStatus = when(viewModel.eventResponseStatus.value) {
-            1 -> EventResponseStatus.notGoing
-            2 -> EventResponseStatus.maybe
-            3 -> EventResponseStatus.going
-            else -> EventResponseStatus.notResponded
+            1 -> EventResponseStatus.NotGoing
+            2 -> EventResponseStatus.Maybe
+            3 -> EventResponseStatus.Going
+            else -> EventResponseStatus.NotResponded
         }
 
         isFavorite = viewModel.isFavorite.value ?: false
@@ -104,6 +104,10 @@ class EventDetailFragment : Fragment() {
 
     private fun swipedToLeft() {
         val eventID = event?.iD ?: return
+        val updateEventTo = event ?: return
+        viewModel.assertWhichViewToBeShowed(updateEventTo)
+        viewModel.updateEventsArrayWithViewedEvent(updateEventTo)
+
 
         FirebaseFirestore.getInstance().runTransaction { transaction ->
             var whenDocumentSnapshot : DocumentSnapshot? = null
@@ -120,7 +124,7 @@ class EventDetailFragment : Fragment() {
                 eventDate.substring(0, 16)
             } as ArrayList<String>
 
-            var readEventDateVote = readEventDateData?.map {eventDateVote ->
+            var readEventDateVote = readEventDateData.map {eventDateVote ->
                 eventDateVote.substring(16)
             } as ArrayList<String>
 
@@ -136,18 +140,17 @@ class EventDetailFragment : Fragment() {
             transaction.update(FirebaseFirestore.getInstance().collection("events").document(eventID),
                 mapOf( "When" to updatedReadEventDateData))
 
-
-            val eventResponsStatusAsInt = when(eventResponseStatus) {
-                EventResponseStatus.notResponded -> 0
-                EventResponseStatus.notGoing -> 1
-                EventResponseStatus.maybe -> 2
-                EventResponseStatus.going -> 3
+            val eventResponseStatusAsInt = when(eventResponseStatus) {
+                EventResponseStatus.NotResponded -> 0
+                EventResponseStatus.NotGoing -> 1
+                EventResponseStatus.Maybe -> 2
+                EventResponseStatus.Going -> 3
             }
 
             val eventSpecificPath = FirebaseFirestore.getInstance().collection("users").document("MKbCN5M1gnZ9Yi427rPf2SzyvqM2")
                 .collection("events").document(eventID)
 
-            val toBeUpdated = mapOf("EventStatus" to eventResponsStatusAsInt, "EventIsFavorite" to isFavorite) as MutableMap<String, Any>
+            val toBeUpdated = mapOf("EventStatus" to eventResponseStatusAsInt, "EventIsFavorite" to isFavorite) as MutableMap<String, Any>
             toBeUpdated.putAll(votedForDates)
 
             transaction.update(eventSpecificPath,toBeUpdated)
@@ -163,13 +166,13 @@ class EventDetailFragment : Fragment() {
 
     private fun setEventResponseStatusToButtons() {
         when (eventResponseStatus) {
-            EventResponseStatus.going -> {
+            EventResponseStatus.Going -> {
                 eventDetailGoingButton.setBackgroundColor(Color.GREEN)
             }
-            EventResponseStatus.maybe -> {
+            EventResponseStatus.Maybe -> {
                 eventDetailMaybeButton.setBackgroundColor(Color.YELLOW)
             }
-            EventResponseStatus.notGoing -> {
+            EventResponseStatus.NotGoing -> {
                 eventDetailNotGoingButton.setBackgroundColor(Color.RED)
             }
             else -> {
@@ -180,11 +183,11 @@ class EventDetailFragment : Fragment() {
         }
 
         eventDetailGoingButton.setOnClickListener {
-            if (eventResponseStatus == EventResponseStatus.going) {
-                eventResponseStatus = EventResponseStatus.notResponded
+            if (eventResponseStatus == EventResponseStatus.Going) {
+                eventResponseStatus = EventResponseStatus.NotResponded
                 eventDetailGoingButton.setBackgroundColor(Color.LTGRAY)
             } else {
-                eventResponseStatus = EventResponseStatus.going
+                eventResponseStatus = EventResponseStatus.Going
                 eventDetailGoingButton.setBackgroundColor(Color.GREEN)
                 eventDetailMaybeButton.setBackgroundColor(Color.LTGRAY)
                 eventDetailNotGoingButton.setBackgroundColor(Color.LTGRAY)
@@ -193,11 +196,11 @@ class EventDetailFragment : Fragment() {
         }
 
         eventDetailMaybeButton.setOnClickListener {
-            if (eventResponseStatus == EventResponseStatus.maybe) {
-                eventResponseStatus = EventResponseStatus.notResponded
+            if (eventResponseStatus == EventResponseStatus.Maybe) {
+                eventResponseStatus = EventResponseStatus.NotResponded
                 eventDetailMaybeButton.setBackgroundColor(Color.LTGRAY)
             } else {
-                eventResponseStatus = EventResponseStatus.maybe
+                eventResponseStatus = EventResponseStatus.Maybe
                 eventDetailMaybeButton.setBackgroundColor(Color.YELLOW)
                 eventDetailNotGoingButton.setBackgroundColor(Color.LTGRAY)
                 eventDetailGoingButton.setBackgroundColor(Color.LTGRAY)
@@ -206,11 +209,11 @@ class EventDetailFragment : Fragment() {
         }
 
         eventDetailNotGoingButton.setOnClickListener {
-            if (eventResponseStatus == EventResponseStatus.notGoing) {
-                eventResponseStatus = EventResponseStatus.notResponded
+            if (eventResponseStatus == EventResponseStatus.NotGoing) {
+                eventResponseStatus = EventResponseStatus.NotResponded
                 eventDetailNotGoingButton.setBackgroundColor(Color.LTGRAY)
             } else {
-                eventResponseStatus = EventResponseStatus.notGoing
+                eventResponseStatus = EventResponseStatus.NotGoing
                 eventDetailNotGoingButton.setBackgroundColor(Color.RED)
                 eventDetailGoingButton.setBackgroundColor(Color.LTGRAY)
                 eventDetailMaybeButton.setBackgroundColor(Color.LTGRAY)
@@ -278,8 +281,6 @@ class EventDetailFragment : Fragment() {
                         }
                     }
 
-                    override fun onLongItemClick(view: View, position: Int) {
-                    }
                 })
         )
     }

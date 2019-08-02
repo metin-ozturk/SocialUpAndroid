@@ -25,11 +25,14 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jora.socialup.R
+import com.jora.socialup.activities.EventCreateActivity
+import com.jora.socialup.activities.MainActivity
 import com.jora.socialup.adapters.EventHistoryRecyclerViewAdapter
 import com.jora.socialup.helpers.OnSwipeTouchListener
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.CreateEventViewModel
+import com.squareup.haha.perflib.Main
 import kotlinx.android.synthetic.main.fragment_create_event_what.*
 import kotlinx.android.synthetic.main.fragment_create_event_what.view.*
 
@@ -86,6 +89,11 @@ class CreateEventWhatFragment : Fragment() {
                 override fun swipedRight() {
                     super.swipedRight()
                     goToWhoFragment()
+                }
+
+                override fun swipedLeft() {
+                    super.swipedLeft()
+                    startActivity(Intent(activity!!, MainActivity::class.java))
                 }
             }))
     }
