@@ -49,7 +49,7 @@ class CreateEventWhatFragment : Fragment() {
         ViewModelProviders.of(activity!!).get(CreateEventViewModel::class.java)
     }
     private var viewToBeCreated : View? = null
-    private var loadedEvent : Event? = null
+    private var eventToBePassed : Event? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
@@ -118,7 +118,7 @@ class CreateEventWhatFragment : Fragment() {
     }
 
     private fun createEventToBeTransferredAndUpdateViewModel() {
-        val eventToBeTransferred = loadedEvent ?: Event()
+        val eventToBeTransferred = eventToBePassed ?: Event()
 
         eventToBeTransferred.name = createEventWhatName.text.toString()
         eventToBeTransferred.description = createEventWhatDescription.text.toString()
@@ -189,7 +189,7 @@ class CreateEventWhatFragment : Fragment() {
                             if (historyEvents.size == 0) return
 
                             val clickedEvent = historyEvents[position]
-                            loadedEvent = clickedEvent
+                            eventToBePassed = clickedEvent
 
                             if (clickedEvent.image == null) createEventWhatImageView.setImageResource(R.drawable.imageplaceholder) else createEventWhatImageView.setImageBitmap(
                                 clickedEvent.image

@@ -2,8 +2,10 @@ package com.jora.socialup.activities
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import androidx.fragment.app.FragmentManager
 import com.jora.socialup.fragments.eventFeedAndDetail.EventFragment
 import com.jora.socialup.R
+import com.jora.socialup.fragments.TimePickerFragment
 import kotlin.collections.ArrayList
 
 // When activities are changes, it is downloading events again - FIX
@@ -35,6 +37,7 @@ class MainActivity : AppCompatActivity() {
         val transaction = supportFragmentManager.beginTransaction()
         transaction.replace(R.id.homeRootFrameLayout, eventFragment)
         transaction.commit()
+
 
     }
 

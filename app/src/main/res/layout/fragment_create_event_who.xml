@@ -14,12 +14,13 @@
             app:layout_constraintTop_toBottomOf="@+id/createEventWhoTitle" android:layout_marginTop="20dp"
             android:id="@+id/createEventWhoSearchView"/>
     <TextView
-            android:text="WHO"
+            android:text="Who"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:id="@+id/createEventWhoTitle" app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
-            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
-            app:layout_constraintTop_toTopOf="parent" android:textSize="80sp" android:gravity="center"/>
+            android:id="@+id/createEventWhoTitle" app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" android:textSize="80sp" android:gravity="center"
+            android:layout_marginTop="8dp"/>
     <androidx.recyclerview.widget.RecyclerView
             android:layout_width="0dp"
             android:layout_height="0dp"
@@ -28,5 +29,5 @@
             android:layout_marginEnd="8dp" app:layout_constraintEnd_toEndOf="parent" android:layout_marginTop="8dp"
             app:layout_constraintTop_toBottomOf="@+id/createEventWhoSearchView"
             android:id="@+id/createEventWhoRecyclerView"
-            android:background="@drawable/light_gray_borders"/>
+            android:background="@drawable/light_gray_borders" android:padding="1dp"/>
 </androidx.constraintlayout.widget.ConstraintLayout>

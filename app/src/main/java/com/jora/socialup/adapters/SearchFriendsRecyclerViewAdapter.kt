@@ -25,6 +25,8 @@ class SearchFriendsRecyclerViewAdapter(private var friends: ArrayList<FriendInfo
         return FriendsItemHolder(itemView)
     }
 
+    
+
     override fun getItemCount(): Int {
         return if (friends.size > 0) friends.size else 1
     }

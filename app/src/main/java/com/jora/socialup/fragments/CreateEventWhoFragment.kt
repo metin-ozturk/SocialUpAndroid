@@ -17,10 +17,6 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
-import com.google.firebase.firestore.DocumentSnapshot
-import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.R
 import com.jora.socialup.adapters.SearchFriendsRecyclerViewAdapter
 import com.jora.socialup.helpers.OnSwipeTouchListener
@@ -28,16 +24,16 @@ import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
 import com.jora.socialup.models.User
 import com.jora.socialup.viewModels.CreateEventViewModel
-import kotlinx.android.synthetic.main.fragment_create_event_who.*
 import kotlinx.android.synthetic.main.fragment_create_event_who.view.*
 import kotlinx.android.synthetic.main.fragment_create_event_who.view.createEventWhoRecyclerView
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.tasks.asDeferred
 
 class FriendInfo(internal var name : String? = null, internal var image : Bitmap? = null,
-                 internal var isSelected : Boolean? = null)
+                 internal var isSelected : Boolean? = null) {
+    override fun toString(): String {
+        return mapOf<String, Any>("Name" to name as Any, "Image" to image as Any,
+                            "IsSelected" to isSelected as Any).toString()
+    }
+}
 
 class CreateEventWhoFragment : Fragment() {
 
@@ -48,7 +44,7 @@ class CreateEventWhoFragment : Fragment() {
     private var friends = ArrayList<FriendInfo>()
     private val friendIDsArrayList = ArrayList<String>()
 
-    private var eventToBeReceived : Event? = null
+    private var eventToBePassed : Event? = null
     private var viewToBeCreated : View? = null
     private val customSearchAdapter : SearchFriendsRecyclerViewAdapter by lazy {
         SearchFriendsRecyclerViewAdapter(friends)
@@ -59,7 +55,7 @@ class CreateEventWhoFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_who, container, false)
-        eventToBeReceived = createEventViewModel.event.value
+        eventToBePassed = createEventViewModel.event.value
 
         setSwipeGestures()
         setSearchView()
@@ -114,7 +110,7 @@ class CreateEventWhoFragment : Fragment() {
                         return false
                     }
 
-                    friends = friends.filter { retrievedFriend ->
+                    friends = (friendsMap.map { it.value } as ArrayList<FriendInfo>).filter { retrievedFriend ->
                         val retrievedFriendName = retrievedFriend.name ?: return false
                         retrievedFriendName.contains(newText.toString())
                     } as ArrayList<FriendInfo>
@@ -176,7 +172,7 @@ class CreateEventWhoFragment : Fragment() {
                         customSearchAdapter.notifyItemChanged(friends.size - 1)
                     } else {
 
-                        val friend = if (eventToBeReceived?.eventWithWhomID?.contains(friendID) == true) {
+                        val friend = if (eventToBePassed?.eventWithWhomID?.contains(friendID) == true) {
                             FriendInfo(friendName,
                                 BitmapFactory.decodeByteArray(friendImage, 0, friendImage.size),
                                 true)
@@ -205,11 +201,32 @@ class CreateEventWhoFragment : Fragment() {
                     override fun swipedLeft() {
                         super.swipedLeft()
 
+                        getSelectedFriendsIDsAndUpdateViewModel()
+
                         val createEventWhatFragment = CreateEventWhatFragment()
                         val transaction = activity?.supportFragmentManager?.beginTransaction()
                         transaction?.replace(R.id.eventCreateFrameLayout, createEventWhatFragment)
                         transaction?.commit()
                     }
+
+                    override fun swipedRight() {
+                        super.swipedRight()
+
+                        getSelectedFriendsIDsAndUpdateViewModel()
+
+                        val createEventWhenFragment = CreateEventWhenFragment()
+                        val transaction = activity?.supportFragmentManager?.beginTransaction()
+                        transaction?.replace(R.id.eventCreateFrameLayout, createEventWhenFragment)
+                        transaction?.commit()
+                    }
                 }))
+    }
+
+    private fun getSelectedFriendsIDsAndUpdateViewModel() {
+        val eventToBePassed = eventToBePassed ?: return
+        val selectedFriends = friendsMap.filter { it.value.isSelected == true }
+        val selectedFriendsIDs = ArrayList(selectedFriends.keys)
+        eventToBePassed.eventWithWhomID = selectedFriendsIDs
+        createEventViewModel.updateEventToBeCreated(eventToBePassed)
     }
 }
