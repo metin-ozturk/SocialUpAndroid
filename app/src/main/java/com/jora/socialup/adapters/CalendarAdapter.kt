@@ -11,11 +11,30 @@ import androidx.annotation.ColorInt
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.jora.socialup.R
+import com.jora.socialup.fragments.CreateEventWhenFragment
+import java.text.DecimalFormat
 import java.util.*
 import kotlin.collections.ArrayList
 import kotlin.math.absoluteValue
 
 class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
+
+    internal enum class TimeStatus {
+        CHECKED,
+        SELECTED,
+        DEFAULT
+    }
+
+    internal class DateTimeInfo(var dateTimeStatus: TimeStatus? = TimeStatus.DEFAULT,
+                                var date : String? = null,
+                                var initialHourAndMinute : String? = null,
+                                var finalHourAndMinute : String? = null,
+                                var positionInCalendar : Int? = null,
+                                var month: Int? = null) {
+        override fun toString(): String {
+            return "$date$initialHourAndMinute$finalHourAndMinute"
+        }
+    }
 
     var currentMonth : Int? = null //0,1,2..11
     var initialMonth : Int? = null
@@ -26,9 +45,7 @@ class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
     private var firstDayOfMonth : Int? = null // 1 = Monday, 7 = Sunday
     var numberOfMonthsChanged : Int = 0 // shouldn't exceed 6
 
-    private var checkedDays = mutableMapOf<Int, ArrayList<Int>>()
-    private var selectedDays = mutableMapOf<Int, ArrayList<Int>>()
-
+    private var dateTime = arrayListOf<DateTimeInfo>()
 
     val numberOfPastCellsToShow : Int
         get() = firstDayOfMonth ?: 0
@@ -78,6 +95,7 @@ class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
     override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
 
         val castedHolder = holder as CalendarItemHolder
+
         if (position < dayTitlesCount) {
             castedHolder.calendarItem.setBackgroundColor(Color.DKGRAY)
             castedHolder.calendarItem.text = dayTitles[position]
@@ -102,55 +120,93 @@ class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
         } else {
             castedHolder.calendarItem.setBackgroundColor(Color.TRANSPARENT)
             castedHolder.itemView.setBackgroundColor(calendarActiveUnselectedColor)
-            castedHolder.itemView.alpha = 0.8f
+            castedHolder.itemView.alpha = 1f
             castedHolder.calendarItem.text = (position + 1 - numberOfPastCellsToShow - dayTitlesCount).toString()
         }
 
-        if (checkedDays[numberOfMonthsChanged]?.contains(position) == true) {
+        if (dateTime.firstOrNull { it.month == numberOfMonthsChanged && it.positionInCalendar == position}?.dateTimeStatus == TimeStatus.CHECKED ){
             castedHolder.itemView.setBackgroundColor(Color.YELLOW)
             castedHolder.itemView.alpha = 0.8f
-        } else if(selectedDays[numberOfMonthsChanged]?.contains(position) == true) {
+        } else if(dateTime.firstOrNull { it.month == numberOfMonthsChanged && it.positionInCalendar == position}?.dateTimeStatus == TimeStatus.SELECTED ) {
             castedHolder.itemView.setBackgroundColor(Color.GREEN)
             castedHolder.itemView.alpha = 0.8f
         }
 
     }
 
-    fun updateCheckedDays(position: Int) {
+    fun onClick(position: Int) {
+        val daysPassedInInitialMonthBeforeCurrentDay = if (initialMonth == currentMonth) (currentDay ?: 0) - 1 else 0
 
-        if (checkedDays[numberOfMonthsChanged] == null )
-            checkedDays[numberOfMonthsChanged] = arrayListOf(position)
-        else
-            checkedDays[numberOfMonthsChanged]?.add(position)
+        val cellCountBeforeDateCellsStart = 7 + numberOfPastCellsToShow + daysPassedInInitialMonthBeforeCurrentDay
 
-        notifyItemChanged(position)
+        if (position < cellCountBeforeDateCellsStart ||
+            (position >= (cellCountBeforeDateCellsStart + numberOfCurrentCellsToShow))
+        ) return
+
+        val day = position - cellCountBeforeDateCellsStart + 1  + daysPassedInInitialMonthBeforeCurrentDay // Position starts at 0, add 1.
+        val month = (currentMonth ?: 0) + 1 // Since January is 0, not 1.
+        val year = currentYear ?: 0
+        val twoDecimalFormat = DecimalFormat("00")
+
+        val dateAsString = "${twoDecimalFormat.format(day)}${twoDecimalFormat.format(month)}$year"
+
+
+        when(dateTime.firstOrNull { it.date == dateAsString }?.dateTimeStatus) {
+            null -> {
+                dateTime.add(
+                    DateTimeInfo(
+                        TimeStatus.CHECKED,
+                        dateAsString,
+                        null,
+                        null,
+                        position,
+                        numberOfMonthsChanged
+                    )
+                )
+
+                notifyItemChanged(position)
+
+            }
+
+            TimeStatus.DEFAULT -> {
+                dateTime.first { it.date == dateAsString }.dateTimeStatus = TimeStatus.CHECKED
+                notifyItemChanged(position)
+            }
+
+            else -> {
+                dateTime.first { it.date == dateAsString }.dateTimeStatus = TimeStatus.DEFAULT
+                notifyItemChanged(position)
+
+            }
+        }
     }
 
-    fun updateSelectedDays(position: Int, month: Int) {
-        if (selectedDays[month] == null )
-            selectedDays[month] = arrayListOf(position)
-        else
-            selectedDays[month]?.add(position)
-
-        notifyItemChanged(position)
+    fun onFinishInitialTimePicker(result: String) {
+        dateTime.forEach {
+            if (it.dateTimeStatus == TimeStatus.CHECKED)
+                it.initialHourAndMinute = result
+        }
     }
 
-    fun removeCheckedDays(position: Int, month: Int) {
+    fun onFinishFinalTimePicker(result: String) {
+        dateTime.forEach {
+            if (it.dateTimeStatus == TimeStatus.CHECKED) {
+                it.finalHourAndMinute = result
+                it.dateTimeStatus = TimeStatus.SELECTED
 
-        checkedDays[month]?.remove(position)
-
-        Log.d("OSMAN",checkedDays[numberOfMonthsChanged]?.toString() )
-        notifyItemChanged(position)
+                notifyItemChanged(it.positionInCalendar ?: 0)
+            }
+        }
     }
 
-    fun removeSelectedDays(position: Int) {
-
-        selectedDays[numberOfMonthsChanged]?.remove(position)
-        Log.d("OSMAN",checkedDays[numberOfMonthsChanged]?.toString() )
-
-        notifyItemChanged(position)
-
+    fun showResults() {
+        dateTime.forEach {
+            if (it.dateTimeStatus == TimeStatus.SELECTED) {
+                Log.d("OSMAN", it.toString())
+            }
+        }
     }
+
 
     fun updateMonthToBeShowed(goToFuture: Boolean) {
         if (goToFuture) {
