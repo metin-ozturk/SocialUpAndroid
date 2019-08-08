@@ -96,6 +96,7 @@ class EventFragment : Fragment() {
 
     }
 
+
     private fun getEventsLiveDataFromEventViewModel() {
 
         if (viewModel.currentUserImage.value == null) {

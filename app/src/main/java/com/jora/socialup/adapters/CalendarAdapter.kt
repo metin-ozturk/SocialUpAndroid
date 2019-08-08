@@ -47,10 +47,10 @@ class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
 
     private var dateTime = arrayListOf<DateTimeInfo>()
 
-    val numberOfPastCellsToShow : Int
+    private val numberOfPastCellsToShow : Int
         get() = firstDayOfMonth ?: 0
 
-    val numberOfCurrentCellsToShow : Int
+    private val numberOfCurrentCellsToShow : Int
         get() = numberOfDays ?: 0
 
     private val numberOfFutureCellsToShow : Int
@@ -150,7 +150,6 @@ class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
 
         val dateAsString = "${twoDecimalFormat.format(day)}${twoDecimalFormat.format(month)}$year"
 
-
         when(dateTime.firstOrNull { it.date == dateAsString }?.dateTimeStatus) {
             null -> {
                 dateTime.add(
@@ -199,12 +198,10 @@ class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
         }
     }
 
-    fun showResults() {
-        dateTime.forEach {
-            if (it.dateTimeStatus == TimeStatus.SELECTED) {
-                Log.d("OSMAN", it.toString())
-            }
-        }
+    fun showResults() : List<String> {
+        return dateTime
+            .filter { it.dateTimeStatus == TimeStatus.SELECTED } // Get all selected dates
+            .map { "${it.date}${it.initialHourAndMinute}${it.finalHourAndMinute}" } // convert DateTimeInfo to string format - date/hourMinute/hourMinute
     }
 
 

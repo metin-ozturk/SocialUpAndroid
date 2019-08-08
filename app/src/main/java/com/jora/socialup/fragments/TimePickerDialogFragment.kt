@@ -15,7 +15,7 @@ import java.text.DecimalFormat
 import java.util.*
 
 
-class TimePickerFragment(private val isInitial: Boolean, private val listener: TimePickerFragmentInterface) : DialogFragment() {
+class TimePickerDialogFragment(private val isInitial: Boolean, private val listener: TimePickerFragmentInterface) : DialogFragment() {
 
     interface TimePickerFragmentInterface {
         fun onFinish(result: String)

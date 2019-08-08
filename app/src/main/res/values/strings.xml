@@ -4,4 +4,5 @@
     <string name="search_hint">Search A Friend or An Event</string>
     <string name="search_friends_hint">Search A Friend</string>
     <string name="search_activity">Search Activity</string>
+    <string name="google_android_map_api_key" translatable="false" templateMergeStrategy="preserve">AIzaSyBm3I6KSFsi_usniA7PC9JALxiIBtCw1JA</string>
 </resources>

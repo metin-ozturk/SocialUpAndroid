@@ -1,5 +1,6 @@
 package com.jora.socialup.fragments
 
+import android.Manifest
 import android.Manifest.permission.CAMERA
 import android.app.Activity.RESULT_OK
 import android.content.Context
@@ -251,17 +252,19 @@ class CreateEventWhatFragment : Fragment() {
     }
 
     private fun checkCameraPermission(completion: () -> Unit) {
-        if (checkSelfPermission(activity!!, CAMERA) != PackageManager.PERMISSION_GRANTED) {
+        if (checkSelfPermission(activity!!, CAMERA) == PackageManager.PERMISSION_GRANTED) {
             completion()
         } else {
-            ActivityCompat.requestPermissions(activity!!, arrayOf(CAMERA), MY_PERMISSION_REQUEST_CAMERA)
+            requestPermissions(arrayOf(CAMERA), MY_PERMISSION_REQUEST_CAMERA)
         }
     }
+
+
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
 
-        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED && requestCode == MY_PERMISSION_REQUEST_CAMERA) {
             val takePhotoIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
             startActivityForResult(takePhotoIntent, 0)
         } else {

@@ -2,6 +2,7 @@ package com.jora.socialup.fragments
 
 import android.app.SearchManager
 import android.content.Context
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
@@ -30,7 +31,7 @@ import kotlinx.android.synthetic.main.fragment_create_event_who.view.createEvent
 class FriendInfo(internal var name : String? = null, internal var image : Bitmap? = null,
                  internal var isSelected : Boolean? = null) {
     override fun toString(): String {
-        return mapOf<String, Any>("Name" to name as Any, "Image" to image as Any,
+        return mapOf("Name" to name as Any, "Image" to image as Any,
                             "IsSelected" to isSelected as Any).toString()
     }
 }
@@ -42,7 +43,7 @@ class CreateEventWhoFragment : Fragment() {
     }
 
     private var friends = ArrayList<FriendInfo>()
-    private val friendIDsArrayList = ArrayList<String>()
+    private var friendIDsArrayList = ArrayList<String>()
 
     private var eventToBePassed : Event? = null
     private var viewToBeCreated : View? = null
@@ -57,10 +58,21 @@ class CreateEventWhoFragment : Fragment() {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_who, container, false)
         eventToBePassed = createEventViewModel.event.value
 
+
+        // To persist data across configuration changes like orientantion change
+
+        if (savedInstanceState == null) {
+            downloadFriendsNamesAndImagesAndNotifyRecyclerView()
+        } else {
+            friends = createEventViewModel.friends.value ?: ArrayList()
+            friendsMap = createEventViewModel.friendsMap.value ?: mutableMapOf()
+            friendIDsArrayList = createEventViewModel.friendsIDsArray.value ?: ArrayList()
+            customSearchAdapter.notifyDataSetChanged()
+        }
+
         setSwipeGestures()
         setSearchView()
         setRecyclerView()
-        downloadFriendsNamesAndImagesAndNotifyRecyclerView()
         setSearchViewListeners()
         setRecyclerViewListeners()
 
@@ -68,6 +80,13 @@ class CreateEventWhoFragment : Fragment() {
         return viewToBeCreated
     }
 
+
+    override fun onPause() {
+        super.onPause()
+        createEventViewModel.updateFriendsData(friends)
+        createEventViewModel.updateFriendsMapData(friendsMap)
+        createEventViewModel.updateFriendsIDsArrayData(friendIDsArrayList)
+    }
 
     private fun setSearchView() {
         viewToBeCreated?.apply {
@@ -161,7 +180,6 @@ class CreateEventWhoFragment : Fragment() {
             friendIDs.forEach {friendID ->
                 User.downloadFriendsNamesAndImages(friendID) { friendName, friendImage ->
                     if (friendName == null || friendImage == null) {
-
                         val friend = FriendInfo("ERROR",
                             BitmapFactory.decodeResource(activity!!.resources, R.drawable.imageplaceholder),
                             false)
@@ -185,6 +203,7 @@ class CreateEventWhoFragment : Fragment() {
                         friends.add(friend)
                         friendsMap[friendID] = friend
                         friendIDsArrayList.add(friendID)
+
 
                         customSearchAdapter.notifyItemChanged(friends.size - 1)
                     }

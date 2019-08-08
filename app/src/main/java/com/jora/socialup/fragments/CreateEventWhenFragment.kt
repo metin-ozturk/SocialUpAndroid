@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.GridLayoutManager
+import com.jora.socialup.R
 import com.jora.socialup.adapters.CalendarAdapter
 import com.jora.socialup.helpers.OnSwipeTouchListener
 import com.jora.socialup.helpers.RecyclerItemClickListener
@@ -34,30 +35,30 @@ class CreateEventWhenFragment : Fragment() {
     private var monthMap = mapOf(0 to "January", 1 to "February", 2 to "March", 3 to "April", 4 to "May", 5 to "June",
                                             6 to "July", 7 to "August", 8 to "September", 9 to "October", 10 to "November", 11 to "December" )
 
-    private val initialTimePicker : TimePickerFragment by lazy {
-        TimePickerFragment(true, object: TimePickerFragment.TimePickerFragmentInterface {
+    private val initialTimePickerDialog : TimePickerDialogFragment by lazy {
+        TimePickerDialogFragment(true, object: TimePickerDialogFragment.TimePickerFragmentInterface {
             override fun onFinish(result: String) {
 
                 customCalendarAdapter?.onFinishInitialTimePicker(result)
 
-                finalTimePicker.show(activity?.supportFragmentManager, null)
-                initialTimePicker.dismiss()
+                finalTimePickerDialog.show(activity?.supportFragmentManager, null)
+                initialTimePickerDialog.dismiss()
             }
         })
     }
 
-    private val finalTimePicker : TimePickerFragment by lazy {
-        TimePickerFragment(false, object: TimePickerFragment.TimePickerFragmentInterface {
+    private val finalTimePickerDialog : TimePickerDialogFragment by lazy {
+        TimePickerDialogFragment(false, object: TimePickerDialogFragment.TimePickerFragmentInterface {
             override fun onFinish(result: String) {
                 customCalendarAdapter?.onFinishFinalTimePicker(result)
-                finalTimePicker.dismiss()
+                finalTimePickerDialog.dismiss()
             }
         })
     }
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        viewToBeCreated = inflater.inflate(com.jora.socialup.R.layout.fragment_create_event_when, container, false)
+        viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_when, container, false)
         eventToBePassed = createEventViewModel.event.value
 
         setCalendarRecyclerView()
@@ -75,7 +76,17 @@ class CreateEventWhenFragment : Fragment() {
                 object: OnSwipeTouchListener.OnGestureInitiated {
                     override fun swipedRight() {
                         super.swipedRight()
-                        customCalendarAdapter?.showResults()
+
+                        val dateToBePassed = customCalendarAdapter?.showResults() as ArrayList<String>
+                        eventToBePassed?.date = dateToBePassed
+                        eventToBePassed?.dateVote = dateToBePassed.map { "0" } as ArrayList<String> // Initialize vote as 0
+                        createEventViewModel.updateEventToBeCreated(eventToBePassed ?: Event())
+
+                        val createEventWhereFragment = CreateEventWhereFragment()
+                        val transaction = activity?.supportFragmentManager?.beginTransaction()
+                        transaction?.replace(R.id.eventCreateFrameLayout, createEventWhereFragment)
+                        transaction?.commit()
+
 
                     }
                 })
@@ -104,7 +115,7 @@ class CreateEventWhenFragment : Fragment() {
 
                 override fun onLongItemClick(view: View, position: Int) {
                     super.onLongItemClick(view, position)
-                    initialTimePicker.show(activity?.supportFragmentManager, null)
+                    initialTimePickerDialog.show(activity?.supportFragmentManager, null)
                 }
             }
         ))
