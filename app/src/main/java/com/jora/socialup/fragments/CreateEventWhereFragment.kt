@@ -2,8 +2,6 @@ package com.jora.socialup.fragments
 
 
 import android.content.pm.PackageManager
-import android.location.Address
-import android.location.Geocoder
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
@@ -18,14 +16,11 @@ import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
-import com.jora.socialup.fragments.eventFeedAndDetail.LocationDetailDialogFragment
-import com.jora.socialup.fragments.eventFeedAndDetail.LocationInfo
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_where.view.*
 import com.google.android.libraries.places.api.model.RectangularBounds
 import com.google.android.gms.common.api.ApiException
-import com.google.android.libraries.places.api.model.AutocompletePrediction
 import com.google.android.libraries.places.api.model.TypeFilter
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 
@@ -53,8 +48,8 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
     private var latLongOfEventLocation : LatLng? = null
 
     private val locationDetailDialogFragment : LocationDetailDialogFragment by lazy {
-        LocationDetailDialogFragment(latLongOfEventLocation ?: LatLng(0.0,0.0),
-            object: LocationDetailDialogFragment.LocationDetailDialogFragmentInterface {
+        LocationDetailDialogFragment(latLongOfEventLocation ?: LatLng(0.0, 0.0),
+            object : LocationDetailDialogFragment.LocationDetailDialogFragmentInterface {
                 override fun onConfirmed(locationToBePassed: LocationInfo) {
                     eventToBePassed?.locationName = locationToBePassed.name
                     eventToBePassed?.locationDescription = locationToBePassed.description

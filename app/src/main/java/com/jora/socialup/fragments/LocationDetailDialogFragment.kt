@@ -1,4 +1,4 @@
-package com.jora.socialup.fragments.eventFeedAndDetail
+package com.jora.socialup.fragments
 
 import android.location.Address
 import android.location.Geocoder
@@ -9,9 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import com.google.android.gms.maps.model.LatLng
-import com.jora.socialup.fragments.CreateEventWhereFragment
 import kotlinx.android.synthetic.main.fragment_dialog_location_detail.view.*
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import java.io.IOException
@@ -49,11 +47,13 @@ class LocationDetailDialogFragment(private val latLong: LatLng, private val list
 
             fragmentDialogLocationDetailConfirmButton?.setOnClickListener {
                 if (address.isNotEmpty()) {
-                    val locationToBePassed = LocationInfo(fragmentDialogLocationDetailNameInput.text.toString(),
+                    val locationToBePassed = LocationInfo(
+                        fragmentDialogLocationDetailNameInput.text.toString(),
                         fragmentDialogLocationDetailDescriptionInput.text.toString(),
                         latLong.latitude.toString(),
                         latLong.longitude.toString(),
-                        address)
+                        address
+                    )
 
                     listener.onConfirmed(locationToBePassed)
                 }
