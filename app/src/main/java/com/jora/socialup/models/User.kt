@@ -15,12 +15,16 @@ import kotlinx.coroutines.tasks.asDeferred
 import java.lang.Exception
 
 
-class User() {
-    var name : String? = null
-    var email : String? = null
-    var gender : String? = null
-    var birthday: String? = null
-    var friends: ArrayList<String>? = null
+class User(private var name: String? = null, private var email : String? = null, private var gender : String? = null,
+           private var birthday: String? = null, private var friends: ArrayList<String>? = null) {
+
+    override fun toString(): String {
+        return "Name: $name \n Email: $email \n Gender: $gender \n Birthday: $birthday \n Friends: $friends"
+    }
+
+    fun returnUserInformation(): Map<String, Any> {
+        return mapOf("Name" to name!!, "Email" to email!!, "Gender" to gender!!, "Birthday" to birthday!!, "FriendList" to friends!!)
+    }
 
     companion object {
         fun downloadFriendsIDs(returnFriendsIDs: (ArrayList<String>) -> Unit) {

@@ -6,16 +6,19 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.util.Log
 import com.google.firebase.Timestamp
+import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.asDeferred
 
+// FieldValue is not parcelable - way to fix it?
+
 
 class Event(parcel: Parcel? = null) : Parcelable {
 
-    var timeStamp : Timestamp? = null
+    var timeStamp : FieldValue? = null
 
     var iD : String? = null
     var name : String? = null
@@ -77,7 +80,7 @@ class Event(parcel: Parcel? = null) : Parcelable {
             eventWithWhomWontCome = parcel.readArrayList(ArrayList::class.java.classLoader) as ArrayList<String>
 
             hasImage = parcel.readInt() == 1
-            timeStamp = parcel.readParcelable(Timestamp::class.java.classLoader)
+//            timeStamp = parcel.readParcelable(FieldValue::class.java.classLoader)
         }
     }
 
@@ -108,7 +111,7 @@ class Event(parcel: Parcel? = null) : Parcelable {
         dest?.writeList(eventWithWhomWontCome)
 
         dest?.writeInt(if (hasImage == true) 1 else 0)
-        dest?.writeParcelable(timeStamp, 0)
+//        dest?.writeParcelable(timeStamp, 0)
     }
 
     override fun describeContents(): Int {
@@ -128,11 +131,11 @@ class Event(parcel: Parcel? = null) : Parcelable {
             "LocationAddress" to (locationAddress ?: "ERROR"),
             "LocationLatitude" to (locationLatitude ?: "ERROR"),
             "LocationLongitude" to (locationLongitude ?: "ERROR"),
-            "WithWhomInvited" to (eventWithWhomID ?: "ERROR"),
-            "WithWhomInvitedNames" to (eventWithWhomNames ?: "ERROR"),
-            "WithWhomWillCome" to (eventWithWhomWillCome ?: "ERROR"),
-            "WithWhomMayCome" to (eventWithWhomMayCome ?: "ERROR"),
-            "WithWhomWontCome" to (eventWithWhomWontCome ?: "ERROR"),
+            "WithWhomInvited" to (eventWithWhomID ?: ArrayList()),
+            "WithWhomInvitedNames" to (eventWithWhomNames ?:  ArrayList()),
+            "WithWhomWillCome" to (eventWithWhomWillCome ?:  ArrayList()),
+            "WithWhomMayCome" to (eventWithWhomMayCome ?: ArrayList()),
+            "WithWhomWontCome" to (eventWithWhomWontCome ?:  ArrayList()),
             "When" to ((date ?: ArrayList()).zip(dateVote ?: ArrayList()) { dateElement, dateVoteElement -> "$dateElement$dateVoteElement" }),
             "HasImage" to (hasImage ?: "ERROR"),
             "timestamp" to (timeStamp ?: "ERROR") )
@@ -190,7 +193,7 @@ class Event(parcel: Parcel? = null) : Parcelable {
                 event.eventWithWhomWillCome = eventData["WithWhomWillCome"] as? ArrayList<String> ?: ArrayList()
                 event.eventWithWhomMayCome = eventData["WithWhomMayCome"] as? ArrayList<String> ?: ArrayList()
                 event.eventWithWhomWontCome = eventData["WithWhomWontCome"] as? ArrayList<String> ?: ArrayList()
-                event.timeStamp = eventData["timestamp"] as Timestamp
+                event.timeStamp = eventData["timestamp"] as? FieldValue
 
                 event.hasImage = hasImage
 

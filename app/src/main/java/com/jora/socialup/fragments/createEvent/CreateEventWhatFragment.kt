@@ -1,9 +1,7 @@
-package com.jora.socialup.fragments
+package com.jora.socialup.fragments.createEvent
 
-import android.Manifest
 import android.Manifest.permission.CAMERA
 import android.app.Activity.RESULT_OK
-import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
@@ -11,12 +9,10 @@ import android.graphics.Point
 import android.os.Bundle
 import android.os.Handler
 import android.provider.MediaStore
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.*
 import android.view.ViewGroup
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.Fragment
@@ -26,14 +22,12 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jora.socialup.R
-import com.jora.socialup.activities.EventCreateActivity
-import com.jora.socialup.activities.MainActivity
+import com.jora.socialup.activities.HomeFeedActivity
 import com.jora.socialup.adapters.EventHistoryRecyclerViewAdapter
-import com.jora.socialup.helpers.OnSwipeTouchListener
+import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.CreateEventViewModel
-import com.squareup.haha.perflib.Main
 import kotlinx.android.synthetic.main.fragment_create_event_what.*
 import kotlinx.android.synthetic.main.fragment_create_event_what.view.*
 
@@ -51,6 +45,7 @@ class CreateEventWhatFragment : Fragment() {
     }
     private var viewToBeCreated : View? = null
     private var eventToBePassed : Event? = null
+    private var hasImage = false
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
@@ -85,8 +80,8 @@ class CreateEventWhatFragment : Fragment() {
     }
 
     private fun setSwipeRightGesture() {
-        viewToBeCreated?.createEventWhatRootConstraintLayout?.setOnTouchListener(OnSwipeTouchListener(activity!!,
-            object: OnSwipeTouchListener.OnGestureInitiated {
+        viewToBeCreated?.createEventWhatRootConstraintLayout?.setOnTouchListener(OnGestureTouchListener(activity!!,
+            object: OnGestureTouchListener.OnGestureInitiated {
                 override fun swipedRight() {
                     super.swipedRight()
                     goToWhoFragment()
@@ -94,7 +89,7 @@ class CreateEventWhatFragment : Fragment() {
 
                 override fun swipedLeft() {
                     super.swipedLeft()
-                    startActivity(Intent(activity!!, MainActivity::class.java))
+                    startActivity(Intent(activity!!, HomeFeedActivity::class.java))
                 }
             }))
     }
@@ -123,6 +118,7 @@ class CreateEventWhatFragment : Fragment() {
 
         eventToBeTransferred.name = createEventWhatName.text.toString()
         eventToBeTransferred.description = createEventWhatDescription.text.toString()
+        eventToBeTransferred.hasImage = hasImage
         eventToBeTransferred.image = createEventWhatImageView.drawable.toBitmap()
         eventToBeTransferred.isPrivate = createEventWhatIsPublic.isChecked
 
@@ -192,9 +188,13 @@ class CreateEventWhatFragment : Fragment() {
                             val clickedEvent = historyEvents[position]
                             eventToBePassed = clickedEvent
 
-                            if (clickedEvent.image == null) createEventWhatImageView.setImageResource(R.drawable.imageplaceholder) else createEventWhatImageView.setImageBitmap(
-                                clickedEvent.image
-                            )
+                            if (clickedEvent.image == null) {
+                                hasImage = false
+                                createEventWhatImageView.setImageResource(R.drawable.imageplaceholder)
+                            } else {
+                                hasImage = true
+                                createEventWhatImageView.setImageBitmap(clickedEvent.image)
+                            }
 
                             createEventWhatIsPublic.isChecked = clickedEvent.isPrivate ?: false
                             createEventWhatName.text.clear()
@@ -213,11 +213,13 @@ class CreateEventWhatFragment : Fragment() {
 
         when(requestCode) {
             0 -> { if (resultCode == RESULT_OK) {
+                    hasImage = true
                     val selectedImage : Bitmap = data?.extras?.get("data") as Bitmap
                     createEventWhatImageView.setImageBitmap(selectedImage)
                 }
             }
             1 -> { if (resultCode == RESULT_OK) {
+                    hasImage = true
                     val selectedImage = data?.data
                     createEventWhatImageView.setImageURI(selectedImage)
                 }
@@ -227,7 +229,7 @@ class CreateEventWhatFragment : Fragment() {
 
     private fun setGestureRecognizerToCreateEventImageView() {
         viewToBeCreated?.createEventWhatImageView?.setOnTouchListener(
-            OnSwipeTouchListener(context!!, object : OnSwipeTouchListener.OnGestureInitiated {
+            OnGestureTouchListener(context!!, object : OnGestureTouchListener.OnGestureInitiated {
                 override fun singleTappedConfirmed() {
                     super.singleTappedConfirmed()
 
@@ -268,6 +270,7 @@ class CreateEventWhatFragment : Fragment() {
             val takePhotoIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
             startActivityForResult(takePhotoIntent, 0)
         } else {
+            hasImage = false
             createEventWhatImageView.setImageResource(R.drawable.imageplaceholder)
         }
     }

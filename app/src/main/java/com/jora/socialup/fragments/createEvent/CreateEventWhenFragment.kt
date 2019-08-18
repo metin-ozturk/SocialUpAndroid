@@ -1,7 +1,6 @@
-package com.jora.socialup.fragments
+package com.jora.socialup.fragments.createEvent
 
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,7 +9,7 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.GridLayoutManager
 import com.jora.socialup.R
 import com.jora.socialup.adapters.CalendarAdapter
-import com.jora.socialup.helpers.OnSwipeTouchListener
+import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.CreateEventViewModel
@@ -36,24 +35,28 @@ class CreateEventWhenFragment : Fragment() {
                                             6 to "July", 7 to "August", 8 to "September", 9 to "October", 10 to "November", 11 to "December" )
 
     private val initialTimePickerDialog : TimePickerDialogFragment by lazy {
-        TimePickerDialogFragment(true, object: TimePickerDialogFragment.TimePickerFragmentInterface {
-            override fun onFinish(result: String) {
+        TimePickerDialogFragment(
+            true,
+            object : TimePickerDialogFragment.TimePickerFragmentInterface {
+                override fun onFinish(result: String) {
 
-                customCalendarAdapter?.onFinishInitialTimePicker(result)
+                    customCalendarAdapter?.onFinishInitialTimePicker(result)
 
-                finalTimePickerDialog.show(activity?.supportFragmentManager, null)
-                initialTimePickerDialog.dismiss()
-            }
-        })
+                    finalTimePickerDialog.show(activity?.supportFragmentManager, null)
+                    initialTimePickerDialog.dismiss()
+                }
+            })
     }
 
     private val finalTimePickerDialog : TimePickerDialogFragment by lazy {
-        TimePickerDialogFragment(false, object: TimePickerDialogFragment.TimePickerFragmentInterface {
-            override fun onFinish(result: String) {
-                customCalendarAdapter?.onFinishFinalTimePicker(result)
-                finalTimePickerDialog.dismiss()
-            }
-        })
+        TimePickerDialogFragment(
+            false,
+            object : TimePickerDialogFragment.TimePickerFragmentInterface {
+                override fun onFinish(result: String) {
+                    customCalendarAdapter?.onFinishFinalTimePicker(result)
+                    finalTimePickerDialog.dismiss()
+                }
+            })
     }
 
 
@@ -72,8 +75,8 @@ class CreateEventWhenFragment : Fragment() {
 
     private fun setSwipeGestures() {
         viewToBeCreated?.createEventWhenRootConstraintLayout?.setOnTouchListener(
-            OnSwipeTouchListener(activity!!,
-                object: OnSwipeTouchListener.OnGestureInitiated {
+            OnGestureTouchListener(activity!!,
+                object: OnGestureTouchListener.OnGestureInitiated {
                     override fun swipedRight() {
                         super.swipedRight()
 

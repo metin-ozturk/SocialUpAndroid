@@ -22,13 +22,19 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.algolia.search.saas.Client
 import com.algolia.search.saas.Query
+import com.facebook.login.LoginManager
+import com.google.android.gms.auth.api.signin.GoogleSignIn
+import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jora.socialup.adapters.EventsRecyclerViewAdapter
 import com.jora.socialup.adapters.EventSearchRecyclerViewAdapter
 import com.jora.socialup.R
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.activities.EventCreateActivity
-import com.jora.socialup.activities.MainActivity
+import com.jora.socialup.activities.HomeActivity
+import com.jora.socialup.activities.HomeFeedActivity
+import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event.*
@@ -57,7 +63,7 @@ class EventFragment : Fragment() {
     override fun onAttach(context: Context?) {
         super.onAttach(context)
 
-        if (context !is MainActivity)
+        if (context !is HomeFeedActivity)
             throw RuntimeException(context.toString() + " must implement an Activity")
 
     }
@@ -89,11 +95,35 @@ class EventFragment : Fragment() {
         setSearchViewListeners(customSearchAdapter)
         setEventRecyclerViewListener()
         getEventsLiveDataFromEventViewModel()
+        setLogOut()
 
         eventFeedCreateEventImageView.setOnClickListener {
             startActivity(Intent(activity!!, EventCreateActivity::class.java))
         }
 
+    }
+
+    private fun setLogOut() {
+        eventFeedFounderImageView?.setOnTouchListener(OnGestureTouchListener(activity!!, object: OnGestureTouchListener.OnGestureInitiated {
+            override fun longPressed() {
+                super.longPressed()
+
+                // SIGN OUT FROM GOOGLE
+                val googleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                    .requestIdToken(getString(R.string.google_sign_in_server_client_id))
+                    .requestEmail()
+                    .build()
+                GoogleSignIn.getClient(activity!!, googleSignInOptions).signOut()
+
+                // SIGN OUT FROM FACEBOOK
+                LoginManager.getInstance().logOut()
+
+                // SIGN OUT FROM FIREBASE
+                FirebaseAuth.getInstance().signOut()
+
+                startActivity(Intent(activity, HomeActivity::class.java))
+            }
+        }))
     }
 
 

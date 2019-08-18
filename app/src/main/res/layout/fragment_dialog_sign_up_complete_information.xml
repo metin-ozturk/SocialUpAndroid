@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                                                   xmlns:app="http://schemas.android.com/apk/res-auto"
+                                                   xmlns:tools="http://schemas.android.com/tools"
+                                                   android:layout_width="match_parent"
+                                                   android:layout_height="wrap_content"
+                                                   android:minHeight="450dp" android:minWidth="350dp">
+
+    <NumberPicker android:layout_width="50dp" android:layout_height="100dp"
+                  android:id="@+id/fragmentDialogSignUpCompleteInformationDayPicker"
+                  app:layout_constraintStart_toEndOf="@+id/fragmentDialogSignUpCompleteInformationBirthDay"
+                  android:layout_marginStart="8dp" android:layout_marginTop="8dp"
+                  app:layout_constraintTop_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationGenderPicker"/>
+    <NumberPicker android:layout_width="85dp" android:layout_height="103dp"
+                  android:id="@+id/fragmentDialogSignUpCompleteInformationGenderPicker"
+                  app:layout_constraintStart_toEndOf="@+id/fragmentDialogSignUpCompleteInformationGender"
+                  android:layout_marginStart="8dp" android:layout_marginTop="8dp"
+                  app:layout_constraintTop_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationNameInput"/>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/fragmentDialogSignUpCompleteInformationName"
+            android:textSize="24sp" android:textStyle="bold"
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp" app:layout_constraintTop_toTopOf="parent" android:text="Name:"/>
+    <EditText
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:inputType="textMultiLine"
+            android:gravity="start|top"
+            android:ems="10"
+            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
+            android:textSize="20sp" android:layout_marginTop="8dp" app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/fragmentDialogSignUpCompleteInformationName" android:layout_marginStart="8dp"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintBottom_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationName"
+            android:id="@+id/fragmentDialogSignUpCompleteInformationNameInput"/>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/fragmentDialogSignUpCompleteInformationGender"
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+            android:textSize="30sp" android:textStyle="bold" android:text="Gender:"
+            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationName"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintBottom_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationGenderPicker"/>
+    <NumberPicker android:layout_width="100dp" android:layout_height="100dp"
+                  android:id="@+id/fragmentDialogSignUpCompleteInformationYearPicker"
+                  android:layout_marginTop="8dp"
+                  app:layout_constraintTop_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationGenderPicker"
+                  app:layout_constraintStart_toEndOf="@+id/fragmentDialogSignUpCompleteInformationMonthPicker"
+                  android:layout_marginStart="8dp"/>
+    <NumberPicker android:layout_width="50dp" android:layout_height="100dp"
+                  android:id="@+id/fragmentDialogSignUpCompleteInformationMonthPicker"
+                  android:layout_marginTop="8dp"
+                  app:layout_constraintTop_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationGenderPicker"
+                  app:layout_constraintStart_toEndOf="@+id/fragmentDialogSignUpCompleteInformationDayPicker"
+                  android:layout_marginStart="8dp"/>
+    <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/fragmentDialogSignUpCompleteInformationBirthDay"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="8dp" android:text="Birthday: "
+            android:textSize="30sp" android:textStyle="bold"
+            android:layout_marginTop="8dp"
+            app:layout_constraintTop_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationGenderPicker"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintBottom_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationYearPicker"/>
+    <TextView
+            android:text="Email:"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+            android:id="@+id/fragmentDialogSignUpCompleteInformationEmail" android:textSize="30sp" android:textStyle="bold"
+            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationMonthPicker"/>
+    <EditText
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:inputType="textMultiLine"
+            android:gravity="start|top"
+            android:ems="10"
+            android:id="@+id/fragmentDialogSignUpCompleteInformationEmailInput"
+            app:layout_constraintBottom_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationEmail"
+            app:layout_constraintTop_toTopOf="@+id/fragmentDialogSignUpCompleteInformationEmail" app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="8dp" app:layout_constraintStart_toEndOf="@+id/fragmentDialogSignUpCompleteInformationEmail"
+            android:layout_marginStart="8dp"/>
+    <TextView
+            android:text="Profile Photo:"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:id="@+id/fragmentDialogSignUpCompleteInformationProfilePhoto" android:textSize="30sp"
+            android:textStyle="bold" app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationEmail"/>
+    <ImageView
+            android:layout_width="40dp"
+            android:layout_height="0dp" app:srcCompat="@drawable/imageplaceholder"
+            android:id="@+id/fragmentDialogSignUpCompleteInformationPhotoImageView"
+            app:layout_constraintTop_toTopOf="@+id/fragmentDialogSignUpCompleteInformationProfilePhoto"
+            app:layout_constraintBottom_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationProfilePhoto"
+            app:layout_constraintStart_toEndOf="@+id/fragmentDialogSignUpCompleteInformationProfilePhoto"
+            android:layout_marginStart="8dp"/>
+    <Button
+            android:text="Upload Photo"
+            android:layout_width="wrap_content"
+            android:layout_height="0dp"
+            android:id="@+id/fragmenDialogSignUpCompleteInformationPhotoButton"
+            app:layout_constraintStart_toEndOf="@+id/fragmentDialogSignUpCompleteInformationPhotoImageView"
+            android:layout_marginStart="8dp"
+            app:layout_constraintBottom_toBottomOf="@+id/fragmentDialogSignUpCompleteInformationProfilePhoto"
+            app:layout_constraintTop_toTopOf="@+id/fragmentDialogSignUpCompleteInformationProfilePhoto"
+            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
+            app:layout_constraintHorizontal_bias="1.0"/>
+    <Button
+            android:text="Confirm"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:id="@+id/fragmentDialogSignUpCompleteInformationConfirmButton" android:layout_marginBottom="16dp"
+            app:layout_constraintBottom_toBottomOf="parent" app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginEnd="8dp" app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginStart="8dp"/>
+
+</androidx.constraintlayout.widget.ConstraintLayout>

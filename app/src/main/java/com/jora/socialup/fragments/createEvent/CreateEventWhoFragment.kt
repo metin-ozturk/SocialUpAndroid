@@ -1,13 +1,11 @@
-package com.jora.socialup.fragments
+package com.jora.socialup.fragments.createEvent
 
 import android.app.SearchManager
 import android.content.Context
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -20,7 +18,7 @@ import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.jora.socialup.R
 import com.jora.socialup.adapters.SearchFriendsRecyclerViewAdapter
-import com.jora.socialup.helpers.OnSwipeTouchListener
+import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
 import com.jora.socialup.models.User
@@ -92,6 +90,7 @@ class CreateEventWhoFragment : Fragment() {
         viewToBeCreated?.apply {
             val searchManager = context?.getSystemService(Context.SEARCH_SERVICE) as SearchManager
             val searchableInfo = searchManager.getSearchableInfo(activity?.componentName)
+            createEventWhoSearchView?.queryHint = "Search Friends..."
             createEventWhoSearchView?.setSearchableInfo(searchableInfo)
 
             createEventWhoSearchView?.isIconified = false
@@ -144,12 +143,12 @@ class CreateEventWhoFragment : Fragment() {
     }
 
     private fun setRecyclerView() {
-        viewToBeCreated?.apply {
-            createEventWhoRecyclerView?.adapter = customSearchAdapter
+        viewToBeCreated?.createEventWhoRecyclerView?.apply {
+            adapter = customSearchAdapter
             val layoutManager = LinearLayoutManager(activity!!)
-            createEventWhoRecyclerView?.layoutManager = layoutManager
-            createEventWhoRecyclerView?.itemAnimator = DefaultItemAnimator()
-            createEventWhoRecyclerView?.addItemDecoration(DividerItemDecoration(activity!!, DividerItemDecoration.VERTICAL))
+            this.layoutManager = layoutManager
+            itemAnimator = DefaultItemAnimator()
+            addItemDecoration(DividerItemDecoration(activity!!, DividerItemDecoration.VERTICAL))
         }
     }
 
@@ -180,9 +179,11 @@ class CreateEventWhoFragment : Fragment() {
             friendIDs.forEach {friendID ->
                 User.downloadFriendsNamesAndImages(friendID) { friendName, friendImage ->
                     if (friendName == null || friendImage == null) {
-                        val friend = FriendInfo("ERROR",
+                        val friend = FriendInfo(
+                            "ERROR",
                             BitmapFactory.decodeResource(activity!!.resources, R.drawable.imageplaceholder),
-                            false)
+                            false
+                        )
                         friends.add(friend)
                         friendsMap[friendID] = friend
                         friendIDsArrayList.add(friendID)
@@ -191,13 +192,17 @@ class CreateEventWhoFragment : Fragment() {
                     } else {
 
                         val friend = if (eventToBePassed?.eventWithWhomID?.contains(friendID) == true) {
-                            FriendInfo(friendName,
+                            FriendInfo(
+                                friendName,
                                 BitmapFactory.decodeByteArray(friendImage, 0, friendImage.size),
-                                true)
+                                true
+                            )
                         } else {
-                            FriendInfo(friendName,
+                            FriendInfo(
+                                friendName,
                                 BitmapFactory.decodeByteArray(friendImage, 0, friendImage.size),
-                                false)
+                                false
+                            )
                         }
 
                         friends.add(friend)
@@ -215,8 +220,8 @@ class CreateEventWhoFragment : Fragment() {
 
     private fun setSwipeGestures() {
         viewToBeCreated?.createEventWhoRootConstraintLayout?.setOnTouchListener(
-            OnSwipeTouchListener(activity!!,
-                object: OnSwipeTouchListener.OnGestureInitiated {
+            OnGestureTouchListener(activity!!,
+                object: OnGestureTouchListener.OnGestureInitiated {
                     override fun swipedLeft() {
                         super.swipedLeft()
 
@@ -246,6 +251,7 @@ class CreateEventWhoFragment : Fragment() {
         val selectedFriends = friendsMap.filter { it.value.isSelected == true }
         val selectedFriendsIDs = ArrayList(selectedFriends.keys)
         eventToBePassed.eventWithWhomID = selectedFriendsIDs
+        eventToBePassed.eventWithWhomNames = selectedFriends.map { it.value.name } as ArrayList<String>
         createEventViewModel.updateEventToBeCreated(eventToBePassed)
     }
 }

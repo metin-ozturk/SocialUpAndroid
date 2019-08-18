@@ -52,7 +52,16 @@ dependencies {
     implementation 'com.google.android.gms:play-services-location:17.0.0'
     implementation 'com.google.android.libraries.places:places:2.0.0'
 
+    // Firebase Auth
+    implementation 'com.google.firebase:firebase-auth:18.1.0'
 
+    // Google Auth
+    implementation 'com.google.android.gms:play-services-auth:17.0.0'
+
+    //Facebook Login
+    implementation 'com.facebook.android:facebook-login:5.2.0'
+
+    // Leak Canary
     debugImplementation 'com.squareup.leakcanary:leakcanary-android:1.6.3'
     releaseImplementation 'com.squareup.leakcanary:leakcanary-android-no-op:1.6.3'
     debugImplementation 'com.squareup.leakcanary:leakcanary-support-fragment:1.6.3'

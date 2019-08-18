@@ -9,7 +9,7 @@ import android.view.View.OnTouchListener
 import java.lang.Math.abs
 
 
-class OnSwipeTouchListener(context: Context, private val listener: OnGestureInitiated) : OnTouchListener {
+class OnGestureTouchListener(context: Context, private val listener: OnGestureInitiated) : OnTouchListener {
     private var gestureDetector: GestureDetector? = null
 
     companion object {

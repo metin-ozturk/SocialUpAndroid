@@ -1,10 +1,9 @@
 package com.jora.socialup.activities
 
 import android.os.Bundle
-import android.util.Log
 import androidx.appcompat.app.AppCompatActivity
 import com.jora.socialup.R
-import com.jora.socialup.fragments.CreateEventWhatFragment
+import com.jora.socialup.fragments.createEvent.CreateEventWhatFragment
 
 class EventCreateActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {

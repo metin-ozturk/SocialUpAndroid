@@ -1,4 +1,4 @@
-package com.jora.socialup.fragments
+package com.jora.socialup.fragments.createEvent
 
 import android.location.Address
 import android.location.Geocoder
@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
-import com.google.android.gms.maps.model.LatLng
 import kotlinx.android.synthetic.main.fragment_dialog_location_detail.view.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -19,14 +18,18 @@ class LocationInfo(internal val name : String? = null,
                    internal val description : String? = null,
                    internal val latitude : String? = null,
                    internal val longitude: String? = null,
-                   internal val address: String? = null) {
+                   internal val address: String? = null,
+                   internal val locationID : String? = null) {
     override fun toString(): String {
-        return "$name $description $latitude $longitude $address"
+        return "$name $description $latitude $longitude $address $locationID"
     }
+
 }
 
 
-class LocationDetailDialogFragment(private val latLong: LatLng, private val listener : LocationDetailDialogFragmentInterface) : DialogFragment() {
+class LocationDetailDialogFragment(private val locationInfo : LocationInfo,
+                                   private val listener : LocationDetailDialogFragmentInterface
+) : DialogFragment() {
 
     interface LocationDetailDialogFragmentInterface {
         fun onConfirmed(locationToBePassed: LocationInfo)
@@ -37,21 +40,28 @@ class LocationDetailDialogFragment(private val latLong: LatLng, private val list
         val view = inflater.inflate(com.jora.socialup.R.layout.fragment_dialog_location_detail, container, false)
 
         view.apply {
-            fragmentDialogLocationDetailLatitudeInput.text = latLong.latitude.toString().substring(0,8)
-            fragmentDialogLocationDetailLongitudeInput.text = latLong.longitude.toString().substring(0,8)
+            fragmentDialogLocationDetailLatitudeInput.text = if (locationInfo.latitude?.count() ?: 0 < 8) locationInfo.latitude.toString() else locationInfo.latitude.toString().substring(0,8)
+            fragmentDialogLocationDetailLongitudeInput.text = if (locationInfo.longitude?.count() ?: 0 < 8) locationInfo.longitude.toString() else locationInfo.longitude.toString().substring(0,8)
+            fragmentDialogLocationDetailDescriptionInput.text.insert(0, locationInfo.description ?: "")
+            fragmentDialogLocationDetailNameInput.text.insert(0, locationInfo.name ?: "")
 
             var address = ""
-            GlobalScope.launch {
-                address = getAddress(latLong)
-            }
+
+            if (locationInfo.address.isNullOrEmpty()) {
+                GlobalScope.launch {
+                    address = getAddress(locationInfo.latitude?.toDouble() ?: 0.0,
+                        locationInfo.longitude?.toDouble() ?: 0.0)
+                }
+            } else address = locationInfo.address
+
 
             fragmentDialogLocationDetailConfirmButton?.setOnClickListener {
                 if (address.isNotEmpty()) {
                     val locationToBePassed = LocationInfo(
                         fragmentDialogLocationDetailNameInput.text.toString(),
                         fragmentDialogLocationDetailDescriptionInput.text.toString(),
-                        latLong.latitude.toString(),
-                        latLong.longitude.toString(),
+                        locationInfo.latitude,
+                        locationInfo.longitude,
                         address
                     )
 
@@ -74,14 +84,14 @@ class LocationDetailDialogFragment(private val latLong: LatLng, private val list
         dialog?.window?.attributes = attributes
     }
 
-    fun getAddress(latLng: LatLng) : String {
+    private fun getAddress(latitude: Double, longitude: Double) : String {
         val geoCoder = Geocoder(activity!!)
         val addresses: List<Address>?
         val address: Address?
         var addressText = ""
 
         try {
-            addresses = geoCoder.getFromLocation(latLng.latitude, latLng.longitude, 1)
+            addresses = geoCoder.getFromLocation(latitude, longitude, 1)
             if (!addresses.isNullOrEmpty()) {
                 address = addresses[0]
                 addressText = address.getAddressLine(0)
@@ -92,5 +102,6 @@ class LocationDetailDialogFragment(private val latLong: LatLng, private val list
 
         return addressText
     }
+
 }
 

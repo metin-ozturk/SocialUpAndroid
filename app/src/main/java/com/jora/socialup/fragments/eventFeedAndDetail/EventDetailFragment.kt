@@ -12,7 +12,7 @@ import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.jora.socialup.helpers.OnSwipeTouchListener
+import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.R
 import com.jora.socialup.adapters.EventDatesVoteRecyclerViewAdapter
 import com.jora.socialup.helpers.RecyclerItemClickListener
@@ -89,9 +89,9 @@ class EventDetailFragment : Fragment() {
         setTextViewsButtonsAndImages()
 
         view.setOnTouchListener(
-            OnSwipeTouchListener(
+            OnGestureTouchListener(
                 context!!,
-                object : OnSwipeTouchListener.OnGestureInitiated {
+                object : OnGestureTouchListener.OnGestureInitiated {
                     override fun swipedLeft() {
                         swipedToLeft()
                     }

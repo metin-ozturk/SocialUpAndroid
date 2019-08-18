@@ -5,4 +5,7 @@
     <string name="search_friends_hint">Search A Friend</string>
     <string name="search_activity">Search Activity</string>
     <string name="google_android_map_api_key" translatable="false" templateMergeStrategy="preserve">AIzaSyBm3I6KSFsi_usniA7PC9JALxiIBtCw1JA</string>
+    <string name="google_sign_in_server_client_id">600844983013-hbtdqhedmfbudf9d30qavb2faf1akefk.apps.googleusercontent.com</string>
+    <string name="facebook_app_id">1988725054548859</string>
+    <string name="fb_login_protocol_scheme">fb1988725054548859</string>
 </resources>

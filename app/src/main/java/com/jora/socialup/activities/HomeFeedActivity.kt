@@ -2,8 +2,6 @@ package com.jora.socialup.activities
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.DisplayMetrics
-import android.util.Log
 import com.jora.socialup.fragments.eventFeedAndDetail.EventFragment
 import com.jora.socialup.R
 import kotlin.collections.ArrayList
@@ -26,12 +24,12 @@ class ObservableList<Element>(private val base: MutableList<Element>, private va
     }
 }
 
-class MainActivity : AppCompatActivity() {
+class HomeFeedActivity : AppCompatActivity() {
     private val tag = "MainActivityLog"
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_home)
+        setContentView(R.layout.activity_home_feed)
 
         if (savedInstanceState == null) {
             val eventFragment = EventFragment()

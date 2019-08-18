@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                                                   xmlns:app="http://schemas.android.com/apk/res-auto"
+                                                   xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
+                                                   android:layout_height="match_parent"
+                                                   android:id="@+id/createEventSummaryRootConstraintLayout">
+
+    <TextView
+            android:text="Summary"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content" android:id="@+id/createEventSummaryTitle" android:textSize="80sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent"
+            android:gravity="center" android:layout_marginTop="8dp"/>
+    <ImageView
+            android:layout_width="0dp"
+            android:layout_height="100dp" app:srcCompat="@drawable/imageplaceholder"
+            android:id="@+id/createEventSummaryEventImage" app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent" android:layout_marginStart="8dp" android:layout_marginEnd="8dp"
+            android:layout_marginTop="20dp"
+            app:layout_constraintTop_toBottomOf="@+id/createEventSummaryTitle" android:scaleType="centerCrop"/>
+    <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="200dp" android:id="@+id/createEventSummaryScrollView"
+            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/createEventSummaryEventImage"
+            app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginStart="8dp" android:layout_marginEnd="8dp">
+        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
+                      android:orientation="vertical">
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content" android:gravity="start">
+                <TextView
+                        android:text="Event Name: "
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:id="@+id/createEventSummaryEventName" android:textSize="20sp"
+                        android:textStyle="bold"/>
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryEventNameInput"
+                        android:layout_weight="1" tools:text="Name" android:textSize="20sp"/>
+            </LinearLayout>
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                <TextView
+                        android:text="Event Description: "
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent" android:id="@+id/createEventSummaryDescription"
+                        android:textSize="20sp"
+                        android:textStyle="bold"
+                />
+                <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryDescriptionInput"
+                        android:layout_weight="1" tools:text="Description"
+                        android:textSize="20sp"/>
+            </LinearLayout>
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                <TextView
+                        android:text="Event Is Private: "
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryPrivacy"
+                        android:textSize="20sp"
+                        android:textStyle="bold"/>
+                <TextView
+                        android:text="TextView"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryPrivacyInput"
+                        android:textSize="20sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                <TextView
+                        android:text="Who Is Invited: "
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryWhoInvited"
+                        android:textSize="20sp"
+                        android:textStyle="bold"/>
+                <TextView
+                        android:text="Who is invited input "
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryWhoInvitedInput"
+                        android:textSize="20sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                <TextView
+                        android:text="Location Name: "
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryLocationName"
+                        android:textSize="20sp"
+                        android:textStyle="bold"/>
+                <TextView
+                        android:text="Input "
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryLocationNameInput"
+                        android:textSize="20sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                <TextView
+                        android:text="Location Description: "
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryLocationDescription"
+                        android:textSize="20sp"
+                        android:textStyle="bold"/>
+                <TextView
+                        android:text="Input"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:id="@+id/createEventSummaryLocationDescriptionInput"
+                        android:textSize="20sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                <TextView
+                        android:text="Location Address: "
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryLocationAddress"
+                        android:textSize="20sp"
+                        android:textStyle="bold"/>
+                <TextView
+                        android:text="Input"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryLocationAddressInput"
+                        android:textSize="20sp"/>
+            </LinearLayout>
+
+            <LinearLayout
+                    android:orientation="horizontal"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+                <TextView
+                        android:text="When: "
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryWhen"
+                        android:textSize="20sp"
+                        android:textStyle="bold"/>
+                <TextView
+                        android:text="Input"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryWhenInput"
+                        android:textSize="20sp"/>
+            </LinearLayout>
+        </LinearLayout>
+    </ScrollView>
+    <Button
+            android:text="Confirm Event"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" android:id="@+id/createEventSummaryConfirmButton"
+            android:layout_marginBottom="8dp" app:layout_constraintBottom_toBottomOf="parent"
+            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/createEventSummaryScrollView"
+            app:layout_constraintStart_toStartOf="parent" app:layout_constraintVertical_bias="0.0"
+            android:layout_marginStart="8dp"/>
+    <ImageView
+            android:layout_width="40dp"
+            android:layout_height="0dp" app:srcCompat="@drawable/favorite"
+            android:id="@+id/createEventSummaryFavoriteImage"
+            app:layout_constraintTop_toBottomOf="@+id/createEventSummaryScrollView" android:layout_marginTop="8dp"
+            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
+            android:layout_marginBottom="8dp"
+            app:layout_constraintBottom_toBottomOf="@+id/createEventSummaryConfirmButton"
+            android:scaleType="centerCrop"/>
+</androidx.constraintlayout.widget.ConstraintLayout>

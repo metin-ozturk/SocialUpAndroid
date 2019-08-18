@@ -3,7 +3,7 @@ package com.jora.socialup.viewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.jora.socialup.fragments.FriendInfo
+import com.jora.socialup.fragments.createEvent.FriendInfo
 import com.jora.socialup.models.Event
 
 class CreateEventViewModel : ViewModel() {
