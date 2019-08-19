@@ -105,12 +105,12 @@ class SignUpCompleteInformationDialogFragment(private val listener: SignUpComple
             }
 
             if (birthdayToBeRetrieved.isNotEmpty()) {
-                birthdayToBeRetrieved.substring(0, 2).toInt().let {
+                birthdayToBeRetrieved.substring(0, 2).toInt().also {
                     currentDay = it
                     fragmentDialogSignUpCompleteInformationDayPicker.value = it - 1
                 }
 
-                birthdayToBeRetrieved.substring(2, 4).toInt().let {
+                birthdayToBeRetrieved.substring(2, 4).toInt().also {
                     currentMonth = it
                     fragmentDialogSignUpCompleteInformationMonthPicker.value = it - 1
                 }

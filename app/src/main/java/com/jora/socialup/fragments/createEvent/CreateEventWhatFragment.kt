@@ -13,6 +13,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.View.*
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.core.content.ContextCompat.checkSelfPermission
 import androidx.core.graphics.drawable.toBitmap
 import androidx.fragment.app.Fragment
@@ -20,6 +21,7 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jora.socialup.R
 import com.jora.socialup.activities.HomeFeedActivity
@@ -46,6 +48,10 @@ class CreateEventWhatFragment : Fragment() {
     private var viewToBeCreated : View? = null
     private var eventToBePassed : Event? = null
     private var hasImage = false
+
+    private val userID : String? by lazy {
+        FirebaseAuth.getInstance().currentUser?.uid
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
@@ -136,9 +142,12 @@ class CreateEventWhatFragment : Fragment() {
 
 
     private fun downloadLastFiveEventsCreatedByUser() {
-        FirebaseFirestore.getInstance().collection("users").document("MKbCN5M1gnZ9Yi427rPf2SzyvqM2")
+        FirebaseFirestore.getInstance().collection("users").document(userID ?: "")
             .collection("events").get().addOnSuccessListener { snap ->
-                historyEventsIDs = ArrayList((snap.documents.map { it.id }).subList(0,5))
+                val numberOfHistoryEvents = snap.documents.size
+                if (numberOfHistoryEvents == 0) return@addOnSuccessListener
+
+                historyEventsIDs = ArrayList((snap.documents.map { it.id }).subList(0,numberOfHistoryEvents))
                 historyEventsIDs.forEach { docsID ->
                     Event.downloadEventInformation(docsID) {event ->
                         historyEvents.add(event)
@@ -153,26 +162,32 @@ class CreateEventWhatFragment : Fragment() {
 
         viewToBeCreated?.apply {
             createEventWhatHistoryImageView.setOnClickListener {
-                if (createEventWhatHistoryRecyclerView.visibility == GONE) {
-                    createEventWhatHistoryRecyclerView.visibility = VISIBLE
-                    createEventWhatHistoryRecyclerView.animate().alpha(1f).setDuration(500L).setListener(null)
-                } else {
-                    createEventWhatHistoryRecyclerView.animate().alpha(0f).setDuration(500L).setListener(null)
-                    Handler().postDelayed({
-                        createEventWhatHistoryRecyclerView.visibility = GONE
-                    }, 500)
+                when {
+                    historyEvents.size == 0 -> Toast.makeText(activity!!,"There are no past events to be showed.", Toast.LENGTH_SHORT ).show()
+
+                    createEventWhatHistoryRecyclerView.visibility == GONE -> {
+                        createEventWhatHistoryRecyclerView.visibility = VISIBLE
+                        createEventWhatHistoryRecyclerView.animate().alpha(1f).setDuration(500L).setListener(null)
+                    }
+
+                    else -> {
+                        createEventWhatHistoryRecyclerView.animate().alpha(0f).setDuration(500L).setListener(null)
+                        Handler().postDelayed({
+                            createEventWhatHistoryRecyclerView.visibility = GONE
+                        }, 500)
+                    }
                 }
             }
         }
     }
 
     private fun setHistoryRecyclerView() {
-        viewToBeCreated?.apply {
-            createEventWhatHistoryRecyclerView.adapter = customHistoryAdapter
+        viewToBeCreated?.createEventWhatHistoryRecyclerView?.apply {
+            adapter = customHistoryAdapter
             val layoutManager = LinearLayoutManager(activity)
-            createEventWhatHistoryRecyclerView.layoutManager = layoutManager
-            createEventWhatHistoryRecyclerView.itemAnimator = DefaultItemAnimator()
-            createEventWhatHistoryRecyclerView.addItemDecoration(DividerItemDecoration(activity!!, DividerItemDecoration.VERTICAL))
+            this.layoutManager = layoutManager
+            itemAnimator = DefaultItemAnimator()
+            addItemDecoration(DividerItemDecoration(activity!!, DividerItemDecoration.VERTICAL))
         }
     }
 

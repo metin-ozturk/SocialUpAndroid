@@ -27,8 +27,8 @@ class User(private var name: String? = null, private var email : String? = null,
     }
 
     companion object {
-        fun downloadFriendsIDs(returnFriendsIDs: (ArrayList<String>) -> Unit) {
-            FirebaseFirestore.getInstance().collection("users").document("MKbCN5M1gnZ9Yi427rPf2SzyvqM2")
+        fun downloadFriendsIDs(userID: String, returnFriendsIDs: (ArrayList<String>) -> Unit) {
+            FirebaseFirestore.getInstance().collection("users").document(userID)
                 .get().addOnSuccessListener {
                     returnFriendsIDs( it.data?.get("FriendList") as ArrayList<String> )
                 }

@@ -3,6 +3,8 @@ package com.jora.socialup.adapters
 import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
+import android.view.View.GONE
+import android.view.View.INVISIBLE
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
@@ -13,6 +15,8 @@ import com.jora.socialup.fragments.createEvent.FriendInfo
 class SearchFriendsRecyclerViewAdapter(private var friends: ArrayList<FriendInfo>)
                                         : RecyclerView.Adapter<BaseViewHolder>() {
 
+    private var defaultHolderText = "Loading..."
+    private var friendPhotoVisible = true
 
     internal class FriendsItemHolder(view: View) : BaseViewHolder(view) {
         internal var friendName = view.findViewById<TextView>(R.id.friendsSearchTextViewListlike)
@@ -45,13 +49,22 @@ class SearchFriendsRecyclerViewAdapter(private var friends: ArrayList<FriendInfo
                 castedHolder.itemView.setBackgroundColor(Color.WHITE)
             }
         } else {
-            castedHolder.friendName.text = "Loading..."
-            castedHolder.friendImage.setImageResource(R.drawable.imageplaceholder)
+            castedHolder.friendName.text = defaultHolderText
+            castedHolder.friendName.textSize = 24f
+
+            if (friendPhotoVisible) castedHolder.friendImage.setImageResource(R.drawable.imageplaceholder)
+            else castedHolder.friendImage.visibility = GONE
         }
     }
 
     fun dataUpdated(friendsData: ArrayList<FriendInfo>) {
         friends = friendsData
+        notifyDataSetChanged()
+    }
+
+    fun updateDefaultHolderText(updateTo: String) {
+        defaultHolderText = updateTo
+        friendPhotoVisible = false
         notifyDataSetChanged()
     }
 }

@@ -6,6 +6,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -16,6 +17,7 @@ import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.firebase.auth.FirebaseAuth
 import com.jora.socialup.R
 import com.jora.socialup.adapters.SearchFriendsRecyclerViewAdapter
 import com.jora.socialup.helpers.OnGestureTouchListener
@@ -50,6 +52,10 @@ class CreateEventWhoFragment : Fragment() {
     }
 
     private var friendsMap : MutableMap<String, FriendInfo> = mutableMapOf()
+
+    private val userID : String? by lazy {
+        FirebaseAuth.getInstance().currentUser?.uid
+    }
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -87,15 +93,15 @@ class CreateEventWhoFragment : Fragment() {
     }
 
     private fun setSearchView() {
-        viewToBeCreated?.apply {
+        viewToBeCreated?.createEventWhoSearchView?.apply {
             val searchManager = context?.getSystemService(Context.SEARCH_SERVICE) as SearchManager
             val searchableInfo = searchManager.getSearchableInfo(activity?.componentName)
-            createEventWhoSearchView?.queryHint = "Search Friends..."
-            createEventWhoSearchView?.setSearchableInfo(searchableInfo)
+            queryHint = "Search Friends..."
+            setSearchableInfo(searchableInfo)
 
-            createEventWhoSearchView?.isIconified = false
-            createEventWhoSearchView?.setIconifiedByDefault(false)
-            createEventWhoSearchView?.clearFocus()
+            isIconified = false
+            setIconifiedByDefault(false)
+            clearFocus()
         }
     }
 
@@ -108,6 +114,7 @@ class CreateEventWhoFragment : Fragment() {
             val searchCloseButtonID =
                 createEventWhoSearchView.context.resources.getIdentifier("android:id/search_close_btn", null, null)
             val searchCloseButton = createEventWhoSearchView.findViewById<ImageView>(searchCloseButtonID)
+
             searchCloseButton.setOnClickListener {
                 createEventWhoSearchView.setQuery("", true)
                 createEventWhoSearchView.clearFocus()
@@ -161,6 +168,8 @@ class CreateEventWhoFragment : Fragment() {
                     override fun onItemClick(view: View, position: Int) {
                         super.onItemClick(view, position)
 
+                        if(friendsMap.isEmpty()) return
+
                         view.apply {
                             isSelected = !isSelected
                             if (isSelected) setBackgroundColor(Color.GREEN) else setBackgroundColor(Color.WHITE)
@@ -175,23 +184,23 @@ class CreateEventWhoFragment : Fragment() {
     }
 
     private fun downloadFriendsNamesAndImagesAndNotifyRecyclerView() {
-        User.downloadFriendsIDs { friendIDs ->
+        var friend : FriendInfo
+
+        User.downloadFriendsIDs(userID ?: "") { friendIDs ->
+            if (friendIDs.isEmpty()) customSearchAdapter.updateDefaultHolderText("You don't any have friends")
+
             friendIDs.forEach {friendID ->
                 User.downloadFriendsNamesAndImages(friendID) { friendName, friendImage ->
+
                     if (friendName == null || friendImage == null) {
-                        val friend = FriendInfo(
+                        friend = FriendInfo(
                             "ERROR",
                             BitmapFactory.decodeResource(activity!!.resources, R.drawable.imageplaceholder),
                             false
                         )
-                        friends.add(friend)
-                        friendsMap[friendID] = friend
-                        friendIDsArrayList.add(friendID)
 
-                        customSearchAdapter.notifyItemChanged(friends.size - 1)
                     } else {
-
-                        val friend = if (eventToBePassed?.eventWithWhomID?.contains(friendID) == true) {
+                        friend = if (eventToBePassed?.eventWithWhomID?.contains(friendID) == true) {
                             FriendInfo(
                                 friendName,
                                 BitmapFactory.decodeByteArray(friendImage, 0, friendImage.size),
@@ -205,13 +214,12 @@ class CreateEventWhoFragment : Fragment() {
                             )
                         }
 
-                        friends.add(friend)
-                        friendsMap[friendID] = friend
-                        friendIDsArrayList.add(friendID)
-
-
-                        customSearchAdapter.notifyItemChanged(friends.size - 1)
                     }
+                    friends.add(friend)
+                    friendsMap[friendID] = friend
+                    friendIDsArrayList.add(friendID)
+
+                    customSearchAdapter.notifyItemChanged(friends.size - 1)
 
                 }
             }

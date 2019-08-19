@@ -1,18 +1,33 @@
 package com.jora.socialup.fragments.createEvent
 
+import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.Point
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.view.drawToBitmap
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
+import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.R
+import com.jora.socialup.activities.HomeActivity
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_summary.view.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
+import java.io.ByteArrayInputStream
+import java.io.ByteArrayOutputStream
+import java.io.InputStream
 
 class CreateEventSummaryFragment : Fragment() {
     private var viewToBeCreated : View? = null
@@ -23,11 +38,14 @@ class CreateEventSummaryFragment : Fragment() {
 
     private var eventToBePassed : Event? = null
 
+    private val userID : String? by lazy {
+        FirebaseAuth.getInstance().currentUser?.uid
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_summary, container, false)
-        eventToBePassed = createEventViewModel.event.value
-        eventToBePassed?.status = 0
 
+        fillEventFields()
         setEventImage()
         fillSummaryTexts()
         setConfirmEventFunction()
@@ -36,11 +54,51 @@ class CreateEventSummaryFragment : Fragment() {
         return viewToBeCreated
     }
 
+    private fun fillEventFields() {
+        eventToBePassed = createEventViewModel.event.value
+        eventToBePassed?.status = 0
+        eventToBePassed?.founderID = userID
+        eventToBePassed?.founderName = FirebaseAuth.getInstance().currentUser?.displayName
+    }
+
 
     private fun setConfirmEventFunction() {
         viewToBeCreated?.createEventSummaryConfirmButton?.setOnClickListener {
             eventToBePassed?.timeStamp = FieldValue.serverTimestamp()
             Log.d("OSMAN", eventToBePassed.toString())
+
+            val eventID = FirebaseFirestore.getInstance().collection("events").document().id
+            eventToBePassed?.iD = eventID
+
+            val userEventReference = FirebaseFirestore.getInstance().collection("users").document(userID ?: "").collection("events").document(eventID)
+            val eventImageStorageReference = FirebaseStorage.getInstance().reference.child("Images/Events/$eventID/eventPhoto.jpeg")
+            val eventReference = FirebaseFirestore.getInstance().collection("events").document(eventID)
+
+            val eventInformationTask = eventReference.set(eventToBePassed?.returnEventAsMap() ?: return@setOnClickListener)
+
+            val eventImageToBeUploadedAsBitmap = viewToBeCreated?.createEventSummaryEventImage?.drawToBitmap() ?: return@setOnClickListener
+            val outputStream = ByteArrayOutputStream()
+            eventImageToBeUploadedAsBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            val eventImageToBeUploadedAsByteArray = outputStream.toByteArray()
+            val eventImageAsInputStream = ByteArrayInputStream(eventImageToBeUploadedAsByteArray)
+
+
+            val votedForDate = mutableMapOf<String, Boolean>()
+            eventToBePassed?.date?.forEach {
+                votedForDate[it.substring(0, it.length)] = false
+            }
+
+
+            GlobalScope.launch(Dispatchers.IO) {
+                eventImageStorageReference.putStream(eventImageAsInputStream).await()
+                eventInformationTask.await()
+                userEventReference.set(mapOf("EventResponseStatus" to 0, "EventIsFavorite" to (eventToBePassed?.isFavorite ?: false)))
+                userEventReference.set(votedForDate as Map<String, Boolean>, SetOptions.merge())
+
+                startActivity(Intent(activity!!, HomeActivity::class.java))
+            }
+
+
         }
     }
 

@@ -10,6 +10,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jora.socialup.helpers.OnGestureTouchListener
@@ -147,10 +148,10 @@ class EventDetailFragment : Fragment() {
                 EventResponseStatus.Going -> 3
             }
 
-            val eventSpecificPath = FirebaseFirestore.getInstance().collection("users").document("MKbCN5M1gnZ9Yi427rPf2SzyvqM2")
+            val eventSpecificPath = FirebaseFirestore.getInstance().collection("users").document(FirebaseAuth.getInstance().currentUser?.uid ?: "")
                 .collection("events").document(eventID)
 
-            val toBeUpdated = mapOf("EventStatus" to eventResponseStatusAsInt, "EventIsFavorite" to isFavorite) as MutableMap<String, Any>
+            val toBeUpdated = mapOf("EventResponseStatus" to eventResponseStatusAsInt, "EventIsFavorite" to isFavorite) as MutableMap<String, Any>
             toBeUpdated.putAll(votedForDates)
 
             transaction.update(eventSpecificPath,toBeUpdated)

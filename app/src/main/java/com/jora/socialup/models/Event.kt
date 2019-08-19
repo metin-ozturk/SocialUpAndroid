@@ -6,6 +6,7 @@ import android.os.Parcel
 import android.os.Parcelable
 import android.util.Log
 import com.google.firebase.Timestamp
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
@@ -118,7 +119,7 @@ class Event(parcel: Parcel? = null) : Parcelable {
         return 0
     }
 
-    private fun returnEventAsMap() : Map<String, Any> {
+    fun returnEventAsMap() : Map<String, Any> {
         return mapOf("EventID" to (iD ?: "ERROR"),
             "EventName" to (name ?: "ERROR"),
             "EventDescription" to (description ?: "ERROR"),
@@ -155,7 +156,7 @@ class Event(parcel: Parcel? = null) : Parcelable {
 
             var eventIDsArray : ArrayList<String>
 
-            FirebaseFirestore.getInstance().collection("users").document("MKbCN5M1gnZ9Yi427rPf2SzyvqM2").collection("events").get()
+            FirebaseFirestore.getInstance().collection("users").document(FirebaseAuth.getInstance().currentUser?.uid ?: "").collection("events").get()
                 .addOnSuccessListener { snap ->
                     eventIDsArray = snap.documents.map { it.id } as ArrayList<String>
 
