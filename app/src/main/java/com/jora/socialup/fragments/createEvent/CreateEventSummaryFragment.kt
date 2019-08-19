@@ -76,11 +76,14 @@ class CreateEventSummaryFragment : Fragment() {
 
             val eventInformationTask = eventReference.set(eventToBePassed?.returnEventAsMap() ?: return@setOnClickListener)
 
-            val eventImageToBeUploadedAsBitmap = viewToBeCreated?.createEventSummaryEventImage?.drawToBitmap() ?: return@setOnClickListener
-            val outputStream = ByteArrayOutputStream()
-            eventImageToBeUploadedAsBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
-            val eventImageToBeUploadedAsByteArray = outputStream.toByteArray()
-            val eventImageAsInputStream = ByteArrayInputStream(eventImageToBeUploadedAsByteArray)
+            var eventImageAsInputStream : ByteArrayInputStream? = null
+            if (eventToBePassed?.hasImage == true) {
+                val eventImageToBeUploadedAsBitmap = viewToBeCreated?.createEventSummaryEventImage?.drawToBitmap() ?: return@setOnClickListener
+                val outputStream = ByteArrayOutputStream()
+                eventImageToBeUploadedAsBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+                val eventImageToBeUploadedAsByteArray = outputStream.toByteArray()
+                eventImageAsInputStream = ByteArrayInputStream(eventImageToBeUploadedAsByteArray)
+            }
 
 
             val votedForDate = mutableMapOf<String, Boolean>()
@@ -90,7 +93,7 @@ class CreateEventSummaryFragment : Fragment() {
 
 
             GlobalScope.launch(Dispatchers.IO) {
-                eventImageStorageReference.putStream(eventImageAsInputStream).await()
+                if (eventToBePassed?.hasImage == true) eventImageStorageReference.putStream(eventImageAsInputStream ?: return@launch).await()
                 eventInformationTask.await()
                 userEventReference.set(mapOf("EventResponseStatus" to 0, "EventIsFavorite" to (eventToBePassed?.isFavorite ?: false)))
                 userEventReference.set(votedForDate as Map<String, Boolean>, SetOptions.merge())
