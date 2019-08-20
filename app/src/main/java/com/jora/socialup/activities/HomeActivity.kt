@@ -24,9 +24,7 @@ import com.jora.socialup.fragments.SignInDialogFragment
 import com.jora.socialup.fragments.SignUpCompleteInformationDialogFragment
 import com.jora.socialup.fragments.SignUpDialogFragment
 import com.jora.socialup.models.User
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import java.net.URL
 
@@ -52,6 +50,7 @@ class HomeActivity : AppCompatActivity() {
             }
         })
     }
+
 
     private val signUpDialogFragment : SignUpDialogFragment by lazy {
         SignUpDialogFragment(object: SignUpDialogFragment.SignUpDialogFragmentInterface {
@@ -193,7 +192,9 @@ class HomeActivity : AppCompatActivity() {
         googleCredential = GoogleAuthProvider.getCredential(googleSingInAccount.idToken, null)
 
 
-        GlobalScope.launch(Dispatchers.Main) {
+        val uiScope = CoroutineScope(Dispatchers.Main)
+
+        uiScope.launch {
             val currentSignInMethods = firebaseAuthentication?.fetchSignInMethodsForEmail(gmailAddress)?.await()?.signInMethods ?: return@launch
             when {
                 currentSignInMethods.contains("facebook.com") &&  !currentSignInMethods.contains("google.com") -> {
@@ -202,6 +203,8 @@ class HomeActivity : AppCompatActivity() {
                         LoginManager.getInstance().logIn(this@HomeActivity, arrayListOf("email", "public_profile"))
                     }
 
+
+                    uiScope.cancel()
                 }
 
 
@@ -213,9 +216,14 @@ class HomeActivity : AppCompatActivity() {
                         signInDialogFragment.show(supportFragmentManager, null)
                     }
 
+                    uiScope.cancel()
+
                 }
 
-                else -> firebaseAuthWithGoogle(googleSingInAccount)
+                else -> {
+                    firebaseAuthWithGoogle(googleSingInAccount)
+                    uiScope.cancel()
+                }
             }
 
         }
@@ -255,7 +263,8 @@ class HomeActivity : AppCompatActivity() {
                     // If sign in fails, display a message to the user.
                     facebookCredential = credential
                     if (task.exception is FirebaseAuthUserCollisionException) {
-                        GlobalScope.launch(Dispatchers.Main) {
+                        val uiScope = CoroutineScope(Dispatchers.Main)
+                        uiScope.launch {
                             val currentSignInMethods = firebaseAuthentication?.fetchSignInMethodsForEmail(facebookEmail)?.await()?.signInMethods
 
                             if (currentSignInMethods?.contains("google.com") == true) {
@@ -263,6 +272,8 @@ class HomeActivity : AppCompatActivity() {
                                 showAlertDialog("Facebook", "Google") {
                                     signInWithGoogle()
                                 }
+                                uiScope.cancel()
+
                             } else if (currentSignInMethods?.contains("password") == true) {
 
                                 showAlertDialog("Facebook", "email") {
@@ -270,6 +281,8 @@ class HomeActivity : AppCompatActivity() {
                                     facebookCredential = null
                                     signInDialogFragment.show(supportFragmentManager, null)
                                 }
+
+                                uiScope.cancel()
 
                             }
                         }

@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Parcel
 import android.os.Parcelable
+import android.provider.Settings
 import android.util.Log
 import com.google.firebase.Timestamp
 import com.google.firebase.auth.FirebaseAuth
@@ -13,6 +14,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageException
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.asDeferred
+import kotlinx.coroutines.tasks.await
 
 // FieldValue is not parcelable - way to fix it?
 
@@ -164,88 +166,119 @@ class Event(parcel: Parcel? = null) : Parcelable {
                 }
         }
 
-        fun downloadEventInformation(downloadedEventID: String, completion: (Event) -> Unit)  {
-            FirebaseFirestore.getInstance().collection("events").document(downloadedEventID).get().addOnSuccessListener { snap ->
-                val eventData = snap.data
+        fun downloadEventInformation(downloadedEventID: String, completion: (Event) -> Unit) {
+            FirebaseFirestore.getInstance().collection("events").document(downloadedEventID).get()
+                .addOnSuccessListener { snap ->
 
-                val event = Event()
+                    val eventData = snap.data
 
-                val eventID = eventData?.get("EventID") as String
-                val founderID = eventData["EventFounder"] as String
-                val hasImage = eventData["HasImage"] as Boolean
+                    val event = Event()
 
-                event.iD = eventID
-                event.name = eventData["EventName"] as String
-                event.description = eventData["EventDescription"] as String
-                event.isPrivate = eventData["EventIsPrivate"] as Boolean
+                    val eventID = eventData?.get("EventID") as String
+                    val founderID = eventData["EventFounder"] as String
+                    val hasImage = eventData["HasImage"] as Boolean
 
-                event.founderID = founderID
-                event.founderName = eventData["EventFounderName"] as String
-                event.status = eventData["EventStatus"] as Long
+                    event.apply {
+                        iD = eventID
+                        name = eventData["EventName"] as String
+                        description = eventData["EventDescription"] as String
+                        isPrivate = eventData["EventIsPrivate"] as Boolean
 
-                event.locationName = eventData["LocationName"] as String
-                event.locationDescription = eventData["LocationDescription"] as String
-                event.locationAddress = eventData["LocationAddress"] as String
-                event.locationLongitude = eventData["LocationLongitude"] as String
-                event.locationLatitude = eventData["LocationLatitude"] as String
+                        this.founderID = founderID
+                        founderName = eventData["EventFounderName"] as String
+                        status = eventData["EventStatus"] as Long
 
-                event.eventWithWhomID = eventData["WithWhomInvited"] as? ArrayList<String> ?: ArrayList()
-                event.eventWithWhomNames = eventData["WithWhomInvitedNames"] as? ArrayList<String> ?: ArrayList()
-                event.eventWithWhomWillCome = eventData["WithWhomWillCome"] as? ArrayList<String> ?: ArrayList()
-                event.eventWithWhomMayCome = eventData["WithWhomMayCome"] as? ArrayList<String> ?: ArrayList()
-                event.eventWithWhomWontCome = eventData["WithWhomWontCome"] as? ArrayList<String> ?: ArrayList()
-                event.timeStamp = eventData["timestamp"] as? FieldValue
+                        locationName = eventData["LocationName"] as String
+                        locationDescription = eventData["LocationDescription"] as String
+                        locationAddress = eventData["LocationAddress"] as String
+                        locationLongitude = eventData["LocationLongitude"] as String
+                        locationLatitude = eventData["LocationLatitude"] as String
 
-                event.hasImage = hasImage
+                        eventWithWhomID = eventData["WithWhomInvited"] as? ArrayList<String> ?: ArrayList()
+                        eventWithWhomNames = eventData["WithWhomInvitedNames"] as? ArrayList<String> ?: ArrayList()
+                        eventWithWhomWillCome = eventData["WithWhomWillCome"] as? ArrayList<String> ?: ArrayList()
+                        eventWithWhomMayCome = eventData["WithWhomMayCome"] as? ArrayList<String> ?: ArrayList()
+                        eventWithWhomWontCome = eventData["WithWhomWontCome"] as? ArrayList<String> ?: ArrayList()
+                        timeStamp = eventData["timestamp"] as? FieldValue
+
+                        this.hasImage = hasImage
 
 
-                val downloadedEventDateData = eventData["When"] as? ArrayList<String> ?: ArrayList()
+                        val downloadedEventDateData = eventData["When"] as? ArrayList<String> ?: ArrayList()
 
-                event.date  = ArrayList(downloadedEventDateData.map { it.substring(0, 16) })
-                event.dateVote = ArrayList(downloadedEventDateData.map { it.substring(16) })
-
-                val storageReference = FirebaseStorage.getInstance().reference
-
-                GlobalScope.launch(Dispatchers.Main) {
-                    var downloadEventImage : Deferred<ByteArray>? = null
-
-                    if (hasImage) {
-                        downloadEventImage = storageReference.child("Images/Events/$eventID/eventPhoto.jpeg").getBytes(1024 * 1024).asDeferred()
+                        date = ArrayList(downloadedEventDateData.map { it.substring(0, 16) })
+                        dateVote = ArrayList(downloadedEventDateData.map { it.substring(16) })
                     }
 
-                    val downloadFounderImage = storageReference.child("Images/Users/$founderID/profilePhoto.jpeg").getBytes(1024 * 1024).asDeferred()
+                    val coroutineScope = CoroutineScope(Dispatchers.Main)
 
-                    var eventImage : ByteArray?
-                    var founderImage : ByteArray?
-
-                    try {
-                        if (hasImage) {
-                            val downloadedImages = mutableListOf<ByteArray>(downloadEventImage!!.await(), downloadFounderImage.await())
-                            eventImage = downloadedImages[0]
-                            founderImage = downloadedImages[1]
-                        } else {
-                            founderImage = downloadFounderImage.await()
-                            eventImage = null
+                    coroutineScope.launch {
+                        downloadEventImages(event) {
+                            completion(it)
+                            coroutineScope.cancel()
                         }
-
-                    } catch (e: StorageException) {
-                        founderImage = null
-                        eventImage = null
-                        Log.d("EVENT", "IMAGE DOWNLOAD FAILED WITH: ", e)
                     }
 
 
+                }.addOnFailureListener { exception ->
+                    Log.d("EVENT", "DATA DOWNLOAD FAILED WITH: ", exception)
+                }
+        }
 
-                    event.image = if (eventImage == null) null else BitmapFactory.decodeByteArray(eventImage, 0, eventImage.size)
-                    event.founderImage = if (founderImage == null) null else BitmapFactory.decodeByteArray(founderImage, 0, founderImage.size)
+        private suspend fun downloadEventImages(event: Event, onDownloadComplete: (Event) -> Unit) {
+            val storageReference = FirebaseStorage.getInstance().reference
 
-                    completion(event)
+            var downloadEventImage: Deferred<ByteArray>? = null
+
+            if (event.hasImage == true) {
+                downloadEventImage = storageReference.child("Images/Events/${event.iD}/eventPhoto.jpeg")
+                    .getBytes(1024 * 1024).asDeferred()
+            }
+
+            val downloadFounderImage =
+                storageReference.child("Images/Users/${event.founderID}/profilePhoto.jpeg")
+                    .getBytes(1024 * 1024).asDeferred()
+
+            var eventImage: ByteArray?
+            var founderImage: ByteArray?
+
+            try {
+                if (event.hasImage == true) {
+
+                    val downloadedImages = mutableListOf<ByteArray>(
+                        downloadEventImage!!.await(),
+                        downloadFounderImage.await()
+                    )
+                    eventImage = downloadedImages[0]
+                    founderImage = downloadedImages[1]
+                } else {
+                    founderImage = downloadFounderImage.await()
+                    eventImage = null
                 }
 
-            }.addOnFailureListener { exception ->
-                Log.d("EVENT", "DATA DOWNLOAD FAILED WITH: ", exception)
+            } catch (e: StorageException) {
+                founderImage = null
+                eventImage = null
+                Log.d("EVENT", "IMAGE DOWNLOAD FAILED WITH: ", e)
             }
+
+
+            event.image = if (eventImage == null) null else BitmapFactory.decodeByteArray(
+                eventImage,
+                0,
+                eventImage.size
+            )
+
+            event.founderImage = if (founderImage == null) null else BitmapFactory.decodeByteArray(
+                founderImage,
+                0,
+                founderImage.size
+            )
+
+            onDownloadComplete(event)
         }
+
+
 
         fun convertDateToReadableFormat(date: String) : String {
             val day = date.substring(0, 2)

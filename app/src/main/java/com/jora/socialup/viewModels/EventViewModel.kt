@@ -8,6 +8,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.models.Event
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.isActive
 import kotlin.collections.ArrayList
 
 
@@ -72,9 +76,9 @@ class EventViewModel : ViewModel() {
         eventsArrayData.value = arrayToBeUpdated
     }
 
-    fun downloadCurrentUserProfilePhoto() {
+    fun downloadCurrentUserProfilePhoto(userID : String) {
 
-        FirebaseStorage.getInstance().reference.child("Images/Users/MKbCN5M1gnZ9Yi427rPf2SzyvqM2/profilePhoto.jpeg").getBytes(1024 * 1024).addOnSuccessListener {
+        FirebaseStorage.getInstance().reference.child("Images/Users/$userID/profilePhoto.jpeg").getBytes(1024 * 1024).addOnSuccessListener {
             currentUserImageData.value = BitmapFactory.decodeByteArray(it, 0, it.size)
         }
     }
@@ -83,6 +87,7 @@ class EventViewModel : ViewModel() {
 
         Event.downloadEventIDs { docIDs ->
             docIDs.forEach { docID ->
+
                 Event.downloadEventInformation(docID) {
                     val arrayToBeUpdated = eventsArrayData.value ?: ArrayList()
                     arrayToBeUpdated.add(it)

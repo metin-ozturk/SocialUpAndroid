@@ -40,6 +40,9 @@ import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event.view.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlin.coroutines.CoroutineContext
 
 class EventFragment : Fragment() {
     private val eventTag = "EventTag"
@@ -73,7 +76,7 @@ class EventFragment : Fragment() {
         val previouslyDownloadedEvents = viewModel.eventsArray.value ?: ArrayList()
         if (previouslyDownloadedEvents.size != 0) return
         viewModel.downloadEvents()
-        viewModel.downloadCurrentUserProfilePhoto()
+        viewModel.downloadCurrentUserProfilePhoto(firebaseAuthentication.currentUser?.uid ?: "")
 
     }
 
@@ -305,6 +308,7 @@ class EventFragment : Fragment() {
                             if (!isEvent[position]) return
 
                             eventFeedSearchView.clearFocus()
+
                             Event.downloadEventInformation(searchedEventID[position]) {
                                 viewModel.assertWhichViewToBeShowed(it)
                                 downloadEventSpecificInformationAndUpdateViewModel()

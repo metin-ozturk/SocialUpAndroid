@@ -21,9 +21,7 @@ import com.jora.socialup.activities.HomeActivity
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_summary.view.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
@@ -92,13 +90,16 @@ class CreateEventSummaryFragment : Fragment() {
             }
 
 
-            GlobalScope.launch(Dispatchers.IO) {
+            val bgScope = CoroutineScope(Dispatchers.IO)
+
+            bgScope.launch {
                 if (eventToBePassed?.hasImage == true) eventImageStorageReference.putStream(eventImageAsInputStream ?: return@launch).await()
                 eventInformationTask.await()
                 userEventReference.set(mapOf("EventResponseStatus" to 0, "EventIsFavorite" to (eventToBePassed?.isFavorite ?: false)))
                 userEventReference.set(votedForDate as Map<String, Boolean>, SetOptions.merge())
 
                 startActivity(Intent(activity!!, HomeActivity::class.java))
+                bgScope.cancel()
             }
 
 

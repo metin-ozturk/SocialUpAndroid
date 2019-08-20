@@ -9,8 +9,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import kotlinx.android.synthetic.main.fragment_dialog_location_detail.view.*
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.io.IOException
 
 
@@ -48,9 +47,12 @@ class LocationDetailDialogFragment(private val locationInfo : LocationInfo,
             var address = ""
 
             if (locationInfo.address.isNullOrEmpty()) {
-                GlobalScope.launch {
+                val bgScope = CoroutineScope(Dispatchers.IO)
+
+                bgScope.launch {
                     address = getAddress(locationInfo.latitude?.toDouble() ?: 0.0,
                         locationInfo.longitude?.toDouble() ?: 0.0)
+                    bgScope.cancel()
                 }
             } else address = locationInfo.address
 

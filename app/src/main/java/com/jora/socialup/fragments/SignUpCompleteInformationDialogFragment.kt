@@ -17,10 +17,7 @@ import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.R
 import com.jora.socialup.models.User
 import kotlinx.android.synthetic.main.fragment_dialog_sign_up_complete_information.view.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.net.URL
@@ -96,11 +93,16 @@ class SignUpCompleteInformationDialogFragment(private val listener: SignUpComple
             if (nameToBeRetrieved.isNotEmpty()) fragmentDialogSignUpCompleteInformationNameInput.text?.insert(0, nameToBeRetrieved)
 
             if (urlToBeRetrieved.isNotEmpty()) {
-                GlobalScope.launch(Dispatchers.IO) {
+                val bgScope = CoroutineScope(Dispatchers.IO)
+
+                bgScope.launch {
                     val downloadedImage = BitmapFactory.decodeStream(URL(urlToBeRetrieved).content as InputStream)
-                    GlobalScope.launch(Dispatchers.Main) {
+                    withContext(Dispatchers.Main) {
                         viewToBeCreated?.fragmentDialogSignUpCompleteInformationPhotoImageView?.setImageBitmap(downloadedImage)
+
+                        bgScope.cancel()
                     }
+
                 }
             }
 

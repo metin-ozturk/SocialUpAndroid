@@ -8,9 +8,7 @@ import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.R
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.asDeferred
 import java.lang.Exception
 
@@ -38,7 +36,9 @@ class User(private var name: String? = null, private var email : String? = null,
             var friendName : String? = null
             var friendImage : ByteArray? = null
 
-            GlobalScope.launch(Dispatchers.Main) {
+            val uiScope = CoroutineScope(Dispatchers.Main)
+
+            uiScope.launch {
                 val downloadFriendName =
                     FirebaseFirestore.getInstance().collection("users").document(friendID).get().asDeferred()
                 val downloadFriendImage =
@@ -58,6 +58,7 @@ class User(private var name: String? = null, private var email : String? = null,
                 }
 
                 returnUserNameAndImage(friendName, friendImage)
+                uiScope.cancel()
             }
 
         }

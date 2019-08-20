@@ -32,6 +32,10 @@ import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_what.*
 import kotlinx.android.synthetic.main.fragment_create_event_what.view.*
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlin.coroutines.CoroutineContext
 
 
 private const val MY_PERMISSION_REQUEST_CAMERA = 2
@@ -147,9 +151,10 @@ class CreateEventWhatFragment : Fragment() {
                 val numberOfHistoryEvents = snap.documents.size
                 if (numberOfHistoryEvents == 0) return@addOnSuccessListener
 
+
                 historyEventsIDs = ArrayList((snap.documents.map { it.id }).subList(0,numberOfHistoryEvents))
                 historyEventsIDs.forEach { docsID ->
-                    Event.downloadEventInformation(docsID) {event ->
+                    Event.downloadEventInformation(docsID) { event ->
                         historyEvents.add(event)
                         customHistoryAdapter.loadData(historyEvents)
                     }
