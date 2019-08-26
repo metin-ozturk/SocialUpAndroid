@@ -1,16 +1,45 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
               xmlns:tools="http://schemas.android.com/tools" android:orientation="vertical"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
+              android:layout_width="wrap_content"
+              android:layout_height="wrap_content"
+              android:minWidth="250dp">
     <TextView
             android:layout_width="match_parent"
-            android:layout_height="wrap_content" android:id="@+id/setTimeTitleDialogFragment" android:textSize="24sp"
-            tools:text="TextView" android:textColor="#FFFFFF"/>
-    <TimePicker android:layout_width="match_parent" android:layout_height="wrap_content"
-                android:id="@+id/setTimeTimePickerDialogFragment">
+            android:layout_height="wrap_content" android:id="@+id/setTimeTitleFromDialogFragment"
+            android:textSize="24sp"
+            tools:text="TextView"/>
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+        <NumberPicker android:layout_width="wrap_content" android:layout_height="wrap_content"
+                      android:id="@+id/setTimeInitialHourPicker" android:layout_weight="0.5">
 
-    </TimePicker>
+        </NumberPicker>
+        <NumberPicker android:layout_width="wrap_content" android:layout_height="wrap_content"
+                      android:id="@+id/setTimeInitialMinutePicker" android:layout_weight="0.5">
+
+        </NumberPicker>
+    </LinearLayout>
+    <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content" android:id="@+id/setTimeTitleToDialogFragment" tools:text="TextView"
+            android:textSize="24sp"/>
+    <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+        <NumberPicker android:layout_width="wrap_content" android:layout_height="wrap_content"
+                      android:id="@+id/setTimeFinalHourPicker" android:layout_weight="0.5">
+
+        </NumberPicker>
+        <NumberPicker android:layout_width="wrap_content" android:layout_height="wrap_content"
+                      android:id="@+id/setTimeFinalMinutePicker" android:layout_weight="0.5">
+
+        </NumberPicker>
+    </LinearLayout>
     <Button
             android:text="Confirm Time"
             android:layout_width="match_parent"

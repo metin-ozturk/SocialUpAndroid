@@ -6,8 +6,7 @@ import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
 import android.view.View.OnTouchListener
-import java.lang.Math.abs
-
+import kotlin.math.abs
 
 class OnGestureTouchListener(context: Context, private val listener: OnGestureInitiated) : OnTouchListener {
     private var gestureDetector: GestureDetector? = null

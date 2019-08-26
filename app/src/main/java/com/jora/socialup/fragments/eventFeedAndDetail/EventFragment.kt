@@ -37,6 +37,7 @@ import com.jora.socialup.activities.EventCreateActivity
 import com.jora.socialup.activities.HomeActivity
 import com.jora.socialup.activities.HomeFeedActivity
 import com.jora.socialup.helpers.OnGestureTouchListener
+import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event.view.*
@@ -63,6 +64,13 @@ class EventFragment : Fragment() {
 
     private var viewToBeCreated: View? = null
 
+    private val progressBarFragmentDialog: ProgressBarFragmentDialog by lazy {
+        ProgressBarFragmentDialog(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
+            override fun onCancel() {
+            }
+        })
+    }
+
     override fun onAttach(context: Context?) {
         super.onAttach(context)
 
@@ -84,6 +92,7 @@ class EventFragment : Fragment() {
         viewToBeCreated = inflater.inflate(R.layout.fragment_event, container,false)
 
         val userID = firebaseAuthentication.currentUser?.uid
+
 
         userID?.also {
             FirebaseStorage.getInstance().reference.child("Images/Users/$userID/profilePhoto.jpeg").getBytes(1024 * 1024).addOnSuccessListener {
@@ -237,7 +246,10 @@ class EventFragment : Fragment() {
                 recyclerView,
                 object : RecyclerItemClickListener.OnItemClickListener {
                     override fun onItemClick(view: View, position: Int) {
-                        downloadEventSpecificInformationAndUpdateViewModel(position)
+                        if (!progressBarFragmentDialog.isLoadingInProgress) {
+                            progressBarFragmentDialog.show(fragmentManager, null)
+                            downloadEventSpecificInformationAndUpdateViewModel(position)
+                        }
                     }
 
                 })
@@ -245,6 +257,8 @@ class EventFragment : Fragment() {
     }
 
     private fun downloadEventSpecificInformationAndUpdateViewModel(position: Int? = null) {
+
+        if (progressBarFragmentDialog.isLoadingInProgress) return
 
         val event : Event?
 
@@ -258,7 +272,8 @@ class EventFragment : Fragment() {
         }
 
 
-        viewModel.assertWhichRowToBeFocused(position ?: 0)
+        // If position is -1 then event was searched otherwise it was selected from the feed
+        viewModel.assertWhichRowToBeFocused(position ?: -1)
 
         val eventID = event?.iD ?: return
 
@@ -268,7 +283,7 @@ class EventFragment : Fragment() {
                 val data = it.data
 
                 val eventDates = event.date
-                val eventResponseStatus = (data?.get("EventStatus") as Long?)?.toInt() ?: 0
+                val eventResponseStatus = (data?.get("EventResponseStatus") as Long?)?.toInt() ?: 0
                 val votedDates = mutableMapOf<String, Boolean>() // [DATE, WHETHER THIS DATE IS VOTED AS BOOLEAN]
 
                 eventDates?.forEach { date ->
@@ -281,11 +296,12 @@ class EventFragment : Fragment() {
                 viewModel.assertWhichDatesToBeUpdated(votedDates)
                 viewModel.assertEventResponseStatus(eventResponseStatus)
 
-
                 val eventDetailFragment = EventDetailFragment()
                 val transaction = activity?.supportFragmentManager?.beginTransaction()
                 transaction?.replace(R.id.homeRootFrameLayout, eventDetailFragment)
                 transaction?.commit()
+
+                progressBarFragmentDialog.dismiss()
             }
     }
 
@@ -307,7 +323,7 @@ class EventFragment : Fragment() {
 
                             if (!isEvent[position]) return
 
-                            eventFeedSearchView.clearFocus()
+                            searchRecyclerView.clearFocus()
 
                             Event.downloadEventInformation(searchedEventID[position]) {
                                 viewModel.assertWhichViewToBeShowed(it)

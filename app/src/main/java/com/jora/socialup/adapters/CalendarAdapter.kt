@@ -128,20 +128,7 @@ class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
     }
 
     fun onClick(position: Int) {
-        val daysPassedInInitialMonthBeforeCurrentDay = if (initialMonth == currentMonth) (currentDay ?: 0) - 1 else 0
-
-        val cellCountBeforeDateCellsStart = 7 + numberOfPastCellsToShow + daysPassedInInitialMonthBeforeCurrentDay
-
-        if (position < cellCountBeforeDateCellsStart ||
-            (position >= (cellCountBeforeDateCellsStart + numberOfCurrentCellsToShow))
-        ) return
-
-        val day = position - cellCountBeforeDateCellsStart + 1  + daysPassedInInitialMonthBeforeCurrentDay // Position starts at 0, add 1.
-        val month = (currentMonth ?: 0) + 1 // Since January is 0, not 1.
-        val year = currentYear ?: 0
-        val twoDecimalFormat = DecimalFormat("00")
-
-        val dateAsString = "${twoDecimalFormat.format(day)}${twoDecimalFormat.format(month)}$year"
+        val dateAsString = getDateAsString(position) ?: return
 
         when(dateTime.firstOrNull { it.date == dateAsString }?.dateTimeStatus) {
             null -> {
@@ -171,6 +158,33 @@ class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
 
             }
         }
+    }
+
+    fun isLongClickedDateChecked(position: Int) : Boolean {
+        val dateAsString = getDateAsString(position) ?: return false
+
+        return when(dateTime.firstOrNull { it.date == dateAsString }?.dateTimeStatus ) {
+            TimeStatus.CHECKED -> true
+            else -> false
+        }
+
+    }
+
+    private fun getDateAsString(position: Int) : String? {
+        val daysPassedInInitialMonthBeforeCurrentDay = if (initialMonth == currentMonth) (currentDay ?: 0) - 1 else 0
+
+        val cellCountBeforeDateCellsStart = 7 + numberOfPastCellsToShow + daysPassedInInitialMonthBeforeCurrentDay
+
+        if (position < cellCountBeforeDateCellsStart ||
+            (position >= (cellCountBeforeDateCellsStart + numberOfCurrentCellsToShow))
+        ) return null
+
+        val day = position - cellCountBeforeDateCellsStart + 1  + daysPassedInInitialMonthBeforeCurrentDay // Position starts at 0, add 1.
+        val month = (currentMonth ?: 0) + 1 // Since January is 0, not 1.
+        val year = currentYear ?: 0
+        val twoDecimalFormat = DecimalFormat("00")
+
+        return "${twoDecimalFormat.format(day)}${twoDecimalFormat.format(month)}$year"
     }
 
     fun onFinishInitialTimePicker(result: String) {

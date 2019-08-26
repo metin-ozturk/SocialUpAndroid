@@ -1,6 +1,7 @@
 package com.jora.socialup.fragments.createEvent
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,43 +13,83 @@ import java.text.DecimalFormat
 import java.util.*
 
 
-class TimePickerDialogFragment(private val isInitial: Boolean, private val listener: TimePickerFragmentInterface) : DialogFragment() {
+class TimePickerDialogFragment(private val listener: TimePickerFragmentInterface) : DialogFragment() {
 
     interface TimePickerFragmentInterface {
-        fun onFinish(result: String)
+        fun onFinishInitialTime(result: String)
+        fun onFinishFinalTime(result: String)
     }
 
-    private var hourOfDay : Int? = null
-    private var minute : Int? = null
+    private var viewToBeCreated : View? = null
+
+    private var initialHour : Int? = null
+    private var initialMinute : Int? = null
+
+    private var finalHour : Int? = null
+    private var finalMinute: Int? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        val view = inflater.inflate(R.layout.fragment_dialog_set_time, container, false)
+        viewToBeCreated = inflater.inflate(R.layout.fragment_dialog_set_time, container, false)
 
-        val calendar = Calendar.getInstance()
-        hourOfDay = calendar.get(Calendar.HOUR_OF_DAY)
-        minute = calendar.get(Calendar.MINUTE)
+        initialHour = 0
+        initialMinute = 0
+        finalHour = 0
+        finalMinute = 0
 
-        view.apply {
-            setTimeTimePickerDialogFragment.setIs24HourView(true)
+        viewToBeCreated?.apply {
 
-            setTimeButtonDialogFragment.setBackgroundColor(ContextCompat.getColor(context!!, R.color.colorPrimaryDark))
-            setTimeTitleDialogFragment.setBackgroundColor(ContextCompat.getColor(context!!, R.color.colorPrimaryDark))
-            setTimeTitleDialogFragment.text = if (isInitial) "FROM:" else "TO:"
+            setTimeTitleToDialogFragment.text = "To: "
+            setTimeTitleFromDialogFragment.text = "From: "
 
-            setTimeTimePickerDialogFragment.setOnTimeChangedListener { _, hourOfDayRetrieved, minuteRetrieved ->
-                hourOfDay = hourOfDayRetrieved
-                minute = minuteRetrieved
+            val twoDecimalFormat = DecimalFormat("00")
+
+            (0..23).map { twoDecimalFormat.format(it) }.toTypedArray().also { hourValues ->
+                arrayOf(setTimeInitialHourPicker, setTimeFinalHourPicker).forEach {
+                    it.apply {
+                        displayedValues = hourValues
+                        minValue = 0
+                        maxValue = 23
+                    }
+                }
+            }
+
+
+            (0..55 step 5).map { twoDecimalFormat.format(it) }.toTypedArray().also {minuteValues ->
+                arrayOf(setTimeInitialMinutePicker, setTimeFinalMinutePicker).forEach {
+                    it.apply {
+                        displayedValues = minuteValues
+                        minValue = 0
+                        maxValue = 11
+                    }
+                }
+            }
+
+
+            setTimeInitialHourPicker.setOnValueChangedListener { _, _, newVal ->
+                initialHour = newVal
+            }
+
+            setTimeInitialMinutePicker.setOnValueChangedListener { _, _, newVal ->
+                initialMinute = newVal * 5 // Convert 0..11 to 0, 5 .. 55
+            }
+
+            setTimeFinalHourPicker.setOnValueChangedListener { _, _, newVal ->
+                finalHour = newVal
+            }
+
+            setTimeFinalMinutePicker.setOnValueChangedListener { _, _, newVal ->
+                finalMinute = newVal * 5  // Convert 0..11 to 0, 5 .. 55
             }
 
             setTimeButtonDialogFragment.setOnClickListener {
-                val twoDecimalFormat = DecimalFormat("00")
-                listener.onFinish("${twoDecimalFormat.format(hourOfDay)}${twoDecimalFormat.format(minute)}")
+                listener.onFinishInitialTime("${twoDecimalFormat.format(initialHour)}${twoDecimalFormat.format(initialMinute)}")
+                listener.onFinishFinalTime("${twoDecimalFormat.format(finalHour)}${twoDecimalFormat.format(finalMinute)}")
 
             }
 
         }
 
-        return view
+        return viewToBeCreated
     }
 
 }

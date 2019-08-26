@@ -1,6 +1,7 @@
 package com.jora.socialup.fragments.createEvent
 
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -34,30 +35,19 @@ class CreateEventWhenFragment : Fragment() {
     private var monthMap = mapOf(0 to "January", 1 to "February", 2 to "March", 3 to "April", 4 to "May", 5 to "June",
                                             6 to "July", 7 to "August", 8 to "September", 9 to "October", 10 to "November", 11 to "December" )
 
-    private val initialTimePickerDialog : TimePickerDialogFragment by lazy {
-        TimePickerDialogFragment(
-            true,
-            object : TimePickerDialogFragment.TimePickerFragmentInterface {
-                override fun onFinish(result: String) {
+    private val timePickerDialogFragment : TimePickerDialogFragment by lazy {
+        TimePickerDialogFragment(object: TimePickerDialogFragment.TimePickerFragmentInterface {
+            override fun onFinishInitialTime(result: String) {
+                customCalendarAdapter?.onFinishInitialTimePicker(result)
+            }
 
-                    customCalendarAdapter?.onFinishInitialTimePicker(result)
-
-                    finalTimePickerDialog.show(activity?.supportFragmentManager, null)
-                    initialTimePickerDialog.dismiss()
-                }
-            })
+            override fun onFinishFinalTime(result: String) {
+                customCalendarAdapter?.onFinishFinalTimePicker(result)
+                timePickerDialogFragment.dismiss()
+            }
+        })
     }
 
-    private val finalTimePickerDialog : TimePickerDialogFragment by lazy {
-        TimePickerDialogFragment(
-            false,
-            object : TimePickerDialogFragment.TimePickerFragmentInterface {
-                override fun onFinish(result: String) {
-                    customCalendarAdapter?.onFinishFinalTimePicker(result)
-                    finalTimePickerDialog.dismiss()
-                }
-            })
-    }
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -118,7 +108,7 @@ class CreateEventWhenFragment : Fragment() {
 
                 override fun onLongItemClick(view: View, position: Int) {
                     super.onLongItemClick(view, position)
-                    initialTimePickerDialog.show(activity?.supportFragmentManager, null)
+                    if (customCalendarAdapter?.isLongClickedDateChecked(position) == true) timePickerDialogFragment.show(activity?.supportFragmentManager, null)
                 }
             }
         ))
@@ -127,7 +117,8 @@ class CreateEventWhenFragment : Fragment() {
 
     private fun updateMonthTitle() {
         val currentMonthName = monthMap[customCalendarAdapter?.currentMonth]
-        viewToBeCreated?.createEventWhenMonthTitle?.text = currentMonthName ?: ""
+        val currentYear = customCalendarAdapter?.currentYear
+        viewToBeCreated?.createEventWhenMonthTitle?.text = ((currentMonthName ?: "") + ", " + currentYear)
 
     }
 

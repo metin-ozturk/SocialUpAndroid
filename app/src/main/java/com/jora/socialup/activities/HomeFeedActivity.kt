@@ -34,7 +34,7 @@ class HomeFeedActivity : AppCompatActivity() {
         if (savedInstanceState == null) {
             val eventFragment = EventFragment()
             val transaction = supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.homeRootFrameLayout, eventFragment)
+            transaction.replace(R.id.homeRootFrameLayout, eventFragment, "eventFragment")
             transaction.commit()
         }
 

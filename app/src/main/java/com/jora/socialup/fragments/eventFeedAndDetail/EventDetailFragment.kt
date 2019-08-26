@@ -16,6 +16,7 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.R
 import com.jora.socialup.adapters.EventDatesVoteRecyclerViewAdapter
+import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.EventViewModel
@@ -57,12 +58,18 @@ class EventDetailFragment : Fragment() {
 
     private var isFavorite = false
 
+    private val progressBarFragmentDialog: ProgressBarFragmentDialog by lazy {
+        ProgressBarFragmentDialog(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
+            override fun onCancel() {
+            }
+        })
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         if (activity == null || context == null)  {
             Log.d(eventDetailTag, "Activity is Null")
             return null
         }
-
 
         event = ViewModelProviders.of(activity!!).get(EventViewModel::class.java).event.value
 
@@ -104,8 +111,13 @@ class EventDetailFragment : Fragment() {
     }
 
     private fun swipedToLeft() {
+        if (progressBarFragmentDialog.isLoadingInProgress) return
+
+        progressBarFragmentDialog.show(fragmentManager, null)
+
         val eventID = event?.iD ?: return
         val updateEventTo = event ?: return
+
         viewModel.assertWhichViewToBeShowed(updateEventTo)
         viewModel.updateEventsArrayWithViewedEvent(updateEventTo)
 
@@ -160,6 +172,8 @@ class EventDetailFragment : Fragment() {
             val fragmentTransaction = activity?.supportFragmentManager?.beginTransaction()
             fragmentTransaction?.replace(R.id.homeRootFrameLayout, eventFragment)
             fragmentTransaction?.commit()
+
+            progressBarFragmentDialog.dismiss()
         }
 
 

@@ -66,13 +66,24 @@ class EventViewModel : ViewModel() {
         isFavoriteData.value = isEventFavorite
     }
 
-
     fun updateEventsArrayWithViewedEvent(updateEventsArrayTo:Event) {
         //updates events array by adding changes that were made to event which was viewed in detail.
 
         val arrayToBeUpdated = eventsArrayData.value ?: return
         val position = lastFocusedRowData.value ?: return
-        arrayToBeUpdated[position] = updateEventsArrayTo
+
+        // If position is -1 then event was searched otherwise it was selected from the feed
+
+        if (position != -1) arrayToBeUpdated[position] = updateEventsArrayTo
+        else {
+            for (index in 0 until arrayToBeUpdated.size) {
+                if (arrayToBeUpdated[index].iD == updateEventsArrayTo.iD) {
+                    arrayToBeUpdated[index] = updateEventsArrayTo
+                    break
+                }
+            }
+        }
+
         eventsArrayData.value = arrayToBeUpdated
     }
 

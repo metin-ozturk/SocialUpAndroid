@@ -59,6 +59,9 @@ class SignUpCompleteInformationDialogFragment(private val listener: SignUpComple
         setConfirmButtonListener()
         setUploadPhotoButton()
 
+        dialog.setCanceledOnTouchOutside(false)
+        dialog.setCancelable(false)
+
         return viewToBeCreated
         }
 
@@ -99,7 +102,6 @@ class SignUpCompleteInformationDialogFragment(private val listener: SignUpComple
                     val downloadedImage = BitmapFactory.decodeStream(URL(urlToBeRetrieved).content as InputStream)
                     withContext(Dispatchers.Main) {
                         viewToBeCreated?.fragmentDialogSignUpCompleteInformationPhotoImageView?.setImageBitmap(downloadedImage)
-
                         bgScope.cancel()
                     }
 
