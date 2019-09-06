@@ -7,6 +7,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.storage.FirebaseStorage
+import com.jora.socialup.fragments.eventFeedAndDetail.EventResponseStatus
 import com.jora.socialup.models.Event
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -37,8 +38,8 @@ class EventViewModel : ViewModel() {
     val lastFocusedRow : LiveData<Int>
         get() = lastFocusedRowData
 
-    private val eventResponseStatusData = MutableLiveData<Int>()
-    val eventResponseStatus : LiveData<Int>
+    private val eventResponseStatusData = MutableLiveData<EventResponseStatus>()
+    val eventResponseStatus : LiveData<EventResponseStatus>
         get() = eventResponseStatusData
 
     private val isFavoriteData = MutableLiveData<Boolean>()
@@ -58,7 +59,7 @@ class EventViewModel : ViewModel() {
         lastFocusedRowData.value = row
     }
 
-    fun assertEventResponseStatus(status: Int) {
+    fun assertEventResponseStatus(status: EventResponseStatus) {
         eventResponseStatusData.value = status
     }
 

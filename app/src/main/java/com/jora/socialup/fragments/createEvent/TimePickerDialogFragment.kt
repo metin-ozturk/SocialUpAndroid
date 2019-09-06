@@ -13,7 +13,9 @@ import java.text.DecimalFormat
 import java.util.*
 
 
-class TimePickerDialogFragment(private val listener: TimePickerFragmentInterface) : DialogFragment() {
+
+
+class TimePickerDialogFragment : DialogFragment() {
 
     interface TimePickerFragmentInterface {
         fun onFinishInitialTime(result: String)
@@ -21,12 +23,21 @@ class TimePickerDialogFragment(private val listener: TimePickerFragmentInterface
     }
 
     private var viewToBeCreated : View? = null
+    private var listener: TimePickerFragmentInterface? = null
 
     private var initialHour : Int? = null
     private var initialMinute : Int? = null
 
     private var finalHour : Int? = null
     private var finalMinute: Int? = null
+
+    companion object {
+        fun newInstance(listener: TimePickerFragmentInterface) : TimePickerDialogFragment {
+            val dialogFragment = TimePickerDialogFragment()
+            dialogFragment.listener = listener
+            return dialogFragment
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_dialog_set_time, container, false)
@@ -82,8 +93,8 @@ class TimePickerDialogFragment(private val listener: TimePickerFragmentInterface
             }
 
             setTimeButtonDialogFragment.setOnClickListener {
-                listener.onFinishInitialTime("${twoDecimalFormat.format(initialHour)}${twoDecimalFormat.format(initialMinute)}")
-                listener.onFinishFinalTime("${twoDecimalFormat.format(finalHour)}${twoDecimalFormat.format(finalMinute)}")
+                listener?.onFinishInitialTime("${twoDecimalFormat.format(initialHour)}${twoDecimalFormat.format(initialMinute)}")
+                listener?.onFinishFinalTime("${twoDecimalFormat.format(finalHour)}${twoDecimalFormat.format(finalMinute)}")
 
             }
 

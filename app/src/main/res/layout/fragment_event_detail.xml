@@ -1,95 +1,148 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                                                   xmlns:app="http://schemas.android.com/apk/res-auto"
-                                                   xmlns:tools="http://schemas.android.com/tools"
-                                                   android:layout_height="match_parent"
-                                                   android:layout_width="match_parent">
 
-    <ImageView
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="50dp" app:srcCompat="@drawable/imageplaceholder"
-            android:id="@+id/eventDetailImageView" android:scaleType="centerCrop"
-            app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"
-    />
-    <Button
-            android:text="Going"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:id="@+id/eventDetailGoingButton" app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/eventDetailImageView"/>
-    <Button
-            android:text="Maybe"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:id="@+id/eventDetailMaybeButton" app:layout_constraintStart_toEndOf="@+id/eventDetailGoingButton"
-            app:layout_constraintEnd_toStartOf="@+id/eventDetailNotGoingButton"
-            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/eventDetailImageView"/>
-    <Button
-            android:text="Not Going"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintEnd_toEndOf="parent" android:id="@+id/eventDetailNotGoingButton" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/eventDetailImageView"/>
-    <TextView
-            android:text="TextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/eventDetailDate"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:textSize="16sp"
-            android:singleLine="false"
-            app:layout_constraintTop_toTopOf="@+id/eventDetailTitle" android:layout_marginTop="4dp"/>
-    <TextView
-            android:text="TextView"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content" android:id="@+id/eventDetailTitle"
-            android:textSize="20sp" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/eventDetailGoingButton"
-            app:layout_constraintStart_toStartOf="parent"
-            android:maxLines="1" android:ellipsize="end" android:layout_marginEnd="8dp"
-            app:layout_constraintEnd_toStartOf="@+id/eventDetailDate" app:layout_constraintHorizontal_bias="0.0"/>
-    <ImageView
-            android:layout_width="27dp"
-            android:layout_height="27dp" app:srcCompat="@drawable/imageplaceholder"
-            app:layout_constraintStart_toStartOf="parent"
-            android:id="@+id/eventDetailFounderImageView" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/eventDetailTitle"/>
-    <TextView
-            android:text="TextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/eventDetailFounder"
-            android:textSize="20sp" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/eventDetailTitle"
-            app:layout_constraintStart_toEndOf="@+id/eventDetailFounderImageView" android:layout_marginStart="8dp"
-            android:maxLines="1" android:ellipsize="end"/>
-    <TextView
-            android:text="TextView"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/eventDetailLocation"
-            android:textSize="20sp" app:layout_constraintStart_toStartOf="parent" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/eventDetailFounderImageView" android:ellipsize="end"
-            android:maxLines="1"/>
-    <Button
-            android:text="DELETE"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content" android:id="@+id/eventDetailDeleteButton"
-            app:layout_constraintStart_toStartOf="parent" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/eventDetailLocation" app:layout_constraintEnd_toEndOf="parent"
-    />
-    <ImageView
-            android:layout_width="27dp"
-            android:layout_height="27dp" app:srcCompat="@drawable/landmark"
-            android:id="@+id/eventDetailLandmarkImageView"
-            app:layout_constraintEnd_toEndOf="parent" app:layout_constraintTop_toTopOf="@+id/eventDetailLocation"/>
-    <ImageView
-            android:layout_width="27dp"
-            android:layout_height="27dp" app:srcCompat="@drawable/favorite"
-            android:id="@+id/eventDetailFavoriteImageView"
-            app:layout_constraintEnd_toStartOf="@+id/eventDetailLandmarkImageView" android:layout_marginEnd="8dp"
-            app:layout_constraintTop_toTopOf="@+id/eventDetailLocation"/>
-    <androidx.recyclerview.widget.RecyclerView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content" app:layout_constraintTop_toBottomOf="@+id/eventDetailDeleteButton"
-            android:layout_marginTop="8dp" app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent" android:id="@+id/datesToVoteRecyclerView"/>
-</androidx.constraintlayout.widget.ConstraintLayout>
+            android:layout_height="wrap_content">
+
+
+        <ImageView
+                android:id="@+id/eventDetailImageView"
+                android:layout_width="match_parent"
+                android:layout_height="50dp"
+                android:scaleType="centerCrop"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:srcCompat="@drawable/imageplaceholder" />
+
+        <Button
+                android:id="@+id/eventDetailGoingButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Going"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/eventDetailImageView" />
+
+        <Button
+                android:id="@+id/eventDetailMaybeButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Maybe"
+                app:layout_constraintEnd_toStartOf="@+id/eventDetailNotGoingButton"
+                app:layout_constraintStart_toEndOf="@+id/eventDetailGoingButton"
+                app:layout_constraintTop_toBottomOf="@+id/eventDetailImageView" />
+
+        <Button
+                android:id="@+id/eventDetailNotGoingButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="Not Going"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/eventDetailImageView" />
+
+        <TextView
+                android:id="@+id/eventDetailDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:singleLine="false"
+                android:text="TextView"
+                android:textSize="16sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/eventDetailTitle" />
+
+        <TextView
+                android:id="@+id/eventDetailTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:layout_marginEnd="8dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="TextView"
+                android:textSize="20sp"
+                app:layout_constraintEnd_toStartOf="@+id/eventDetailDate"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/eventDetailGoingButton" />
+
+        <ImageView
+                android:id="@+id/eventDetailFounderImageView"
+                android:layout_width="27dp"
+                android:layout_height="27dp"
+                android:layout_marginTop="8dp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/eventDetailTitle"
+                app:srcCompat="@drawable/imageplaceholder" />
+
+        <TextView
+                android:id="@+id/eventDetailFounder"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="8dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="TextView"
+                android:textSize="20sp"
+                app:layout_constraintStart_toEndOf="@+id/eventDetailFounderImageView"
+                app:layout_constraintTop_toBottomOf="@+id/eventDetailTitle" />
+
+        <TextView
+                android:id="@+id/eventDetailLocation"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:text="TextView"
+                android:textSize="20sp"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/eventDetailFounderImageView" />
+
+        <Button
+                android:id="@+id/eventDetailDeleteButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:text="DELETE"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/eventDetailLocation" />
+
+        <ImageView
+                android:id="@+id/eventDetailLandmarkImageView"
+                android:layout_width="27dp"
+                android:layout_height="27dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/eventDetailLocation"
+                app:srcCompat="@drawable/landmark" />
+
+        <ImageView
+                android:id="@+id/eventDetailFavoriteImageView"
+                android:layout_width="27dp"
+                android:layout_height="27dp"
+                android:layout_marginEnd="8dp"
+                app:layout_constraintEnd_toStartOf="@+id/eventDetailLandmarkImageView"
+                app:layout_constraintTop_toTopOf="@+id/eventDetailLocation"
+                app:srcCompat="@drawable/favorite" />
+
+        <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/datesToVoteRecyclerView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/eventDetailDeleteButton" />
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+</ScrollView>

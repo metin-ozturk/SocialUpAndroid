@@ -40,14 +40,9 @@ class EventDetailFragment : Fragment() {
         ViewModelProviders.of(activity!!).get(EventViewModel::class.java)
     }
 
-    private val datesConvertedToReadableFormat : ArrayList<String> by lazy {
-        (event?.date ?: ArrayList()).map { Event.convertDateToReadableFormat(it) } as ArrayList
-    }
-
     private var votedForDates = mutableMapOf<String, Boolean>()
 
-    private var eventResponseStatus : EventResponseStatus =
-        EventResponseStatus.NotResponded
+    private var eventResponseStatus : EventResponseStatus = EventResponseStatus.NotResponded
 
     private val dateVotesChangedBy : ArrayList<Int> by lazy {
         val arraySize = event?.dateVote?.size ?: 0
@@ -59,7 +54,7 @@ class EventDetailFragment : Fragment() {
     private var isFavorite = false
 
     private val progressBarFragmentDialog: ProgressBarFragmentDialog by lazy {
-        ProgressBarFragmentDialog(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
+        ProgressBarFragmentDialog.newInstance(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
             override fun onCancel() {
             }
         })
@@ -73,12 +68,7 @@ class EventDetailFragment : Fragment() {
 
         event = ViewModelProviders.of(activity!!).get(EventViewModel::class.java).event.value
 
-        eventResponseStatus = when(viewModel.eventResponseStatus.value) {
-            1 -> EventResponseStatus.NotGoing
-            2 -> EventResponseStatus.Maybe
-            3 -> EventResponseStatus.Going
-            else -> EventResponseStatus.NotResponded
-        }
+        eventResponseStatus = viewModel.eventResponseStatus.value ?: EventResponseStatus.NotResponded
 
         isFavorite = viewModel.isFavorite.value ?: false
         votedForDates = viewModel.votedForDates.value ?: mutableMapOf()
@@ -108,6 +98,11 @@ class EventDetailFragment : Fragment() {
 
         setEventResponseStatusToButtons()
         setFavoriteImageView()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (progressBarFragmentDialog.isLoadingInProgress) progressBarFragmentDialog.dismiss()
     }
 
     private fun swipedToLeft() {
@@ -206,8 +201,8 @@ class EventDetailFragment : Fragment() {
                 eventDetailGoingButton.setBackgroundColor(Color.GREEN)
                 eventDetailMaybeButton.setBackgroundColor(Color.LTGRAY)
                 eventDetailNotGoingButton.setBackgroundColor(Color.LTGRAY)
-
             }
+            viewModel.assertEventResponseStatus(eventResponseStatus)
         }
 
         eventDetailMaybeButton.setOnClickListener {
@@ -220,6 +215,7 @@ class EventDetailFragment : Fragment() {
                 eventDetailNotGoingButton.setBackgroundColor(Color.LTGRAY)
                 eventDetailGoingButton.setBackgroundColor(Color.LTGRAY)
             }
+            viewModel.assertEventResponseStatus(eventResponseStatus)
 
         }
 
@@ -232,16 +228,15 @@ class EventDetailFragment : Fragment() {
                 eventDetailNotGoingButton.setBackgroundColor(Color.RED)
                 eventDetailGoingButton.setBackgroundColor(Color.LTGRAY)
                 eventDetailMaybeButton.setBackgroundColor(Color.LTGRAY)
-
             }
+            viewModel.assertEventResponseStatus(eventResponseStatus)
         }
+
 
     }
 
     private fun setFavoriteImageView() {
-        if (isFavorite) eventDetailFavoriteImageView.setImageResource(R.drawable.favorite_selected) else eventDetailFavoriteImageView.setImageResource(
-            R.drawable.favorite
-        )
+        if (isFavorite) eventDetailFavoriteImageView.setImageResource(R.drawable.favorite_selected) else eventDetailFavoriteImageView.setImageResource(R.drawable.favorite)
 
         eventDetailFavoriteImageView.setOnClickListener {
             isFavorite = if (isFavorite) {
@@ -251,6 +246,8 @@ class EventDetailFragment : Fragment() {
                 eventDetailFavoriteImageView.setImageResource(R.drawable.favorite_selected)
                 true
             }
+
+            viewModel.assertIsFavorite(isFavorite)
         }
     }
 
@@ -307,7 +304,9 @@ class EventDetailFragment : Fragment() {
         activity?.windowManager?.defaultDisplay?.getSize(point)
 
         val heightOfEventDetailImageView = point.x * 9 / 16
+
         eventDetailImageView.layoutParams.height = heightOfEventDetailImageView
+
         eventDetailImageView.setImageBitmap(event?.image)
         eventDetailImageView.requestLayout()
 

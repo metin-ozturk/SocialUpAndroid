@@ -63,12 +63,13 @@ class CreateEventWhoFragment : Fragment() {
         eventToBePassed = createEventViewModel.event.value
 
 
-        // To persist data across configuration changes like orientantion change
+        // To persist data across configuration changes like orientation change
 
         if (savedInstanceState == null) {
             downloadFriendsNamesAndImagesAndNotifyRecyclerView()
         } else {
             friends = createEventViewModel.friends.value ?: ArrayList()
+            if (friends.size == 0) customSearchAdapter.updateDefaultHolderText("You don't any have friends")
             friendsMap = createEventViewModel.friendsMap.value ?: mutableMapOf()
             friendIDsArrayList = createEventViewModel.friendsIDsArray.value ?: ArrayList()
             customSearchAdapter.notifyDataSetChanged()

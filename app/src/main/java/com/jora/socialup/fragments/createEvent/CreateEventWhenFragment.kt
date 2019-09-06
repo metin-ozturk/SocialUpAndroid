@@ -28,6 +28,8 @@ class CreateEventWhenFragment : Fragment() {
         ViewModelProviders.of(activity!!).get(CreateEventViewModel::class.java)
     }
 
+    private var dateTime = arrayListOf<CalendarAdapter.DateTimeInfo>()
+
     private var eventToBePassed : Event? = null
 
     private var customCalendarAdapter : CalendarAdapter? = null
@@ -36,7 +38,7 @@ class CreateEventWhenFragment : Fragment() {
                                             6 to "July", 7 to "August", 8 to "September", 9 to "October", 10 to "November", 11 to "December" )
 
     private val timePickerDialogFragment : TimePickerDialogFragment by lazy {
-        TimePickerDialogFragment(object: TimePickerDialogFragment.TimePickerFragmentInterface {
+        TimePickerDialogFragment.newInstance(object: TimePickerDialogFragment.TimePickerFragmentInterface {
             override fun onFinishInitialTime(result: String) {
                 customCalendarAdapter?.onFinishInitialTimePicker(result)
             }
@@ -60,7 +62,17 @@ class CreateEventWhenFragment : Fragment() {
         setCalendarRecyclerViewListeners()
         setSwipeGestures()
 
+        // Persist Checked and Selected Dates and Times
+        if (savedInstanceState != null ) customCalendarAdapter?.dateTime = createEventViewModel.eventDateTime.value ?: arrayListOf()
+
         return viewToBeCreated
+    }
+
+    override fun onPause() {
+        super.onPause()
+
+        // Persist Checked and Selected Dates and Times
+        createEventViewModel.updateEventDateTime(customCalendarAdapter?.dateTime ?: arrayListOf())
     }
 
     private fun setSwipeGestures() {

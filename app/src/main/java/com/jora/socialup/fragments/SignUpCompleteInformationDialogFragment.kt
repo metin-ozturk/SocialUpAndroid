@@ -24,13 +24,15 @@ import java.net.URL
 import java.text.DecimalFormat
 
 
-class SignUpCompleteInformationDialogFragment(private val listener: SignUpCompleteInformationDialogFragmentInterface) : DialogFragment() {
+class SignUpCompleteInformationDialogFragment : DialogFragment() {
 
     interface SignUpCompleteInformationDialogFragmentInterface {
         fun onFinish()
     }
 
     private var viewToBeCreated : View? = null
+
+    private var listener: SignUpCompleteInformationDialogFragmentInterface? = null
 
     private var firebaseAuthentication : FirebaseAuth? = null
 
@@ -45,6 +47,14 @@ class SignUpCompleteInformationDialogFragment(private val listener: SignUpComple
     var nameToBeRetrieved = ""
     var birthdayToBeRetrieved = ""
     var urlToBeRetrieved = ""
+
+    companion object {
+        fun newInstance(listener: SignUpCompleteInformationDialogFragmentInterface) : SignUpCompleteInformationDialogFragment {
+            val dialogFragment = SignUpCompleteInformationDialogFragment()
+            dialogFragment.listener = listener
+            return dialogFragment
+        }
+    }
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -165,7 +175,7 @@ class SignUpCompleteInformationDialogFragment(private val listener: SignUpComple
         userProfilePhotoReference.putBytes(userImageToBeUploadedAsJPEG)
         userReference.set(userToBeCreated?.returnUserInformation() as Map<String, Any>)
 
-        listener.onFinish()
+        listener?.onFinish()
 
     }
 

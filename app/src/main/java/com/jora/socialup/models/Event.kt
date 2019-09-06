@@ -155,10 +155,10 @@ class Event(parcel: Parcel? = null) : Parcelable {
         }
 
         fun downloadEventIDs(completion: (ArrayList<String>) -> Unit) {
-
+            val userID = FirebaseAuth.getInstance().currentUser?.uid ?: return
             var eventIDsArray : ArrayList<String>
 
-            FirebaseFirestore.getInstance().collection("users").document(FirebaseAuth.getInstance().currentUser?.uid ?: "").collection("events").get()
+            FirebaseFirestore.getInstance().collection("users").document(userID).collection("events").get()
                 .addOnSuccessListener { snap ->
                     eventIDsArray = snap.documents.map { it.id } as ArrayList<String>
 

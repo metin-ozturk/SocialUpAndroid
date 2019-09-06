@@ -75,7 +75,6 @@ class CreateEventWhatFragment : Fragment() {
         setHistoryRecyclerViewListener()
         setSwipeRightGesture()
 
-
         return viewToBeCreated
     }
 

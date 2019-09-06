@@ -5,20 +5,22 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
+import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.RecyclerView
 import com.jora.socialup.R
+import com.jora.socialup.viewModels.CreateEventViewModel
 import java.text.DecimalFormat
 import java.util.*
 
 class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
 
-    internal enum class TimeStatus {
+    enum class TimeStatus {
         CHECKED,
         SELECTED,
         DEFAULT
     }
 
-    internal class DateTimeInfo(var dateTimeStatus: TimeStatus? = TimeStatus.DEFAULT,
+    class DateTimeInfo(var dateTimeStatus: TimeStatus? = TimeStatus.DEFAULT,
                                 var date : String? = null,
                                 var initialHourAndMinute : String? = null,
                                 var finalHourAndMinute : String? = null,
@@ -38,7 +40,7 @@ class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
     private var firstDayOfMonth : Int? = null // 1 = Monday, 7 = Sunday
     var numberOfMonthsChanged : Int = 0 // shouldn't exceed 6
 
-    private var dateTime = arrayListOf<DateTimeInfo>()
+    var dateTime = arrayListOf<DateTimeInfo>()
 
     private val numberOfPastCellsToShow : Int
         get() = firstDayOfMonth ?: 0

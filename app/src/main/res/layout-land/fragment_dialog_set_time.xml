@@ -15,6 +15,7 @@
             app:layout_constraintTop_toTopOf="parent"
             tools:text="TextView" />
 
+
     <NumberPicker
             android:id="@+id/setTimeInitialHourPicker"
             android:layout_width="wrap_content"
@@ -30,28 +31,29 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_weight="0.5"
-            app:layout_constraintEnd_toEndOf="@+id/setTimeFinalMinutePicker"
+            app:layout_constraintStart_toEndOf="@+id/setTimeInitialHourPicker"
             app:layout_constraintTop_toBottomOf="@+id/setTimeTitleFromDialogFragment">
 
     </NumberPicker>
+
 
     <TextView
             android:id="@+id/setTimeTitleToDialogFragment"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="24sp"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/setTimeInitialHourPicker"
+            app:layout_constraintBottom_toTopOf="@+id/setTimeFinalHourPicker"
+            app:layout_constraintStart_toStartOf="@+id/setTimeFinalHourPicker"
             tools:text="TextView" />
-
 
     <NumberPicker
             android:id="@+id/setTimeFinalHourPicker"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:layout_weight="0.5"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/setTimeTitleToDialogFragment">
+            app:layout_constraintStart_toEndOf="@+id/setTimeInitialMinutePicker"
+            app:layout_constraintTop_toBottomOf="@+id/setTimeTitleFromDialogFragment">
 
     </NumberPicker>
 
@@ -61,7 +63,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="0.5"
             app:layout_constraintStart_toEndOf="@+id/setTimeFinalHourPicker"
-            app:layout_constraintTop_toBottomOf="@+id/setTimeTitleToDialogFragment">
+            app:layout_constraintTop_toTopOf="@+id/setTimeFinalHourPicker">
 
     </NumberPicker>
 

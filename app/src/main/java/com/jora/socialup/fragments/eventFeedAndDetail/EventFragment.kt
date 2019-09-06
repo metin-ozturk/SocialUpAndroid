@@ -41,8 +41,7 @@ import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event.view.*
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 
 class EventFragment : Fragment() {
@@ -65,7 +64,7 @@ class EventFragment : Fragment() {
     private var viewToBeCreated: View? = null
 
     private val progressBarFragmentDialog: ProgressBarFragmentDialog by lazy {
-        ProgressBarFragmentDialog(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
+        ProgressBarFragmentDialog.newInstance(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
             override fun onCancel() {
             }
         })
@@ -121,6 +120,11 @@ class EventFragment : Fragment() {
 
 
         return viewToBeCreated
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (progressBarFragmentDialog.isLoadingInProgress) progressBarFragmentDialog.dismiss()
     }
 
 
@@ -258,8 +262,6 @@ class EventFragment : Fragment() {
 
     private fun downloadEventSpecificInformationAndUpdateViewModel(position: Int? = null) {
 
-        if (progressBarFragmentDialog.isLoadingInProgress) return
-
         val event : Event?
 
         // If event is selected from search results - it is else block, else if it is selected from feed - it is the first block.
@@ -283,7 +285,7 @@ class EventFragment : Fragment() {
                 val data = it.data
 
                 val eventDates = event.date
-                val eventResponseStatus = (data?.get("EventResponseStatus") as Long?)?.toInt() ?: 0
+                val eventResponseStatusAsInt = (data?.get("EventResponseStatus") as Long?)?.toInt() ?: 0
                 val votedDates = mutableMapOf<String, Boolean>() // [DATE, WHETHER THIS DATE IS VOTED AS BOOLEAN]
 
                 eventDates?.forEach { date ->
@@ -294,7 +296,14 @@ class EventFragment : Fragment() {
 
                 viewModel.assertIsFavorite(isFavorite)
                 viewModel.assertWhichDatesToBeUpdated(votedDates)
-                viewModel.assertEventResponseStatus(eventResponseStatus)
+
+                when(eventResponseStatusAsInt) {
+                    1 -> EventResponseStatus.NotGoing
+                    2 -> EventResponseStatus.Maybe
+                    3 -> EventResponseStatus.Going
+                    else -> EventResponseStatus.NotResponded
+                }.also {eventResponseStatus -> viewModel.assertEventResponseStatus(eventResponseStatus) }
+
 
                 val eventDetailFragment = EventDetailFragment()
                 val transaction = activity?.supportFragmentManager?.beginTransaction()

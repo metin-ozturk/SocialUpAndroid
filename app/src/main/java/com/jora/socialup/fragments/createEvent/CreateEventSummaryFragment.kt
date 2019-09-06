@@ -18,6 +18,7 @@ import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.R
 import com.jora.socialup.activities.HomeActivity
+import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_summary.view.*
@@ -38,6 +39,14 @@ class CreateEventSummaryFragment : Fragment() {
 
     private val userID : String? by lazy {
         FirebaseAuth.getInstance().currentUser?.uid
+    }
+
+    private val progressBarFragmentDialog: ProgressBarFragmentDialog by lazy {
+        ProgressBarFragmentDialog.newInstance(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
+            override fun onCancel() {
+
+            }
+        })
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -62,8 +71,12 @@ class CreateEventSummaryFragment : Fragment() {
 
     private fun setConfirmEventFunction() {
         viewToBeCreated?.createEventSummaryConfirmButton?.setOnClickListener {
+
+            if (progressBarFragmentDialog.isLoadingInProgress) return@setOnClickListener
+
+            progressBarFragmentDialog.show(fragmentManager, null)
+
             eventToBePassed?.timeStamp = FieldValue.serverTimestamp()
-            Log.d("OSMAN", eventToBePassed.toString())
 
             val eventID = FirebaseFirestore.getInstance().collection("events").document().id
             eventToBePassed?.iD = eventID
@@ -98,8 +111,11 @@ class CreateEventSummaryFragment : Fragment() {
                 userEventReference.set(mapOf("EventResponseStatus" to 0, "EventIsFavorite" to (eventToBePassed?.isFavorite ?: false)))
                 userEventReference.set(votedForDate as Map<String, Boolean>, SetOptions.merge())
 
-                startActivity(Intent(activity!!, HomeActivity::class.java))
-                bgScope.cancel()
+                withContext(Dispatchers.Main) {
+                    progressBarFragmentDialog.dismiss()
+                    startActivity(Intent(activity!!, HomeActivity::class.java))
+                    cancel()
+                }
             }
 
 

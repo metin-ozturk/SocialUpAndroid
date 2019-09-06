@@ -3,6 +3,7 @@ package com.jora.socialup.viewModels
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import com.jora.socialup.adapters.CalendarAdapter
 import com.jora.socialup.fragments.createEvent.FriendInfo
 import com.jora.socialup.models.Event
 
@@ -14,6 +15,10 @@ class CreateEventViewModel : ViewModel() {
     private var eventHistoryData = MutableLiveData<ArrayList<Event>>()
     val eventHistory : LiveData<ArrayList<Event>>
         get() = eventHistoryData
+
+    private var eventDateTimeData = MutableLiveData<ArrayList<CalendarAdapter.DateTimeInfo>>()
+    val eventDateTime : LiveData<ArrayList<CalendarAdapter.DateTimeInfo>>
+        get() = eventDateTimeData
 
     private var friendsData = MutableLiveData<ArrayList<FriendInfo>>()
     val friends : LiveData<ArrayList<FriendInfo>>
@@ -45,5 +50,9 @@ class CreateEventViewModel : ViewModel() {
 
     fun updateEventHistory(updateTo: ArrayList<Event>) {
         eventHistoryData.value = updateTo
+    }
+
+    fun updateEventDateTime(updateTo: ArrayList<CalendarAdapter.DateTimeInfo>) {
+        eventDateTimeData.value = updateTo
     }
 }

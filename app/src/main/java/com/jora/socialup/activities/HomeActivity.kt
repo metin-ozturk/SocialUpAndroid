@@ -4,12 +4,14 @@ import android.content.DialogInterface
 import android.content.Intent
 import android.graphics.Rect
 import android.os.Bundle
+import android.os.PersistableBundle
 import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.app.ActivityCompat.startActivityForResult
 import com.facebook.*
 import com.facebook.login.LoginManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -35,6 +37,8 @@ private const val googleSignInTag = "GoogleSignInTag"
 private const val facebookSignInTag = "FacebookSignInTag"
 
 
+// At onPause(), we dismiss progressBar when orientation changes - better way to do it? (Also At EventDetail and Event)
+
 class HomeActivity : AppCompatActivity() {
 
     private var googleSignInClient : GoogleSignInClient? = null
@@ -45,7 +49,7 @@ class HomeActivity : AppCompatActivity() {
     private var callbackManager : CallbackManager? = null
 
     private val signUpCompleteInformationDialogFragment : SignUpCompleteInformationDialogFragment by lazy {
-        SignUpCompleteInformationDialogFragment(object: SignUpCompleteInformationDialogFragment.SignUpCompleteInformationDialogFragmentInterface {
+        SignUpCompleteInformationDialogFragment.newInstance(object: SignUpCompleteInformationDialogFragment.SignUpCompleteInformationDialogFragmentInterface {
             override fun onFinish() {
                 startActivity(Intent(this@HomeActivity, HomeFeedActivity::class.java))
                 signUpCompleteInformationDialogFragment.dismiss()
@@ -55,7 +59,7 @@ class HomeActivity : AppCompatActivity() {
 
 
     private val signUpDialogFragment : SignUpDialogFragment by lazy {
-        SignUpDialogFragment(object: SignUpDialogFragment.SignUpDialogFragmentInterface {
+        SignUpDialogFragment.newInstance(object: SignUpDialogFragment.SignUpDialogFragmentInterface {
             override fun onFinish(email: String) {
                 // FIX
                 signUpCompleteInformationDialogFragment.apply {
@@ -74,9 +78,24 @@ class HomeActivity : AppCompatActivity() {
             }
         })
     }
+//
+//    private val signInDialogFragment : SignInDialogFragment by lazy {
+//        SignInDialogFragment(object: SignInDialogFragment.SignInDialogFragmentInterface {
+//            override fun onFinish() {
+//                startActivity(Intent(this@HomeActivity, HomeFeedActivity::class.java))
+//            }
+//
+//            override fun informationMissing(email: String) {
+//                signUpCompleteInformationDialogFragment.apply {
+//                    completeSignUpInfo(email)
+//                    show(supportFragmentManager, null)
+//                }
+//            }
+//        })
+//    }
 
     private val signInDialogFragment : SignInDialogFragment by lazy {
-        SignInDialogFragment(object: SignInDialogFragment.SignInDialogFragmentInterface {
+        SignInDialogFragment.newInstance(object: SignInDialogFragment.SignInDialogFragmentInterface {
             override fun onFinish() {
                 startActivity(Intent(this@HomeActivity, HomeFeedActivity::class.java))
             }
@@ -87,11 +106,20 @@ class HomeActivity : AppCompatActivity() {
                     show(supportFragmentManager, null)
                 }
             }
+
+            override fun loginWithGoogle() {
+                signInWithGoogle()
+            }
+
+            override fun loginWithFacebook() {
+                LoginManager.getInstance().logIn(this@HomeActivity, arrayListOf("email", "public_profile"))
+            }
         })
     }
 
+
     private val progressBarFragmentDialog: ProgressBarFragmentDialog by lazy {
-        ProgressBarFragmentDialog(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
+        ProgressBarFragmentDialog.newInstance(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
             override fun onCancel() {
                 logOut()
             }
@@ -106,6 +134,7 @@ class HomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
+
         firebaseAuthentication = FirebaseAuth.getInstance()
 
         setSignUpWithEmailButton()
@@ -119,10 +148,17 @@ class HomeActivity : AppCompatActivity() {
         return true
     }
 
+
     override fun onStart() {
         super.onStart()
 
 //        if (firebaseAuthentication?.currentUser != null) startActivity(Intent(this, HomeFeedActivity::class.java))
+    }
+
+
+    override fun onPause() {
+        super.onPause()
+        if (progressBarFragmentDialog.isLoadingInProgress) progressBarFragmentDialog.dismiss()
     }
 
     private fun setSignUpWithEmailButton() {
@@ -269,7 +305,6 @@ class HomeActivity : AppCompatActivity() {
                     if (task.result?.additionalUserInfo?.isNewUser == true) {
                         presentCompleteInformationDialogForFacebook(task, birthday)
                         progressBarFragmentDialog.dismiss()
-
                         return@addOnCompleteListener
                     } else if (googleCredential != null) {
                         firebaseAuthentication?.currentUser?.linkWithCredential(googleCredential ?: return@addOnCompleteListener)
@@ -354,7 +389,6 @@ class HomeActivity : AppCompatActivity() {
                 checkIfCompleteUserInfoCreated(task) {
                     presentCompleteInformationDialogForGoogle(task)
                 }
-
 
             } else {
                 progressBarFragmentDialog.setCancelAlertDialog()

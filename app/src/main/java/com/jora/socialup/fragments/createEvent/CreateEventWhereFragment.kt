@@ -119,7 +119,7 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
     }
 
     private fun setNullLocationDetailDialogFragment() : LocationDetailDialogFragment {
-        return LocationDetailDialogFragment(
+        return LocationDetailDialogFragment.newInstance(
             LocationInfo(
                 null, null, latLongOfEventLocation?.latitude.toString(),
                 latLongOfEventLocation?.longitude.toString(), null, null
@@ -304,7 +304,7 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
     }
 
     private fun setFilledFromSearchLocationDetailDialogFragment(place: Place, placeID: String) : LocationDetailDialogFragment {
-        return LocationDetailDialogFragment(
+        return LocationDetailDialogFragment.newInstance(
             LocationInfo(
                 place.name, place.address, place.latLng?.latitude.toString(), place.latLng?.longitude.toString(),
                 place.address, placeID
@@ -318,7 +318,7 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
     }
 
     private fun setFilledFromSearchLocationDetailDialogFragmentFromPastEvent(pastEvent: Event) : LocationDetailDialogFragment {
-        return LocationDetailDialogFragment(
+        return LocationDetailDialogFragment.newInstance(
             LocationInfo(
                 pastEvent.locationName, pastEvent.locationAddress, pastEvent.locationLatitude.toString(),
                 pastEvent.locationLongitude.toString(), pastEvent.locationAddress, null

@@ -26,12 +26,22 @@ class LocationInfo(internal val name : String? = null,
 }
 
 
-class LocationDetailDialogFragment(private val locationInfo : LocationInfo,
-                                   private val listener : LocationDetailDialogFragmentInterface
-) : DialogFragment() {
+class LocationDetailDialogFragment : DialogFragment() {
 
     interface LocationDetailDialogFragmentInterface {
         fun onConfirmed(locationToBePassed: LocationInfo)
+    }
+
+    private var locationInfo : LocationInfo? = null
+    private var listener : LocationDetailDialogFragmentInterface? = null
+
+    companion object {
+        fun newInstance(locationInfo: LocationInfo, listener: LocationDetailDialogFragmentInterface) : LocationDetailDialogFragment {
+            val dialogFragment = LocationDetailDialogFragment()
+            dialogFragment.listener = listener
+            dialogFragment.locationInfo = locationInfo
+            return dialogFragment
+        }
     }
 
 
@@ -39,22 +49,22 @@ class LocationDetailDialogFragment(private val locationInfo : LocationInfo,
         val view = inflater.inflate(com.jora.socialup.R.layout.fragment_dialog_location_detail, container, false)
 
         view.apply {
-            fragmentDialogLocationDetailLatitudeInput.text = if (locationInfo.latitude?.count() ?: 0 < 8) locationInfo.latitude.toString() else locationInfo.latitude.toString().substring(0,8)
-            fragmentDialogLocationDetailLongitudeInput.text = if (locationInfo.longitude?.count() ?: 0 < 8) locationInfo.longitude.toString() else locationInfo.longitude.toString().substring(0,8)
-            fragmentDialogLocationDetailDescriptionInput.text.insert(0, locationInfo.description ?: "")
-            fragmentDialogLocationDetailNameInput.text.insert(0, locationInfo.name ?: "")
+            fragmentDialogLocationDetailLatitudeInput.text = if (locationInfo?.latitude?.count() ?: 0 < 8) locationInfo?.latitude.toString() else locationInfo?.latitude.toString().substring(0,8)
+            fragmentDialogLocationDetailLongitudeInput.text = if (locationInfo?.longitude?.count() ?: 0 < 8) locationInfo?.longitude.toString() else locationInfo?.longitude.toString().substring(0,8)
+            fragmentDialogLocationDetailDescriptionInput.text.insert(0, locationInfo?.description ?: "")
+            fragmentDialogLocationDetailNameInput.text.insert(0, locationInfo?.name ?: "")
 
             var address = ""
 
-            if (locationInfo.address.isNullOrEmpty()) {
+            if (locationInfo?.address.isNullOrEmpty()) {
                 val bgScope = CoroutineScope(Dispatchers.IO)
 
                 bgScope.launch {
-                    address = getAddress(locationInfo.latitude?.toDouble() ?: 0.0,
-                        locationInfo.longitude?.toDouble() ?: 0.0)
+                    address = getAddress(locationInfo?.latitude?.toDouble() ?: 0.0,
+                        locationInfo?.longitude?.toDouble() ?: 0.0)
                     bgScope.cancel()
                 }
-            } else address = locationInfo.address
+            } else address = locationInfo?.address ?: "ERROR"
 
 
             fragmentDialogLocationDetailConfirmButton?.setOnClickListener {
@@ -62,12 +72,12 @@ class LocationDetailDialogFragment(private val locationInfo : LocationInfo,
                     val locationToBePassed = LocationInfo(
                         fragmentDialogLocationDetailNameInput.text.toString(),
                         fragmentDialogLocationDetailDescriptionInput.text.toString(),
-                        locationInfo.latitude,
-                        locationInfo.longitude,
+                        locationInfo?.latitude,
+                        locationInfo?.longitude,
                         address
                     )
 
-                    listener.onConfirmed(locationToBePassed)
+                    listener?.onConfirmed(locationToBePassed)
                 }
             }
         }

@@ -8,41 +8,42 @@ import android.util.Log
 import android.view.*
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.DialogFragment
+import androidx.fragment.app.FragmentManager
 import com.jora.socialup.R
 import kotlinx.android.synthetic.main.fragment_dialog_progress_bar.view.*
 
-class ProgressBarFragmentDialog(private val listener: ProgressBarFragmentDialogInterface) : DialogFragment() {
+class ProgressBarFragmentDialog : DialogFragment() {
 
     interface ProgressBarFragmentDialogInterface {
         fun onCancel()
     }
+    private var viewToBeCreated : View? = null
 
+    private var listener: ProgressBarFragmentDialogInterface? = null
 
     private var isLoadingInProgressData = false
     val isLoadingInProgress : Boolean
-        get() = isLoadingInProgressData
+            get() = isLoadingInProgressData
 
-    private var viewToBeCreated : View? = null
+    companion object {
+        fun newInstance(listener: ProgressBarFragmentDialogInterface) : ProgressBarFragmentDialog {
+            val dialogFragment = ProgressBarFragmentDialog()
+            dialogFragment.listener = listener
+            return dialogFragment
+        }
+    }
 
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        return object: Dialog(activity!!, theme) {
+
+        return object : Dialog(activity!!, theme) {
             override fun onTouchEvent(event: MotionEvent): Boolean {
+
                 if (MotionEvent.ACTION_OUTSIDE == event.action) {
                     setVoluntaryCancelAlertDialog()
                     return true
                 }
 
                 return super.onTouchEvent(event)
-            }
-
-            override fun show() {
-                super.show()
-                isLoadingInProgressData = true
-            }
-
-            override fun dismiss() {
-                super.dismiss()
-                isLoadingInProgressData = false
             }
         }.apply {
             setCanceledOnTouchOutside(false)
@@ -53,6 +54,7 @@ class ProgressBarFragmentDialog(private val listener: ProgressBarFragmentDialogI
                 setFlags(WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH, WindowManager.LayoutParams.FLAG_WATCH_OUTSIDE_TOUCH)
             }
         }
+        
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -64,13 +66,24 @@ class ProgressBarFragmentDialog(private val listener: ProgressBarFragmentDialogI
         return viewToBeCreated
     }
 
+    override fun show(manager: FragmentManager?, tag: String?) {
+        super.show(manager, tag)
+        isLoadingInProgressData = true
+    }
+
+    override fun dismiss() {
+        super.dismiss()
+        isLoadingInProgressData = false
+
+    }
+
     private fun setVoluntaryCancelAlertDialog() {
         val alertDialog = AlertDialog.Builder(activity!!).create()
         alertDialog.apply {
             setTitle("Warning")
             setMessage("Are you sure you want to stop waiting and cancel the process?")
             setButton(DialogInterface.BUTTON_POSITIVE, "YES") { dialogInterface, _ ->
-                listener.onCancel()
+                listener?.onCancel()
                 dialogInterface.dismiss()
                 this@ProgressBarFragmentDialog.dismiss()
             }
@@ -91,7 +104,7 @@ class ProgressBarFragmentDialog(private val listener: ProgressBarFragmentDialogI
             setTitle("Warning")
             setMessage("An error occurred. Process is halted.")
             setButton(DialogInterface.BUTTON_NEUTRAL, "OKAY") { dialogInterface, _ ->
-                listener.onCancel()
+                listener?.onCancel()
                 dialogInterface.dismiss()
                 this@ProgressBarFragmentDialog.dismiss()
             }

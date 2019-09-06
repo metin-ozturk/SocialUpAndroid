@@ -13,7 +13,7 @@ import com.google.firebase.auth.FirebaseAuthUserCollisionException
 import kotlinx.android.synthetic.main.fragment_dialog_sign_up.view.*
 import com.jora.socialup.R
 
-class SignUpDialogFragment(private val listener: SignUpDialogFragmentInterface) : DialogFragment() {
+class SignUpDialogFragment : DialogFragment() {
 
     interface SignUpDialogFragmentInterface {
         fun onFinish(email: String)
@@ -21,9 +21,17 @@ class SignUpDialogFragment(private val listener: SignUpDialogFragmentInterface) 
         fun loginWithGoogle()
     }
     private var firebaseAuthentication : FirebaseAuth? = null
-
+    private var listener: SignUpDialogFragmentInterface? = null
 
     private var viewToBeCreated : View? = null
+
+    companion object {
+        fun newInstance(listener: SignUpDialogFragmentInterface) : SignUpDialogFragment {
+            val dialogFragment = SignUpDialogFragment()
+            dialogFragment.listener = listener
+            return dialogFragment
+        }
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_dialog_sign_up, container, false)
@@ -36,7 +44,7 @@ class SignUpDialogFragment(private val listener: SignUpDialogFragmentInterface) 
                 val email = fragmentDialogSignUpEmailInput.text.toString()
 
                 firebaseAuthentication?.createUserWithEmailAndPassword(email, password)?.addOnSuccessListener {
-                    listener.onFinish(email)
+                    listener?.onFinish(email)
                 }?.addOnFailureListener {exception ->
                     if (exception is FirebaseAuthUserCollisionException) {
                         firebaseAuthentication?.fetchSignInMethodsForEmail(email)?.addOnSuccessListener { result ->
@@ -64,7 +72,7 @@ class SignUpDialogFragment(private val listener: SignUpDialogFragmentInterface) 
             setTitle("$providerName Account Found")
             setMessage("You previously logged in with your $providerName Account. Please sign in to continue.")
             setButton(DialogInterface.BUTTON_POSITIVE, "YES") { dialogInterface, _ ->
-                if (isGoogle) listener.loginWithGoogle() else listener.loginWithFacebook()
+                if (isGoogle) listener?.loginWithGoogle() else listener?.loginWithFacebook()
                 dialogInterface.dismiss()
             }
 
