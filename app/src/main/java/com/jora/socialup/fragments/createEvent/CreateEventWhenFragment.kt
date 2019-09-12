@@ -1,5 +1,6 @@
 package com.jora.socialup.fragments.createEvent
 
+import android.app.AlertDialog
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
@@ -8,10 +9,10 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.GridLayoutManager
+import com.google.rpc.Help
 import com.jora.socialup.R
 import com.jora.socialup.adapters.CalendarAdapter
-import com.jora.socialup.helpers.OnGestureTouchListener
-import com.jora.socialup.helpers.RecyclerItemClickListener
+import com.jora.socialup.helpers.*
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.CreateEventViewModel
 import java.text.SimpleDateFormat
@@ -27,8 +28,6 @@ class CreateEventWhenFragment : Fragment() {
     private val createEventViewModel : CreateEventViewModel by lazy {
         ViewModelProviders.of(activity!!).get(CreateEventViewModel::class.java)
     }
-
-    private var dateTime = arrayListOf<CalendarAdapter.DateTimeInfo>()
 
     private var eventToBePassed : Event? = null
 
@@ -50,7 +49,7 @@ class CreateEventWhenFragment : Fragment() {
         })
     }
 
-
+    private var initialFinalHoursMinutes : String? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_when, container, false)
@@ -63,16 +62,34 @@ class CreateEventWhenFragment : Fragment() {
         setSwipeGestures()
 
         // Persist Checked and Selected Dates and Times
-        if (savedInstanceState != null ) customCalendarAdapter?.dateTime = createEventViewModel.eventDateTime.value ?: arrayListOf()
+        if (savedInstanceState != null ) {
+            customCalendarAdapter?.dateTime = createEventViewModel.eventDateTime.value ?: arrayListOf()
+
+            savedInstanceState.getString("initialFinalHoursMinutes")?.also {
+                timePickerDialogFragment.initialFinalHoursMinutes = it
+                timePickerDialogFragment.show(fragmentManager, null)
+            }
+        }
 
         return viewToBeCreated
     }
 
     override fun onPause() {
         super.onPause()
-
         // Persist Checked and Selected Dates and Times
         createEventViewModel.updateEventDateTime(customCalendarAdapter?.dateTime ?: arrayListOf())
+
+        if (timePickerDialogFragment.isAdded){
+            initialFinalHoursMinutes = timePickerDialogFragment.getInitialAndFinalHoursMinutes()
+            timePickerDialogFragment.dismiss()
+        } else initialFinalHoursMinutes = null
+
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        outState.putString("initialFinalHoursMinutes", initialFinalHoursMinutes)
     }
 
     private fun setSwipeGestures() {
@@ -83,9 +100,19 @@ class CreateEventWhenFragment : Fragment() {
                         super.swipedRight()
 
                         val dateToBePassed = customCalendarAdapter?.showResults() as ArrayList<String>
+
+                        if (dateToBePassed.isEmpty()) {
+                            HelperFunctions.showMessage(activity!!,
+                                "ERROR",
+                                "You didn't select a time for your event.")
+                            return
+                        }
+
                         eventToBePassed?.date = dateToBePassed
                         eventToBePassed?.dateVote = dateToBePassed.map { "0" } as ArrayList<String> // Initialize vote as 0
                         createEventViewModel.updateEventToBeCreated(eventToBePassed ?: Event())
+
+                        Log.d("OSMAN", dateToBePassed.toString())
 
                         val createEventWhereFragment = CreateEventWhereFragment()
                         val transaction = activity?.supportFragmentManager?.beginTransaction()

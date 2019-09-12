@@ -1,6 +1,7 @@
 package com.jora.socialup.adapters
 
 import android.graphics.Color
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -192,7 +193,7 @@ class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
     fun onFinishInitialTimePicker(result: String) {
         dateTime.forEach {
             if (it.dateTimeStatus == TimeStatus.CHECKED)
-                it.initialHourAndMinute = result
+            it.initialHourAndMinute = result
         }
     }
 

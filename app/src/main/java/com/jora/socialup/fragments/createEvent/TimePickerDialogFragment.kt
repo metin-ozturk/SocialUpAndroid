@@ -8,11 +8,10 @@ import android.view.ViewGroup
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.DialogFragment
 import com.jora.socialup.R
+import kotlinx.android.synthetic.main.fragment_dialog_set_time.*
 import kotlinx.android.synthetic.main.fragment_dialog_set_time.view.*
 import java.text.DecimalFormat
 import java.util.*
-
-
 
 
 class TimePickerDialogFragment : DialogFragment() {
@@ -25,11 +24,7 @@ class TimePickerDialogFragment : DialogFragment() {
     private var viewToBeCreated : View? = null
     private var listener: TimePickerFragmentInterface? = null
 
-    private var initialHour : Int? = null
-    private var initialMinute : Int? = null
-
-    private var finalHour : Int? = null
-    private var finalMinute: Int? = null
+    var initialFinalHoursMinutes : String? = null
 
     companion object {
         fun newInstance(listener: TimePickerFragmentInterface) : TimePickerDialogFragment {
@@ -41,11 +36,6 @@ class TimePickerDialogFragment : DialogFragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_dialog_set_time, container, false)
-
-        initialHour = 0
-        initialMinute = 0
-        finalHour = 0
-        finalMinute = 0
 
         viewToBeCreated?.apply {
 
@@ -62,6 +52,7 @@ class TimePickerDialogFragment : DialogFragment() {
                         maxValue = 23
                     }
                 }
+
             }
 
 
@@ -75,32 +66,37 @@ class TimePickerDialogFragment : DialogFragment() {
                 }
             }
 
+            // Update starting values of initial and final time values when orientation changes
+            initialFinalHoursMinutes?.let { updateInitialAndFinalHoursMinutes(it) }
 
-            setTimeInitialHourPicker.setOnValueChangedListener { _, _, newVal ->
-                initialHour = newVal
-            }
-
-            setTimeInitialMinutePicker.setOnValueChangedListener { _, _, newVal ->
-                initialMinute = newVal * 5 // Convert 0..11 to 0, 5 .. 55
-            }
-
-            setTimeFinalHourPicker.setOnValueChangedListener { _, _, newVal ->
-                finalHour = newVal
-            }
-
-            setTimeFinalMinutePicker.setOnValueChangedListener { _, _, newVal ->
-                finalMinute = newVal * 5  // Convert 0..11 to 0, 5 .. 55
-            }
 
             setTimeButtonDialogFragment.setOnClickListener {
-                listener?.onFinishInitialTime("${twoDecimalFormat.format(initialHour)}${twoDecimalFormat.format(initialMinute)}")
-                listener?.onFinishFinalTime("${twoDecimalFormat.format(finalHour)}${twoDecimalFormat.format(finalMinute)}")
+                // By multiplying with 5, we convert 0..11 to 0, 5..55
+                listener?.onFinishInitialTime("${twoDecimalFormat.format(setTimeInitialHourPicker.value)}${twoDecimalFormat.format(setTimeInitialMinutePicker.value * 5)}")
+                listener?.onFinishFinalTime("${twoDecimalFormat.format(setTimeFinalHourPicker.value)}${twoDecimalFormat.format(setTimeFinalMinutePicker.value * 5)}")
 
             }
 
         }
 
         return viewToBeCreated
+    }
+
+    private fun updateInitialAndFinalHoursMinutes(updateWith: String) {
+        viewToBeCreated?.apply {
+            setTimeInitialHourPicker.value = updateWith.substring(0, 2).toInt()
+            setTimeInitialMinutePicker.value = updateWith.substring(2,4).toInt()
+            setTimeFinalHourPicker.value = updateWith.substring(4,6).toInt()
+            setTimeFinalMinutePicker.value = updateWith.substring(6,8).toInt()
+        }
+    }
+
+    fun getInitialAndFinalHoursMinutes() : String {
+        val twoDecimalFormat = DecimalFormat("00")
+        return twoDecimalFormat.format(setTimeInitialHourPicker.value) +
+                    twoDecimalFormat.format(setTimeInitialMinutePicker.value) +
+                    twoDecimalFormat.format(setTimeFinalHourPicker.value) +
+                    twoDecimalFormat.format(setTimeFinalMinutePicker.value)
     }
 
 }

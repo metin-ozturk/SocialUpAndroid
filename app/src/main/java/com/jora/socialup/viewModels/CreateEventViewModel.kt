@@ -55,4 +55,5 @@ class CreateEventViewModel : ViewModel() {
     fun updateEventDateTime(updateTo: ArrayList<CalendarAdapter.DateTimeInfo>) {
         eventDateTimeData.value = updateTo
     }
+
 }
