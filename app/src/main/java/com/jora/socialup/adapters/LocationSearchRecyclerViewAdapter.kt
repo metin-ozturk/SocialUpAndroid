@@ -40,5 +40,4 @@ class LocationSearchRecyclerViewAdapter : RecyclerView.Adapter<BaseViewHolder>()
         notifyDataSetChanged()
     }
 
-
 }

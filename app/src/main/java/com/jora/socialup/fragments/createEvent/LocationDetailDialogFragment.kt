@@ -8,6 +8,8 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
+import com.jora.socialup.models.Event
+import kotlinx.android.synthetic.main.fragment_dialog_location_detail.*
 import kotlinx.android.synthetic.main.fragment_dialog_location_detail.view.*
 import kotlinx.coroutines.*
 import java.io.IOException
@@ -85,8 +87,8 @@ class LocationDetailDialogFragment : DialogFragment() {
         return view
     }
 
-    override fun onStart() {
-        super.onStart()
+    override fun onResume() {
+        super.onResume()
 
         // SET HEIGHT AND WIDTH OF DIALOG HERE
 
@@ -95,6 +97,16 @@ class LocationDetailDialogFragment : DialogFragment() {
         attributes?.height = 1000
         dialog?.window?.attributes = attributes
     }
+
+    fun returnEventWithUpdatedLocation(event: Event) : Event {
+        return event.apply {
+            locationName = fragmentDialogLocationDetailNameInput?.text.toString()
+            locationDescription = fragmentDialogLocationDetailDescriptionInput?.text.toString()
+            locationLatitude = fragmentDialogLocationDetailLatitudeInput?.text.toString()
+            locationLongitude = fragmentDialogLocationDetailLongitudeInput?.text.toString()
+            locationAddress = ""
+        }
+     }
 
     private fun getAddress(latitude: Double, longitude: Double) : String {
         val geoCoder = Geocoder(activity!!)
@@ -109,7 +121,7 @@ class LocationDetailDialogFragment : DialogFragment() {
                 addressText = address.getAddressLine(0)
             }
         } catch (e: IOException) {
-            Log.e("MapsActivity", e.localizedMessage)
+            Log.e("MapsActivity", "ERROR ${e.localizedMessage}")
         }
 
         return addressText

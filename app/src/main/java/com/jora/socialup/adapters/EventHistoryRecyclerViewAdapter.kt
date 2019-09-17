@@ -30,8 +30,10 @@ class EventHistoryRecyclerViewAdapter : RecyclerView.Adapter<BaseViewHolder>() {
         castedHolder.pastEvent.text = if (pastEvents.size > 0) pastEvents[position].name else "Loading..."
     }
 
-    fun loadData(eventsData: ArrayList<Event>) {
-        pastEvents = eventsData
-        notifyDataSetChanged()
+    fun loadData(eventsData: ArrayList<Event>?) {
+        eventsData?.let {
+            pastEvents = it
+            notifyDataSetChanged()
+        }
     }
 }

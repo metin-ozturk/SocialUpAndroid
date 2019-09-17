@@ -9,6 +9,7 @@ import android.graphics.Point
 import android.os.Bundle
 import android.os.Handler
 import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.*
@@ -43,7 +44,7 @@ private const val MY_PERMISSION_REQUEST_CAMERA = 2
 class CreateEventWhatFragment : Fragment() {
 
     private var historyEventsIDs = ArrayList<String>()
-    private var historyEvents = ArrayList<Event>()
+    private var historyEvents : ArrayList<Event>? = null
 
     private var customHistoryAdapter = EventHistoryRecyclerViewAdapter()
     private val createEventViewModel : CreateEventViewModel by lazy {
@@ -51,7 +52,9 @@ class CreateEventWhatFragment : Fragment() {
     }
     private var viewToBeCreated : View? = null
     private var eventToBePassed : Event? = null
-    private var hasImage = false
+    private var eventHasImage = false
+
+    private var pastEventsErrorToastMessage = "Please wait for past events to download"
 
     private val userID : String? by lazy {
         FirebaseAuth.getInstance().currentUser?.uid
@@ -60,10 +63,13 @@ class CreateEventWhatFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_what, container, false)
+        eventToBePassed = createEventViewModel.event.value ?: Event()
+        historyEvents = createEventViewModel.eventHistory.value
+
         reloadViewModelDataToViews()
 
         // Download events to show in the history. If they were downloaded before, reload them.
-        if (createEventViewModel.eventHistory.value == null) downloadLastFiveEventsCreatedByUser()
+        if (historyEvents.isNullOrEmpty()) downloadLastFiveEventsCreatedByUser()
         else customHistoryAdapter.loadData(historyEvents)
 
 
@@ -83,9 +89,6 @@ class CreateEventWhatFragment : Fragment() {
         super.onPause()
 
         createEventToBeTransferredAndUpdateViewModel()
-        if (historyEvents.isNotEmpty()) {
-            createEventViewModel.updateEventHistory(historyEvents)
-        }
     }
 
     private fun setSwipeRightGesture() {
@@ -105,34 +108,28 @@ class CreateEventWhatFragment : Fragment() {
 
 
     private fun reloadViewModelDataToViews() {
-        if (createEventViewModel.event.value != null) {
-            val retrievedEvent = createEventViewModel.event.value ?: return
+        if (eventToBePassed != null) {
             viewToBeCreated?.apply {
-                createEventWhatName.text.insert(0, retrievedEvent.name)
-                createEventWhatDescription.text.insert(0, retrievedEvent.description)
-                createEventWhatImageView.setImageBitmap(retrievedEvent.image)
-                createEventWhatIsPublic.isChecked = retrievedEvent.isPrivate ?: false
+                createEventWhatName.text.insert(0, eventToBePassed?.name ?: "")
+                createEventWhatDescription.text.insert(0, eventToBePassed?.description ?: "")
+                if (eventToBePassed?.image != null) createEventWhatImageView.setImageBitmap(eventToBePassed?.image)
+                createEventWhatIsPublic.isChecked = eventToBePassed?.isPrivate ?: false
                 createEventWhatIsPublic.text = if (createEventWhatIsPublic.isChecked) "Private" else "Public"
             }
-        }
-
-        if (createEventViewModel.eventHistory.value != null) {
-            historyEvents = createEventViewModel.eventHistory.value ?: return
         }
 
     }
 
     private fun createEventToBeTransferredAndUpdateViewModel() {
-        val eventToBeTransferred = eventToBePassed ?: Event()
+        eventToBePassed?.apply {
+            name = createEventWhatName.text.toString()
+            description = createEventWhatDescription.text.toString()
+            hasImage = eventHasImage
+            image = createEventWhatImageView.drawable.toBitmap()
+            isPrivate = createEventWhatIsPublic.isChecked
+        }
 
-        eventToBeTransferred.name = createEventWhatName.text.toString()
-        eventToBeTransferred.description = createEventWhatDescription.text.toString()
-        eventToBeTransferred.hasImage = hasImage
-        eventToBeTransferred.image = createEventWhatImageView.drawable.toBitmap()
-        eventToBeTransferred.isPrivate = createEventWhatIsPublic.isChecked
-
-        createEventViewModel.updateEventToBeCreated(eventToBeTransferred)
-
+        createEventViewModel.updateEventData(eventToBePassed)
     }
 
     private fun goToWhoFragment() {
@@ -147,14 +144,16 @@ class CreateEventWhatFragment : Fragment() {
     private fun downloadLastFiveEventsCreatedByUser() {
         FirebaseFirestore.getInstance().collection("users").document(userID ?: "")
             .collection("events").get().addOnSuccessListener { snap ->
-                val numberOfHistoryEvents = snap.documents.size
-                if (numberOfHistoryEvents == 0) return@addOnSuccessListener
-
+                val numberOfHistoryEvents = if (snap.documents.size <= 5) snap.documents.size else 5
+                if (numberOfHistoryEvents == 0) {
+                    pastEventsErrorToastMessage = "There are no past events to be showed."
+                    return@addOnSuccessListener
+                }
 
                 historyEventsIDs = ArrayList((snap.documents.map { it.id }).subList(0,numberOfHistoryEvents))
                 historyEventsIDs.forEach { docsID ->
                     Event.downloadEventInformation(docsID) { event ->
-                        historyEvents.add(event)
+                        historyEvents?.add(event)
                         customHistoryAdapter.loadData(historyEvents)
                     }
                 }
@@ -167,7 +166,7 @@ class CreateEventWhatFragment : Fragment() {
         viewToBeCreated?.apply {
             createEventWhatHistoryImageView.setOnClickListener {
                 when {
-                    historyEvents.size == 0 -> Toast.makeText(activity!!,"There are no past events to be showed.", Toast.LENGTH_SHORT ).show()
+                    historyEvents?.size == 0 -> Toast.makeText(activity!!,pastEventsErrorToastMessage, Toast.LENGTH_SHORT ).show()
 
                     createEventWhatHistoryRecyclerView.visibility == GONE -> {
                         createEventWhatHistoryRecyclerView.visibility = VISIBLE
@@ -188,8 +187,7 @@ class CreateEventWhatFragment : Fragment() {
     private fun setHistoryRecyclerView() {
         viewToBeCreated?.createEventWhatHistoryRecyclerView?.apply {
             adapter = customHistoryAdapter
-            val layoutManager = LinearLayoutManager(activity)
-            this.layoutManager = layoutManager
+            layoutManager = LinearLayoutManager(activity)
             itemAnimator = DefaultItemAnimator()
             addItemDecoration(DividerItemDecoration(activity!!, DividerItemDecoration.VERTICAL))
         }
@@ -202,24 +200,24 @@ class CreateEventWhatFragment : Fragment() {
                     createEventWhatHistoryRecyclerView,
                     object : RecyclerItemClickListener.OnItemClickListener {
                         override fun onItemClick(view: View, position: Int) {
-                            if (historyEvents.size == 0) return
+                            if (historyEvents?.size == 0) return
 
-                            val clickedEvent = historyEvents[position]
+                            val clickedEvent = historyEvents?.get(position)
                             eventToBePassed = clickedEvent
 
-                            if (clickedEvent.image == null) {
-                                hasImage = false
+                            if (clickedEvent?.image == null) {
+                                eventHasImage = false
                                 createEventWhatImageView.setImageResource(R.drawable.imageplaceholder)
                             } else {
-                                hasImage = true
+                                eventHasImage = true
                                 createEventWhatImageView.setImageBitmap(clickedEvent.image)
                             }
 
-                            createEventWhatIsPublic.isChecked = clickedEvent.isPrivate ?: false
+                            createEventWhatIsPublic.isChecked = clickedEvent?.isPrivate ?: false
                             createEventWhatName.text.clear()
-                            createEventWhatName.text.insert(0, clickedEvent.name)
+                            createEventWhatName.text.insert(0, clickedEvent?.name)
                             createEventWhatDescription.text.clear()
-                            createEventWhatDescription.text.insert(0, clickedEvent.description)
+                            createEventWhatDescription.text.insert(0, clickedEvent?.description)
                         }
 
                     })
@@ -232,13 +230,13 @@ class CreateEventWhatFragment : Fragment() {
 
         when(requestCode) {
             0 -> { if (resultCode == RESULT_OK) {
-                    hasImage = true
+                    eventHasImage = true
                     val selectedImage : Bitmap = data?.extras?.get("data") as Bitmap
                     createEventWhatImageView.setImageBitmap(selectedImage)
                 }
             }
             1 -> { if (resultCode == RESULT_OK) {
-                    hasImage = true
+                    eventHasImage = true
                     val selectedImage = data?.data
                     createEventWhatImageView.setImageURI(selectedImage)
                 }
@@ -267,6 +265,7 @@ class CreateEventWhatFragment : Fragment() {
 
                 override fun swipedRight() {
                     super.swipedRight()
+
                     goToWhoFragment()
                 }
             }))
@@ -289,7 +288,7 @@ class CreateEventWhatFragment : Fragment() {
             val takePhotoIntent = Intent(MediaStore.ACTION_IMAGE_CAPTURE)
             startActivityForResult(takePhotoIntent, 0)
         } else {
-            hasImage = false
+            eventHasImage = false
             createEventWhatImageView.setImageResource(R.drawable.imageplaceholder)
         }
     }

@@ -66,7 +66,7 @@ class ProgressBarFragmentDialog : DialogFragment() {
         return viewToBeCreated
     }
 
-    override fun show(manager: FragmentManager?, tag: String?) {
+    override fun show(manager: FragmentManager, tag: String?) {
         super.show(manager, tag)
         isLoadingInProgressData = true
     }

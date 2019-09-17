@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.RecyclerView
 import com.jora.socialup.R
+import com.jora.socialup.models.DateTimeInfo
 import com.jora.socialup.viewModels.CreateEventViewModel
 import java.text.DecimalFormat
 import java.util.*
@@ -21,25 +22,15 @@ class CalendarAdapter : RecyclerView.Adapter<BaseViewHolder>() {
         DEFAULT
     }
 
-    class DateTimeInfo(var dateTimeStatus: TimeStatus? = TimeStatus.DEFAULT,
-                                var date : String? = null,
-                                var initialHourAndMinute : String? = null,
-                                var finalHourAndMinute : String? = null,
-                                var positionInCalendar : Int? = null,
-                                var month: Int? = null) {
-        override fun toString(): String {
-            return "$date$initialHourAndMinute$finalHourAndMinute"
-        }
-    }
 
     var currentMonth : Int? = null //0,1,2..11
-    var initialMonth : Int? = null
+    private var initialMonth : Int? = null
     var currentYear : Int? = null //2018, 2019, 2020
-    var currentDay: Int? = null // 1,2,3...31
+    private var currentDay: Int? = null // 1,2,3...31
 
     private var numberOfDays : Int? = null // 28, 29, 30, 31
     private var firstDayOfMonth : Int? = null // 1 = Monday, 7 = Sunday
-    var numberOfMonthsChanged : Int = 0 // shouldn't exceed 6
+    private var numberOfMonthsChanged : Int = 0 // shouldn't exceed 6
 
     var dateTime = arrayListOf<DateTimeInfo>()
 

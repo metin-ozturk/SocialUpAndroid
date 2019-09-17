@@ -1,11 +1,10 @@
-package com.jora.socialup.fragments
+package com.jora.socialup.fragments.authentication
 
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Bundle
 import android.provider.MediaStore
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -50,7 +49,8 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
 
     companion object {
         fun newInstance(listener: SignUpCompleteInformationDialogFragmentInterface) : SignUpCompleteInformationDialogFragment {
-            val dialogFragment = SignUpCompleteInformationDialogFragment()
+            val dialogFragment =
+                SignUpCompleteInformationDialogFragment()
             dialogFragment.listener = listener
             return dialogFragment
         }
@@ -69,8 +69,8 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
         setConfirmButtonListener()
         setUploadPhotoButton()
 
-        dialog.setCanceledOnTouchOutside(false)
-        dialog.setCancelable(false)
+        dialog?.setCanceledOnTouchOutside(false)
+        dialog?.setCancelable(false)
 
         return viewToBeCreated
         }

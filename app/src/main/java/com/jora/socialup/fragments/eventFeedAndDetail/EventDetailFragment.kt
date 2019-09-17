@@ -108,7 +108,7 @@ class EventDetailFragment : Fragment() {
     private fun swipedToLeft() {
         if (progressBarFragmentDialog.isLoadingInProgress) return
 
-        progressBarFragmentDialog.show(fragmentManager, null)
+        progressBarFragmentDialog.show(fragmentManager ?: return, null)
 
         val eventID = event?.iD ?: return
         val updateEventTo = event ?: return

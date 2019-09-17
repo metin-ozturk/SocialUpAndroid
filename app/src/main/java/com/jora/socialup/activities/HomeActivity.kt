@@ -2,16 +2,11 @@ package com.jora.socialup.activities
 
 import android.content.DialogInterface
 import android.content.Intent
-import android.graphics.Rect
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.util.Log
 import android.view.MotionEvent
-import android.view.View
-import android.view.ViewGroup
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.app.ActivityCompat.startActivityForResult
 import com.facebook.*
 import com.facebook.login.LoginManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
@@ -25,9 +20,9 @@ import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.*
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jora.socialup.R
-import com.jora.socialup.fragments.SignInDialogFragment
-import com.jora.socialup.fragments.SignUpCompleteInformationDialogFragment
-import com.jora.socialup.fragments.SignUpDialogFragment
+import com.jora.socialup.fragments.authentication.SignInDialogFragment
+import com.jora.socialup.fragments.authentication.SignUpCompleteInformationDialogFragment
+import com.jora.socialup.fragments.authentication.SignUpDialogFragment
 import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await

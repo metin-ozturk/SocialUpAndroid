@@ -10,6 +10,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.ImageView
 import android.widget.SearchView
 import androidx.fragment.app.Fragment
@@ -23,18 +24,12 @@ import com.jora.socialup.adapters.SearchFriendsRecyclerViewAdapter
 import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
+import com.jora.socialup.models.FriendInfo
 import com.jora.socialup.models.User
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_who.view.*
 import kotlinx.android.synthetic.main.fragment_create_event_who.view.createEventWhoRecyclerView
 
-class FriendInfo(internal var name : String? = null, internal var image : Bitmap? = null,
-                 internal var isSelected : Boolean? = null) {
-    override fun toString(): String {
-        return mapOf("Name" to name as Any, "Image" to image as Any,
-                            "IsSelected" to isSelected as Any).toString()
-    }
-}
 
 class CreateEventWhoFragment : Fragment() {
 
@@ -44,6 +39,7 @@ class CreateEventWhoFragment : Fragment() {
 
     private var friends = ArrayList<FriendInfo>()
     private var friendIDsArrayList = ArrayList<String>()
+    private var friendsMap : MutableMap<String, FriendInfo> = mutableMapOf()
 
     private var eventToBePassed : Event? = null
     private var viewToBeCreated : View? = null
@@ -51,7 +47,6 @@ class CreateEventWhoFragment : Fragment() {
         SearchFriendsRecyclerViewAdapter(friends)
     }
 
-    private var friendsMap : MutableMap<String, FriendInfo> = mutableMapOf()
 
     private val userID : String? by lazy {
         FirebaseAuth.getInstance().currentUser?.uid
@@ -60,18 +55,17 @@ class CreateEventWhoFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_who, container, false)
-        eventToBePassed = createEventViewModel.event.value
-
+        eventToBePassed = createEventViewModel.event.value ?: Event()
 
         // To persist data across configuration changes like orientation change
 
-        if (savedInstanceState == null) {
+        if (savedInstanceState == null && createEventViewModel.friends.value.isNullOrEmpty()) {
             downloadFriendsNamesAndImagesAndNotifyRecyclerView()
         } else {
             friends = createEventViewModel.friends.value ?: ArrayList()
             if (friends.size == 0) customSearchAdapter.updateDefaultHolderText("You don't any have friends")
             friendsMap = createEventViewModel.friendsMap.value ?: mutableMapOf()
-            friendIDsArrayList = createEventViewModel.friendsIDsArray.value ?: ArrayList()
+            friendIDsArrayList = createEventViewModel.friendsIdsArrayList.value ?: ArrayList()
             customSearchAdapter.notifyDataSetChanged()
         }
 
@@ -88,9 +82,13 @@ class CreateEventWhoFragment : Fragment() {
 
     override fun onPause() {
         super.onPause()
-        createEventViewModel.updateFriendsData(friends)
-        createEventViewModel.updateFriendsMapData(friendsMap)
-        createEventViewModel.updateFriendsIDsArrayData(friendIDsArrayList)
+        createEventViewModel.apply {
+            updateEventData(eventToBePassed)
+            updateFriendsData(this@CreateEventWhoFragment.friends)
+            updateFriendsMapData(this@CreateEventWhoFragment.friendsMap)
+            updateFriendIDsArrayListData(friendIDsArrayList)
+        }
+
     }
 
     private fun setSearchView() {
@@ -101,7 +99,8 @@ class CreateEventWhoFragment : Fragment() {
             setSearchableInfo(searchableInfo)
 
             isIconified = false
-            setIconifiedByDefault(false)
+            isIconifiedByDefault = false
+            imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
             clearFocus()
         }
     }
@@ -125,7 +124,7 @@ class CreateEventWhoFragment : Fragment() {
                 override fun onQueryTextSubmit(query: String?): Boolean {
                     createEventWhoSearchView.clearFocus()
                     createEventWhoSearchView.setQuery("", true)
-                    return false
+                    return true
                 }
 
                 override fun onQueryTextChange(newText: String?): Boolean {
@@ -153,8 +152,7 @@ class CreateEventWhoFragment : Fragment() {
     private fun setRecyclerView() {
         viewToBeCreated?.createEventWhoRecyclerView?.apply {
             adapter = customSearchAdapter
-            val layoutManager = LinearLayoutManager(activity!!)
-            this.layoutManager = layoutManager
+            layoutManager = LinearLayoutManager(activity!!)
             itemAnimator = DefaultItemAnimator()
             addItemDecoration(DividerItemDecoration(activity!!, DividerItemDecoration.VERTICAL))
         }
@@ -256,11 +254,12 @@ class CreateEventWhoFragment : Fragment() {
     }
 
     private fun getSelectedFriendsIDsAndUpdateViewModel() {
-        val eventToBePassed = eventToBePassed ?: return
         val selectedFriends = friendsMap.filter { it.value.isSelected == true }
         val selectedFriendsIDs = ArrayList(selectedFriends.keys)
-        eventToBePassed.eventWithWhomID = selectedFriendsIDs
-        eventToBePassed.eventWithWhomNames = selectedFriends.map { it.value.name } as ArrayList<String>
-        createEventViewModel.updateEventToBeCreated(eventToBePassed)
+        eventToBePassed?.eventWithWhomID = selectedFriendsIDs
+        eventToBePassed?.eventWithWhomNames = selectedFriends.map { it.value.name } as ArrayList<String>
+
+        createEventViewModel.updateEventData(eventToBePassed)
+
     }
 }

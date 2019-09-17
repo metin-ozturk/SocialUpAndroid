@@ -1,101 +1,140 @@
 <?xml version="1.0" encoding="utf-8"?>
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                                                   xmlns:app="http://schemas.android.com/apk/res-auto"
-                                                   xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-                                                   android:layout_height="match_parent"
-                                                   android:id="@+id/fragmentDialogLocationDetailRootConstraintLayout">
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:id="@+id/fragmentDialogLocationDetailRootConstraintLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
     <EditText
+            android:id="@+id/fragmentDialogLocationDetailDescriptionInput"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:inputType="textMultiLine"
-            android:gravity="start|top"
-            android:ems="10"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="8dp" android:id="@+id/fragmentDialogLocationDetailDescriptionInput"
-            android:layout_marginEnd="8dp" app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="1.0" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/fragmentDialogLocationDetailDescription" android:maxLines="1"/>
-    <TextView
-            android:text="Location Name:"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content" app:layout_constraintTop_toTopOf="parent"
-            app:layout_constraintStart_toStartOf="parent" android:layout_marginTop="8dp"
-            android:layout_marginStart="8dp" android:id="@+id/fragmentDialogLocationDetailName" app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginEnd="8dp" app:layout_constraintHorizontal_bias="0.0" android:gravity="start"
-            android:textSize="24sp"/>
-    <TextView
-            android:text="Location Description:"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="8dp" android:id="@+id/fragmentDialogLocationDetailDescription"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginEnd="8dp" app:layout_constraintHorizontal_bias="0.0" android:gravity="start"
-            android:textSize="24sp" app:layout_constraintTop_toBottomOf="@+id/fragmentDialogLocationDetailNameInput"
-            android:layout_marginTop="8dp"/>
-    <EditText
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:inputType="textMultiLine"
-            android:gravity="start|top"
-            android:ems="10"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="8dp" android:id="@+id/fragmentDialogLocationDetailNameInput"
-            app:layout_constraintTop_toBottomOf="@+id/fragmentDialogLocationDetailName" android:layout_marginTop="8dp"
-            android:layout_marginEnd="8dp" app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.0" android:maxLines="1"/>
-    <TextView
-            android:text="Longitude:"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
-            android:id="@+id/fragmentDialogLocationDetailLongitude" android:textSize="24sp"
-            app:layout_constraintBottom_toBottomOf="@+id/fragmentDialogLocationDetailLongitudeInput"
-            app:layout_constraintTop_toTopOf="@+id/fragmentDialogLocationDetailLongitudeInput"/>
-    <TextView
-            android:text="Latitude:"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
-            android:id="@+id/fragmentDialogLocationDetailLatitude" android:textSize="24sp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
             android:layout_marginEnd="8dp"
+            android:ems="10"
+            android:gravity="start|top"
+            android:inputType="textMultiLine"
+            android:maxLines="1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/fragmentDialogLocationDetailDescription" />
+
+    <TextView
+            android:id="@+id/fragmentDialogLocationDetailName"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:gravity="start"
+            android:text="Location Name:"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+    <TextView
+            android:id="@+id/fragmentDialogLocationDetailDescription"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:gravity="start"
+            android:text="Location Description:"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/fragmentDialogLocationDetailNameInput" />
+
+    <EditText
+            android:id="@+id/fragmentDialogLocationDetailNameInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:ems="10"
+            android:gravity="start|top"
+            android:inputType="textMultiLine"
+            android:maxLines="1"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="0.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/fragmentDialogLocationDetailName" />
+
+    <TextView
+            android:id="@+id/fragmentDialogLocationDetailLongitude"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:text="Longitude:"
+            android:textSize="24sp"
+            app:layout_constraintBottom_toBottomOf="@+id/fragmentDialogLocationDetailLongitudeInput"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/fragmentDialogLocationDetailLongitudeInput" />
+
+    <TextView
+            android:id="@+id/fragmentDialogLocationDetailLatitude"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="Latitude:"
+            android:textSize="24sp"
+            app:layout_constraintBottom_toBottomOf="@+id/fragmentDialogLocationDetailLatitudeInput"
             app:layout_constraintEnd_toEndOf="@+id/fragmentDialogLocationDetailLongitude"
             app:layout_constraintHorizontal_bias="0.0"
-            app:layout_constraintBottom_toBottomOf="@+id/fragmentDialogLocationDetailLatitudeInput"
-            app:layout_constraintTop_toTopOf="@+id/fragmentDialogLocationDetailLatitudeInput"/>
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/fragmentDialogLocationDetailLatitudeInput" />
+
     <TextView
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:inputType="textMultiLine"
-            android:gravity="start|top"
-            android:ems="10"
             android:id="@+id/fragmentDialogLocationDetailLatitudeInput"
-            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
-            android:textSize="24sp" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/fragmentDialogLocationDetailDescriptionInput"
-            app:layout_constraintStart_toEndOf="@+id/fragmentDialogLocationDetailLongitude"
-            android:layout_marginStart="8dp" android:maxLines="1"/>
-    <TextView
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:inputType="textMultiLine"
-            android:gravity="start|top"
-            android:ems="10"
-            android:id="@+id/fragmentDialogLocationDetailLongitudeInput"
-            app:layout_constraintStart_toEndOf="@+id/fragmentDialogLocationDetailLongitude"
             android:layout_marginStart="8dp"
-            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:ems="10"
+            android:gravity="start|top"
+            android:inputType="textMultiLine"
+            android:maxLines="1"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@+id/fragmentDialogLocationDetailLongitude"
+            app:layout_constraintTop_toBottomOf="@+id/fragmentDialogLocationDetailDescriptionInput" />
+
+    <TextView
+            android:id="@+id/fragmentDialogLocationDetailLongitudeInput"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:ems="10"
+            android:gravity="start|top"
+            android:inputType="textMultiLine"
+            android:textSize="24sp"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.0"
-            android:textSize="24sp" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/fragmentDialogLocationDetailLatitudeInput"/>
+            app:layout_constraintStart_toEndOf="@+id/fragmentDialogLocationDetailLongitude"
+            app:layout_constraintTop_toBottomOf="@+id/fragmentDialogLocationDetailLatitudeInput" />
+
     <Button
-            android:text="Set Location"
+            android:id="@+id/fragmentDialogLocationDetailConfirmButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:id="@+id/fragmentDialogLocationDetailConfirmButton" app:layout_constraintStart_toStartOf="parent"
             android:layout_marginStart="8dp"
-            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
-            app:layout_constraintHorizontal_bias="1.0" android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/fragmentDialogLocationDetailLongitudeInput"/>
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            android:text="Set Location"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintHorizontal_bias="1.0"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/fragmentDialogLocationDetailLongitudeInput" />
 </androidx.constraintlayout.widget.ConstraintLayout>

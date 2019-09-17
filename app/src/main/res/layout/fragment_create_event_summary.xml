@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                                                   xmlns:app="http://schemas.android.com/apk/res-auto"
-                                                   xmlns:tools="http://schemas.android.com/tools" android:layout_width="match_parent"
-                                                   android:layout_height="match_parent"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:fillViewport="true">
+<androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+                                                   android:layout_height="wrap_content"
                                                    android:id="@+id/createEventSummaryRootConstraintLayout">
 
     <TextView
@@ -19,165 +24,217 @@
             app:layout_constraintEnd_toEndOf="parent" android:layout_marginStart="8dp" android:layout_marginEnd="8dp"
             android:layout_marginTop="20dp"
             app:layout_constraintTop_toBottomOf="@+id/createEventSummaryTitle" android:scaleType="centerCrop"/>
+
     <ScrollView
+            android:id="@+id/createEventSummaryScrollView"
             android:layout_width="match_parent"
-            android:layout_height="200dp" android:id="@+id/createEventSummaryScrollView"
-            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/createEventSummaryEventImage"
-            app:layout_constraintStart_toStartOf="parent" app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginStart="8dp" android:layout_marginEnd="8dp">
-        <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content"
-                      android:orientation="vertical">
+            android:layout_height="0dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintBottom_toTopOf="@+id/createEventSummaryConfirmButton"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/createEventSummaryEventImage"
+            app:layout_constraintVertical_bias="0.0">
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
+
             <LinearLayout
-                    android:orientation="horizontal"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content" android:gravity="start">
+                    android:layout_height="wrap_content"
+                    android:gravity="start"
+                    android:orientation="horizontal">
+
                 <TextView
-                        android:text="Event Name: "
+                        android:id="@+id/createEventSummaryEventName"
                         android:layout_width="wrap_content"
                         android:layout_height="match_parent"
-                        android:id="@+id/createEventSummaryEventName" android:textSize="20sp"
-                        android:textStyle="bold"/>
-                <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryEventNameInput"
-                        android:layout_weight="1" tools:text="Name" android:textSize="20sp"/>
-            </LinearLayout>
-            <LinearLayout
-                    android:orientation="horizontal"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-                <TextView
-                        android:text="Event Description: "
-                        android:layout_width="wrap_content"
-                        android:layout_height="match_parent" android:id="@+id/createEventSummaryDescription"
+                        android:text="Event Name: "
                         android:textSize="20sp"
-                        android:textStyle="bold"
-                />
-                <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryDescriptionInput"
-                        android:layout_weight="1" tools:text="Description"
-                        android:textSize="20sp"/>
-            </LinearLayout>
-            <LinearLayout
-                    android:orientation="horizontal"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-                <TextView
-                        android:text="Event Is Private: "
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryPrivacy"
-                        android:textSize="20sp"
-                        android:textStyle="bold"/>
-                <TextView
-                        android:text="TextView"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryPrivacyInput"
-                        android:textSize="20sp"/>
-            </LinearLayout>
+                        android:textStyle="bold" />
 
-            <LinearLayout
-                    android:orientation="horizontal"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
                 <TextView
-                        android:text="Who Is Invited: "
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryWhoInvited"
-                        android:textSize="20sp"
-                        android:textStyle="bold"/>
-                <TextView
-                        android:text="Who is invited input "
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryWhoInvitedInput"
-                        android:textSize="20sp"/>
-            </LinearLayout>
-
-            <LinearLayout
-                    android:orientation="horizontal"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-                <TextView
-                        android:text="Location Name: "
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryLocationName"
-                        android:textSize="20sp"
-                        android:textStyle="bold"/>
-                <TextView
-                        android:text="Input "
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryLocationNameInput"
-                        android:textSize="20sp"/>
-            </LinearLayout>
-
-            <LinearLayout
-                    android:orientation="horizontal"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
-                <TextView
-                        android:text="Location Description: "
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryLocationDescription"
-                        android:textSize="20sp"
-                        android:textStyle="bold"/>
-                <TextView
-                        android:text="Input"
+                        android:id="@+id/createEventSummaryEventNameInput"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="20sp"
+                        tools:text="Name" />
+            </LinearLayout>
+
+            <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                <TextView
+                        android:id="@+id/createEventSummaryDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="match_parent"
+                        android:text="Event Description: "
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                <TextView
+                        android:id="@+id/createEventSummaryDescriptionInput"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textSize="20sp"
+                        tools:text="Description" />
+            </LinearLayout>
+
+            <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                <TextView
+                        android:id="@+id/createEventSummaryPrivacy"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Event Is Private: "
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                <TextView
+                        android:id="@+id/createEventSummaryPrivacyInput"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="TextView"
+                        android:textSize="20sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                <TextView
+                        android:id="@+id/createEventSummaryWhoInvited"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Who Is Invited: "
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                <TextView
+                        android:id="@+id/createEventSummaryWhoInvitedInput"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Who is invited input "
+                        android:textSize="20sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                <TextView
+                        android:id="@+id/createEventSummaryLocationName"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Location Name: "
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                <TextView
+                        android:id="@+id/createEventSummaryLocationNameInput"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Input "
+                        android:textSize="20sp" />
+            </LinearLayout>
+
+            <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                <TextView
+                        android:id="@+id/createEventSummaryLocationDescription"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Location Description: "
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                <TextView
                         android:id="@+id/createEventSummaryLocationDescriptionInput"
-                        android:textSize="20sp"/>
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Input"
+                        android:textSize="20sp" />
             </LinearLayout>
 
             <LinearLayout
-                    android:orientation="horizontal"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
                 <TextView
+                        android:id="@+id/createEventSummaryLocationAddress"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:text="Location Address: "
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryLocationAddress"
                         android:textSize="20sp"
-                        android:textStyle="bold"/>
+                        android:textStyle="bold" />
+
                 <TextView
-                        android:text="Input"
+                        android:id="@+id/createEventSummaryLocationAddressInput"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryLocationAddressInput"
-                        android:textSize="20sp"/>
+                        android:layout_height="wrap_content"
+                        android:text="Input"
+                        android:textSize="20sp" />
             </LinearLayout>
 
             <LinearLayout
-                    android:orientation="horizontal"
                     android:layout_width="wrap_content"
-                    android:layout_height="wrap_content">
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
                 <TextView
+                        android:id="@+id/createEventSummaryWhen"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
                         android:text="When: "
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryWhen"
                         android:textSize="20sp"
-                        android:textStyle="bold"/>
+                        android:textStyle="bold" />
+
                 <TextView
-                        android:text="Input"
+                        android:id="@+id/createEventSummaryWhenInput"
                         android:layout_width="wrap_content"
-                        android:layout_height="wrap_content" android:id="@+id/createEventSummaryWhenInput"
-                        android:textSize="20sp"/>
+                        android:layout_height="wrap_content"
+                        android:text="Input"
+                        android:textSize="20sp" />
             </LinearLayout>
         </LinearLayout>
     </ScrollView>
+
     <Button
-            android:text="Confirm Event"
+            android:id="@+id/createEventSummaryConfirmButton"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content" android:id="@+id/createEventSummaryConfirmButton"
-            android:layout_marginBottom="8dp" app:layout_constraintBottom_toBottomOf="parent"
-            android:layout_marginTop="8dp" app:layout_constraintTop_toBottomOf="@+id/createEventSummaryScrollView"
-            app:layout_constraintStart_toStartOf="parent" app:layout_constraintVertical_bias="0.0"
-            android:layout_marginStart="8dp"/>
-    <ImageView
-            android:layout_width="40dp"
-            android:layout_height="0dp" app:srcCompat="@drawable/favorite"
-            android:id="@+id/createEventSummaryFavoriteImage"
-            app:layout_constraintTop_toBottomOf="@+id/createEventSummaryScrollView" android:layout_marginTop="8dp"
-            app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
             android:layout_marginBottom="8dp"
+            android:text="Confirm Event"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent" />
+
+    <ImageView
+            android:id="@+id/createEventSummaryFavoriteImage"
+            android:layout_width="40dp"
+            android:layout_height="0dp"
+            android:layout_marginEnd="8dp"
+            android:scaleType="centerCrop"
             app:layout_constraintBottom_toBottomOf="@+id/createEventSummaryConfirmButton"
-            android:scaleType="centerCrop"/>
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="@+id/createEventSummaryConfirmButton"
+            app:srcCompat="@drawable/favorite" />
 </androidx.constraintlayout.widget.ConstraintLayout>
+</ScrollView>

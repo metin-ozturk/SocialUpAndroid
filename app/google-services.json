@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "600844983013-hmfeea46qp4h4idhd3fe6umfbnuj3k7p.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.jora.socialup",
+            "certificate_hash": "9318d2b7ea316b87d68dae4b70b5c78c4a434f9c"
+          }
+        },
+        {
           "client_id": "600844983013-hg3b8k3u7m52he3g3gp21ns0ielb5ve7.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {

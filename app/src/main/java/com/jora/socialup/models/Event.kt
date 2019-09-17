@@ -93,13 +93,12 @@ class Event(parcel: Parcel? = null) : Parcelable {
         dest?.writeString(description)
         dest?.writeInt(if (isPrivate == true) 1 else 0)
 
-
         dest?.writeString(founderID)
         dest?.writeString(founderName)
 
         dest?.writeLong(status ?: 0)
-        dest?.writeList(date)
-        dest?.writeList(dateVote)
+        dest?.writeList(date?.toList())
+        dest?.writeList(dateVote?.toList())
 
         dest?.writeString(locationAddress)
         dest?.writeString(locationDescription)
@@ -107,11 +106,11 @@ class Event(parcel: Parcel? = null) : Parcelable {
         dest?.writeString(locationLongitude)
         dest?.writeString(locationName)
 
-        dest?.writeList(eventWithWhomID)
-        dest?.writeList(eventWithWhomMayCome)
-        dest?.writeList(eventWithWhomNames)
-        dest?.writeList(eventWithWhomWillCome)
-        dest?.writeList(eventWithWhomWontCome)
+        dest?.writeList(eventWithWhomID?.toList())
+        dest?.writeList(eventWithWhomMayCome?.toList())
+        dest?.writeList(eventWithWhomNames?.toList())
+        dest?.writeList(eventWithWhomWillCome?.toList())
+        dest?.writeList(eventWithWhomWontCome?.toList())
 
         dest?.writeInt(if (hasImage == true) 1 else 0)
 //        dest?.writeParcelable(timeStamp, 0)

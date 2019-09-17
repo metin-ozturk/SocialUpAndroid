@@ -10,7 +10,7 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.jora.socialup.R
-import com.jora.socialup.fragments.createEvent.FriendInfo
+import com.jora.socialup.models.FriendInfo
 
 class SearchFriendsRecyclerViewAdapter(private var friends: ArrayList<FriendInfo>)
                                         : RecyclerView.Adapter<BaseViewHolder>() {
@@ -28,7 +28,6 @@ class SearchFriendsRecyclerViewAdapter(private var friends: ArrayList<FriendInfo
         return FriendsItemHolder(itemView)
     }
 
-    
 
     override fun getItemCount(): Int {
         return if (friends.size > 0) friends.size else 1

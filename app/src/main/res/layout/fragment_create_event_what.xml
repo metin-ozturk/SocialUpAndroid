@@ -5,8 +5,7 @@
         android:layout_height="match_parent"
         android:fillViewport="true">
     <androidx.constraintlayout.widget.ConstraintLayout
-                                                   xmlns:tools="http://schemas.android.com/tools"
-                                                   android:layout_width="match_parent"
+            android:layout_width="match_parent"
                                                    android:layout_height="wrap_content"
                                                    android:id="@+id/createEventWhatRootConstraintLayout">
 
@@ -17,17 +16,23 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent" app:layout_constraintTop_toTopOf="parent"
             android:layout_marginTop="8dp" android:gravity="center"/>
-    <EditText
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:inputType="textMultiLine"
-            android:gravity="start|top"
-            android:ems="10"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginStart="8dp" android:id="@+id/createEventWhatName" android:layout_marginTop="20dp"
-            app:layout_constraintTop_toBottomOf="@+id/createEventWhatTitle" android:layout_marginEnd="8dp"
-            app:layout_constraintEnd_toEndOf="parent" app:layout_constraintHorizontal_bias="0.0" android:maxLines="1"
-            android:hint="Write The Name of Event..."/>
+
+        <EditText
+                android:id="@+id/createEventWhatName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:layout_marginTop="20dp"
+                android:layout_marginEnd="8dp"
+                android:ems="10"
+                android:gravity="start|top"
+                android:hint="Write The Name of Event..."
+                android:inputType="textMultiLine"
+                android:maxLines="1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.0"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/createEventWhatTitle" />
     <EditText
             android:layout_width="0dp"
             android:layout_height="wrap_content"

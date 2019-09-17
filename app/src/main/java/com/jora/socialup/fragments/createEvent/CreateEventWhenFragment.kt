@@ -53,7 +53,7 @@ class CreateEventWhenFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_when, container, false)
-        eventToBePassed = createEventViewModel.event.value
+        eventToBePassed = createEventViewModel.event.value ?: Event()
 
         setCalendarRecyclerView()
         updateMonthTitle()
@@ -62,12 +62,13 @@ class CreateEventWhenFragment : Fragment() {
         setSwipeGestures()
 
         // Persist Checked and Selected Dates and Times
-        if (savedInstanceState != null ) {
+        if (createEventViewModel.eventDateTime.value != null) {
             customCalendarAdapter?.dateTime = createEventViewModel.eventDateTime.value ?: arrayListOf()
-
-            savedInstanceState.getString("initialFinalHoursMinutes")?.also {
-                timePickerDialogFragment.initialFinalHoursMinutes = it
-                timePickerDialogFragment.show(fragmentManager, null)
+            if (savedInstanceState != null) {
+                savedInstanceState.getString("initialFinalHoursMinutes")?.also {
+                    timePickerDialogFragment.initialFinalHoursMinutes = it
+                    timePickerDialogFragment.show(fragmentManager ?: return@also, null)
+                }
             }
         }
 
@@ -96,6 +97,17 @@ class CreateEventWhenFragment : Fragment() {
         viewToBeCreated?.createEventWhenRootConstraintLayout?.setOnTouchListener(
             OnGestureTouchListener(activity!!,
                 object: OnGestureTouchListener.OnGestureInitiated {
+                    override fun swipedLeft() {
+                        super.swipedLeft()
+
+                        createEventViewModel.updateEventDateTime(customCalendarAdapter?.dateTime ?: arrayListOf())
+
+                        val createEventWhoFragment = CreateEventWhoFragment()
+                        val transaction = activity?.supportFragmentManager?.beginTransaction()
+                        transaction?.replace(R.id.eventCreateFrameLayout, createEventWhoFragment)
+                        transaction?.commit()
+                    }
+
                     override fun swipedRight() {
                         super.swipedRight()
 
@@ -110,9 +122,8 @@ class CreateEventWhenFragment : Fragment() {
 
                         eventToBePassed?.date = dateToBePassed
                         eventToBePassed?.dateVote = dateToBePassed.map { "0" } as ArrayList<String> // Initialize vote as 0
-                        createEventViewModel.updateEventToBeCreated(eventToBePassed ?: Event())
 
-                        Log.d("OSMAN", dateToBePassed.toString())
+                        createEventViewModel.updateEventData(eventToBePassed)
 
                         val createEventWhereFragment = CreateEventWhereFragment()
                         val transaction = activity?.supportFragmentManager?.beginTransaction()
@@ -147,7 +158,7 @@ class CreateEventWhenFragment : Fragment() {
 
                 override fun onLongItemClick(view: View, position: Int) {
                     super.onLongItemClick(view, position)
-                    if (customCalendarAdapter?.isLongClickedDateChecked(position) == true) timePickerDialogFragment.show(activity?.supportFragmentManager, null)
+                    if (customCalendarAdapter?.isLongClickedDateChecked(position) == true) timePickerDialogFragment.show(fragmentManager ?: return, null)
                 }
             }
         ))

@@ -23,7 +23,7 @@ class EventsRecyclerViewAdapter(private val eventList : List<Event>?, private va
     }
 
 
-    inner class EventsItemWithImageHolder(view: View) : BaseViewHolder(view), View.OnClickListener {
+    inner class EventsItemWithImageHolder(view: View) : BaseViewHolder(view) {
         internal var title = view.findViewById<TextView>(R.id.titleWithImage)
         internal var founderName = view.findViewById<TextView>(R.id.founderWithImage)
         internal var imageView = view.findViewById<ImageView>(R.id.eventImageView)
@@ -35,22 +35,15 @@ class EventsRecyclerViewAdapter(private val eventList : List<Event>?, private va
             imageView.layoutParams.height = height
             imageView.requestLayout()
         }
-        override fun onClick(v: View?) {
-        }
+
     }
 
-     inner class EventsItemWithOutImageHolder(view: View) : BaseViewHolder(view), View.OnClickListener {
+     inner class EventsItemWithOutImageHolder(view: View) : BaseViewHolder(view) {
          internal var title = view.findViewById<TextView>(R.id.titleWithoutImage)
          internal var founderName = view.findViewById<TextView>(R.id.founderWithoutImage)
          internal var date = view.findViewById<TextView>(R.id.dateWithoutImage)
          internal var location = view.findViewById<TextView>(R.id.locationWithoutImage)
          internal var founderImageView = view.findViewById<ImageView>(R.id.founderImageWithoutImageView)
-
-         init {
-
-         }
-         override fun onClick(v: View?) {
-         }
 
     }
 
@@ -83,10 +76,10 @@ class EventsRecyclerViewAdapter(private val eventList : List<Event>?, private va
         return eventList?.size ?: 0
     }
 
-    override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
-        when (holder.itemViewType) {
+    override fun onBindViewHolder(holderRetrieved: BaseViewHolder, position: Int) {
+        when (holderRetrieved.itemViewType) {
             TYPE_WITHIMAGE -> {
-                val holder = holder as EventsItemWithImageHolder
+                val holder = holderRetrieved as EventsItemWithImageHolder
 
                 val nonNullEventList = eventList ?: return
                 val event = nonNullEventList[position]
@@ -98,7 +91,7 @@ class EventsRecyclerViewAdapter(private val eventList : List<Event>?, private va
 
                 holder.date.text = when (event.date?.size) {
                     0 -> "ERROR"
-                    1 -> Event.convertDateToReadableFormat(Event.convertDateToReadableFormat(event.date?.first()!!))
+                    1 -> Event.convertDateToReadableFormat(event.date?.first()!!)
                     else -> "Multiple Dates Are Proposed"
                 }
 
@@ -107,7 +100,7 @@ class EventsRecyclerViewAdapter(private val eventList : List<Event>?, private va
                 } else { holder.founderImageView.setImageResource(R.drawable.imageplaceholder) }
             }
             TYPE_WITHOUTIMAGE -> {
-                val holder = holder as EventsItemWithOutImageHolder
+                val holder = holderRetrieved as EventsItemWithOutImageHolder
 
                 val nonNullEventList = eventList ?: return
                 val event = nonNullEventList[position]

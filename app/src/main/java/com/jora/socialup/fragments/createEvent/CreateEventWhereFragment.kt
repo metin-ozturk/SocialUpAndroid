@@ -1,6 +1,7 @@
 package com.jora.socialup.fragments.createEvent
 
 
+import android.Manifest
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ObjectAnimator
@@ -12,6 +13,7 @@ import android.location.Location
 import android.os.Bundle
 import android.util.Log
 import android.view.*
+import android.view.inputmethod.EditorInfo
 import android.widget.ImageView
 import android.widget.SearchView
 import android.widget.TextView
@@ -25,6 +27,7 @@ import com.google.android.gms.common.api.ApiException
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.*
 import com.google.android.gms.maps.model.*
+import com.google.android.gms.tasks.Task
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.model.Place
@@ -36,15 +39,18 @@ import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.jora.socialup.R
 import com.jora.socialup.adapters.LocationSearchRecyclerViewAdapter
+import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.RecyclerItemClickListener
+import kotlin.properties.Delegates
 
 // DEAL WITH "windowSoftInputMode" in MANIFEST
 // FIX IT WHEN IT UPLOADS FROM A PAST EVENT
 
+// LINE 370 - BE TIDY
+
 private const val LOCATION_PERMISSION_REQUEST_CODE = 1
 
 class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener{
-
 
     private var viewToBeCreated : View? = null
 
@@ -66,8 +72,24 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
 
     private var searchedLocations = ArrayList<LocationInfo>()
 
-    private var toBeFilledLocationDetailDialogFragment : LocationDetailDialogFragment? = null
-    private var filledLocationDetailDialogFragment : LocationDetailDialogFragment? = null
+    private var locationDetailDialogFragment : LocationDetailDialogFragment? = null
+
+    private val locationDetailDialogListener: LocationDetailDialogFragment.LocationDetailDialogFragmentInterface by lazy {
+        object: LocationDetailDialogFragment.LocationDetailDialogFragmentInterface {
+            override fun onConfirmed(locationToBePassed: LocationInfo) {
+                updateEventToBePassedByLocationDetailDialogData(locationToBePassed)
+                placeMarkerOnMap(
+                    LatLng(
+                        locationToBePassed.latitude?.toDouble() ?: 0.0,
+                        locationToBePassed.longitude?.toDouble() ?: 0.0
+                    )
+                )
+                locationDetailDialogFragment?.dismiss()
+            }
+        }
+    }
+
+    private var isLocationTickMenuPresent = false
 
     private var markers = ArrayList<Marker>()
     private var customMarker : Marker? = null
@@ -82,56 +104,70 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_where, container, false)
-        eventToBePassed = createEventViewModel.event.value
+        eventToBePassed = createEventViewModel.event.value ?: Event()
+
+        isLocationTickMenuPresent = createEventViewModel.isLocationTickMenuPresent.value ?: false
 
         setSearchView()
         setSearchViewListeners()
         setMapView(savedInstanceState)
         setSearchRecyclerView()
+        setSwipeGestures()
 
         return viewToBeCreated
+    }
+
+    private fun setSwipeGestures() {
+        viewToBeCreated?.createEventWhereRootConstraintLayout?.setOnTouchListener( OnGestureTouchListener(activity!!,
+            object: OnGestureTouchListener.OnGestureInitiated {
+                override fun swipedLeft() {
+
+                    createEventViewModel.updateEventData(eventToBePassed)
+
+                    val createEventWhenFragment = CreateEventWhenFragment()
+                    val transaction = activity?.supportFragmentManager?.beginTransaction()
+                    transaction?.replace(R.id.eventCreateFrameLayout, createEventWhenFragment)
+                    transaction?.commit()
+                }
+            })
+        )
     }
 
     override fun onMapReady(googleMapRetrieved: GoogleMap?) {
         googleMap = googleMapRetrieved
         googleMap?.setOnMarkerClickListener(this)
 
-        if (eventToBePassed?.locationLongitude != null && eventToBePassed?.locationLatitude != null) {
-            filledLocationDetailDialogFragment = setFilledFromSearchLocationDetailDialogFragmentFromPastEvent(eventToBePassed ?: Event())
-            filledLocationDetailDialogFragment?.show(activity?.supportFragmentManager, null)
+        if (isLocationTickMenuPresent) {
+            placeMarkerOnMap(LatLng(eventToBePassed?.locationLatitude?.toDouble() ?: return, eventToBePassed?.locationLongitude?.toDouble() ?: return), false)
+        } else {
+
+            if (eventToBePassed?.locationLongitude != null && eventToBePassed?.locationLatitude != null) {
+                locationDetailDialogFragment = eventToBePassed?.run {
+                    LocationDetailDialogFragment.newInstance(LocationInfo(locationName, locationDescription, locationLatitude.toString(),
+                        locationLongitude.toString(), locationAddress, null), locationDetailDialogListener)
+                }
+                locationDetailDialogFragment?.show(fragmentManager ?: return, null)
+
+            }
+
+            // Check if user grants permission to access fine location and if not, ask for it. Then go to current location.
+            if (checkFineLocationPermission()) {
+                goToCurrentLocationAndUpdateMapViewDetails()
+            } else if (!isLocationTickMenuPresent) {
+                requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
+            }
         }
+
 
         googleMap?.setOnMapLongClickListener {
             latLongOfEventLocation = it
-            toBeFilledLocationDetailDialogFragment = setNullLocationDetailDialogFragment()
-            toBeFilledLocationDetailDialogFragment?.show(activity?.supportFragmentManager, null)
-        }
-
-        // Check if user grants permission to access fine location and if not, ask for it. Then go to current location.
-        if (checkFineLocationPermission()) {
-            goToCurrentLocationAndUpdateMapViewDetails()
-        } else {
-            requestPermissions(arrayOf(android.Manifest.permission.ACCESS_FINE_LOCATION),
-                LOCATION_PERMISSION_REQUEST_CODE
-            )
+            locationDetailDialogFragment = LocationDetailDialogFragment.newInstance(LocationInfo(null, null,
+                latLongOfEventLocation?.latitude.toString(), latLongOfEventLocation?.longitude.toString(), null, null),
+                locationDetailDialogListener)
+            locationDetailDialogFragment?.show(fragmentManager ?: return@setOnMapLongClickListener, null)
         }
 
     }
-
-    private fun setNullLocationDetailDialogFragment() : LocationDetailDialogFragment {
-        return LocationDetailDialogFragment.newInstance(
-            LocationInfo(
-                null, null, latLongOfEventLocation?.latitude.toString(),
-                latLongOfEventLocation?.longitude.toString(), null, null
-            ),
-            object :
-                LocationDetailDialogFragment.LocationDetailDialogFragmentInterface {
-                override fun onConfirmed(locationToBePassed: LocationInfo) {
-                    updateEventToBePassedByLocationDetailDialogData(locationToBePassed, false)
-                }
-            })
-    }
-
 
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
@@ -156,7 +192,8 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
             setSearchableInfo(searchableInfo)
 
             isIconified = false
-            setIconifiedByDefault(false)
+            isIconifiedByDefault = false
+            imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
             clearFocus()
         }
     }
@@ -180,9 +217,15 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
             createEventWhereSearchView.setOnQueryTextListener(object : SearchView.OnQueryTextListener {
 
                 override fun onQueryTextSubmit(query: String?): Boolean {
+                    if (!searchedLocations.isNullOrEmpty()) {
+                        val locationID = searchedLocations.first().locationID ?: return true
+                        getLocationInformationWithPlaceID(locationID)
+                    }
+
                     createEventWhereSearchView.clearFocus()
                     createEventWhereSearchView.setQuery("", true)
-                    return false
+
+                    return true
                 }
 
                 override fun onQueryTextChange(newText: String?): Boolean {
@@ -231,7 +274,7 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
     }
 
     private fun checkFineLocationPermission():Boolean {
-        return ContextCompat.checkSelfPermission(activity!!, android.Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        return ContextCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
     }
 
     private fun getAutoCompletePredictions(query: String) {
@@ -292,57 +335,43 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
 
         placesClient.fetchPlace(request).addOnSuccessListener {
             customSearchAdapter?.updateSearchedLocations(arrayListOf())
+            searchedLocations = arrayListOf()
             viewToBeCreated?.createEventWhereSearchView?.clearFocus()
 
-            filledLocationDetailDialogFragment = setFilledFromSearchLocationDetailDialogFragment(it.place, placeID)
-            filledLocationDetailDialogFragment?.show(activity?.supportFragmentManager, null)
+            locationDetailDialogFragment = it.run {
+                LocationDetailDialogFragment.newInstance(LocationInfo(place.name,
+                        place.address, place.latLng?.latitude.toString(), place.latLng?.longitude.toString(), place.address, placeID), locationDetailDialogListener)
+            }
 
+            locationDetailDialogFragment?.show(fragmentManager ?: return@addOnSuccessListener, null)
         }.addOnFailureListener {
             if (it is ApiException)
                 Log.d("CreateEventWhereFrag","PLACE NOT FOUND" , it)
         }
     }
 
-    private fun setFilledFromSearchLocationDetailDialogFragment(place: Place, placeID: String) : LocationDetailDialogFragment {
-        return LocationDetailDialogFragment.newInstance(
-            LocationInfo(
-                place.name, place.address, place.latLng?.latitude.toString(), place.latLng?.longitude.toString(),
-                place.address, placeID
-            ),
-            object :
-                LocationDetailDialogFragment.LocationDetailDialogFragmentInterface {
-                override fun onConfirmed(locationToBePassed: LocationInfo) {
-                    updateEventToBePassedByLocationDetailDialogData(locationToBePassed, true)
-                }
-            })
-    }
 
-    private fun setFilledFromSearchLocationDetailDialogFragmentFromPastEvent(pastEvent: Event) : LocationDetailDialogFragment {
-        return LocationDetailDialogFragment.newInstance(
-            LocationInfo(
-                pastEvent.locationName, pastEvent.locationAddress, pastEvent.locationLatitude.toString(),
-                pastEvent.locationLongitude.toString(), pastEvent.locationAddress, null
-            ),
-            object :
-                LocationDetailDialogFragment.LocationDetailDialogFragmentInterface {
-                override fun onConfirmed(locationToBePassed: LocationInfo) {
-                    updateEventToBePassedByLocationDetailDialogData(locationToBePassed, true)
-                }
-            })
-    }
-
-    private fun updateEventToBePassedByLocationDetailDialogData(locationToBePassed: LocationInfo, isFilled: Boolean ) {
+    private fun updateEventToBePassedByLocationDetailDialogData(locationToBePassed: LocationInfo) {
         eventToBePassed?.apply {
             locationName = locationToBePassed.name
             locationDescription = locationToBePassed.description
             locationLatitude = locationToBePassed.latitude
             locationLongitude = locationToBePassed.longitude
             locationAddress = locationToBePassed.address
-            placeMarkerOnMap(LatLng(locationLatitude?.toDouble() ?: 0.0, locationLongitude?.toDouble() ?: 0.0))
         }
 
-        if (isFilled) filledLocationDetailDialogFragment?.dismiss() else toBeFilledLocationDetailDialogFragment?.dismiss()
+        createEventViewModel.updateEventData(eventToBePassed)
 
+    }
+
+    private fun clearEventToBeCreated() {
+        eventToBePassed?.apply {
+            locationName = null
+            locationDescription = null
+            locationLatitude = null
+            locationLongitude = null
+            locationAddress = null
+        }
     }
 
 
@@ -354,16 +383,44 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
             isMyLocationEnabled = true
         }
 
-        fusedLocationClient?.lastLocation?.addOnSuccessListener {
-            lastLocation = it
-            googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(it.latitude, it.longitude), 12f))
+
+        fusedLocationClient?.lastLocation?.addOnSuccessListener { retrievedLocation ->
+            if (retrievedLocation == null) {
+                // If there is no know last location, request current location
+                val locationRequest = LocationRequest.create().setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY).setInterval(10000).setFastestInterval(1000)
+
+                val locationCallback = object: LocationCallback() {
+                    override fun onLocationResult(locationResult: LocationResult?) {
+                        super.onLocationResult(locationResult)
+
+                        if (locationResult == null) return
+
+                        lastLocation = locationResult.lastLocation.also { location ->
+                            googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(location.latitude, location.longitude), 12f))
+                        }
+
+                        fusedLocationClient?.removeLocationUpdates(this)
+                    }
+                }
+
+                fusedLocationClient?.requestLocationUpdates(locationRequest, locationCallback, null)
+            } else {
+                lastLocation = retrievedLocation.also { location ->
+                    googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(location.latitude, location.longitude), 12f))
+                }
+            }
+
 
         }
+
     }
 
 
-    private fun placeMarkerOnMap(location: LatLng) {
-        googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(location.latitude, location.longitude), 12f))
+    private fun placeMarkerOnMap(location: LatLng, animateCamera: Boolean = true) {
+        if (animateCamera)
+            googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(location.latitude, location.longitude), 12f))
+        else
+            googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(location.latitude, location.longitude), 12f))
 
         val markerOptions = MarkerOptions().position(location)
 
@@ -390,6 +447,8 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
     }
 
     private fun setConfirmInterface() {
+        isLocationTickMenuPresent = true
+
         val confirmLocation = TextView(context!!)
         confirmLocation.text = "Confirm?"
         confirmLocation.textSize = 20f
@@ -412,7 +471,6 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
         }
 
         val constraintSet = ConstraintSet()
-
 
         constraintSet.connect(confirmLocation.id, ConstraintSet.START, viewToBeCreated?.createEventWhereMapView?.id ?: return, ConstraintSet.START, (viewToBeCreated?.createEventWhereMapView?.measuredWidth ?: 0 ) / 2 - confirmLocation.measuredWidth / 2 )
         constraintSet.connect(confirmLocation.id, ConstraintSet.TOP, viewToBeCreated?.createEventWhereMapView?.id ?: return, ConstraintSet.TOP, (viewToBeCreated?.createEventWhereMapView?.measuredHeight ?: 0 ) / 2)
@@ -438,6 +496,7 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
     private fun setConfirmInterfaceListeners(confirmLocationTick: ImageView, confirmLocationCancel: ImageView, confirmLocation: TextView) {
 
         confirmLocationTick.setOnClickListener {
+            isLocationTickMenuPresent = false
             val createEventSummaryFragment = CreateEventSummaryFragment()
             val transaction = activity?.supportFragmentManager?.beginTransaction()
             transaction?.replace(R.id.eventCreateFrameLayout, createEventSummaryFragment)
@@ -445,6 +504,9 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
         }
 
         confirmLocationCancel.setOnClickListener {
+            isLocationTickMenuPresent = false
+            clearEventToBeCreated()
+
             arrayOf(confirmLocation, confirmLocationCancel, confirmLocationTick, customMarker).forEach {viewToBeRemoved ->
 
                 val fadeOutAnimation = ObjectAnimator.ofFloat(viewToBeRemoved, "alpha", 1f, 0f).setDuration(confirmInterfaceFadeInFadeOutAnimation)
@@ -484,15 +546,23 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
         mapView?.onResume()
     }
 
+    override fun onPause() {
+        super.onPause()
+        mapView?.onPause()
+
+        if (locationDetailDialogFragment?.isAdded == true) {
+            createEventViewModel.updateEventData(locationDetailDialogFragment?.returnEventWithUpdatedLocation(eventToBePassed ?: return) ?: return)
+            locationDetailDialogFragment?.dismiss()
+        }
+
+        createEventViewModel.updateIsLocationTickMenuPresent(isLocationTickMenuPresent)
+    }
+
     override fun onStop() {
         super.onStop()
         mapView?.onStop()
     }
 
-    override fun onPause() {
-        super.onPause()
-        mapView?.onPause()
-    }
 
     override fun onDestroy() {
         super.onDestroy()

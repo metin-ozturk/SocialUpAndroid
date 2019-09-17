@@ -8,6 +8,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.drawToBitmap
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
@@ -18,7 +20,9 @@ import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.R
 import com.jora.socialup.activities.HomeActivity
+import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.ProgressBarFragmentDialog
+import com.jora.socialup.helpers.isInPortraitMode
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_summary.view.*
@@ -57,8 +61,37 @@ class CreateEventSummaryFragment : Fragment() {
         fillSummaryTexts()
         setConfirmEventFunction()
         setFavoriteEventButton()
+        setSwipeGestures()
+
 
         return viewToBeCreated
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        setFavoriteEventButtonImage()
+
+        if (activity!!.window.isInPortraitMode()) {
+            viewToBeCreated?.createEventSummaryScrollView?.layoutParams?.height = ConstraintSet.MATCH_CONSTRAINT_SPREAD
+        } else {
+            viewToBeCreated?.createEventSummaryScrollView?.layoutParams?.height = ConstraintLayout.LayoutParams.WRAP_CONTENT
+        }
+    }
+
+    private fun setSwipeGestures() {
+        viewToBeCreated?.createEventSummaryRootConstraintLayout?.setOnTouchListener( OnGestureTouchListener(activity!!,
+            object: OnGestureTouchListener.OnGestureInitiated {
+                override fun swipedLeft() {
+                    createEventViewModel.updateEventData(eventToBePassed)
+
+                    val createEventWhereFragment = CreateEventWhereFragment()
+                    val transaction = activity?.supportFragmentManager?.beginTransaction()
+                    transaction?.replace(R.id.eventCreateFrameLayout, createEventWhereFragment)
+                    transaction?.commit()
+                }
+            })
+        )
     }
 
     private fun fillEventFields() {
@@ -74,7 +107,7 @@ class CreateEventSummaryFragment : Fragment() {
 
             if (progressBarFragmentDialog.isLoadingInProgress) return@setOnClickListener
 
-            progressBarFragmentDialog.show(fragmentManager, null)
+            progressBarFragmentDialog.show(fragmentManager ?: return@setOnClickListener, null)
 
             eventToBePassed?.timeStamp = FieldValue.serverTimestamp()
 
@@ -125,11 +158,18 @@ class CreateEventSummaryFragment : Fragment() {
     private fun setFavoriteEventButton() {
         viewToBeCreated?.createEventSummaryFavoriteImage?.setOnClickListener {
             eventToBePassed?.isFavorite = !(eventToBePassed?.isFavorite ?: false)
+            setFavoriteEventButtonImage()
+        }
+    }
 
-            if (eventToBePassed?.isFavorite == true)
-                viewToBeCreated?.createEventSummaryFavoriteImage?.setImageResource(R.drawable.favorite_selected)
-            else
-                viewToBeCreated?.createEventSummaryFavoriteImage?.setImageResource(R.drawable.favorite)
+    private fun setFavoriteEventButtonImage() {
+        if (eventToBePassed?.isFavorite == true) {
+            viewToBeCreated?.createEventSummaryFavoriteImage?.setImageResource(R.drawable.favorite_selected)
+            eventToBePassed?.isFavorite = true
+        }
+        else {
+            viewToBeCreated?.createEventSummaryFavoriteImage?.setImageResource(R.drawable.favorite)
+            eventToBePassed?.isFavorite = false
         }
     }
 

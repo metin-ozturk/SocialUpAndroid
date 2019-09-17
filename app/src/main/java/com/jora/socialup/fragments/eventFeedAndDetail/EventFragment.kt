@@ -13,6 +13,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.view.inputmethod.EditorInfo
 import android.widget.ImageView
 import android.widget.SearchView
 import androidx.fragment.app.Fragment
@@ -70,12 +71,11 @@ class EventFragment : Fragment() {
         })
     }
 
-    override fun onAttach(context: Context?) {
+    override fun onAttach(context: Context) {
         super.onAttach(context)
 
         if (context !is HomeFeedActivity)
             throw RuntimeException(context.toString() + " must implement an Activity")
-
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -251,7 +251,7 @@ class EventFragment : Fragment() {
                 object : RecyclerItemClickListener.OnItemClickListener {
                     override fun onItemClick(view: View, position: Int) {
                         if (!progressBarFragmentDialog.isLoadingInProgress) {
-                            progressBarFragmentDialog.show(fragmentManager, null)
+                            progressBarFragmentDialog.show(fragmentManager ?: return, null)
                             downloadEventSpecificInformationAndUpdateViewModel(position)
                         }
                     }
@@ -280,7 +280,7 @@ class EventFragment : Fragment() {
         val eventID = event?.iD ?: return
 
 
-        FirebaseFirestore.getInstance().collection("users").document(firebaseAuthentication?.currentUser?.uid ?: "")
+        FirebaseFirestore.getInstance().collection("users").document(firebaseAuthentication.currentUser?.uid ?: "")
             .collection("events").document(eventID).get().addOnSuccessListener {
                 val data = it.data
 
@@ -354,7 +354,8 @@ class EventFragment : Fragment() {
         viewToBeCreated?.eventFeedSearchView?.apply {
             setSearchableInfo(searchableInfo)
             isIconified = false
-            setIconifiedByDefault(false)
+            isIconifiedByDefault = false
+            imeOptions = EditorInfo.IME_FLAG_NO_EXTRACT_UI
             clearFocus()
         }
     }
@@ -377,9 +378,20 @@ class EventFragment : Fragment() {
 
             eventFeedSearchView.setOnQueryTextListener(object: SearchView.OnQueryTextListener {
                 override fun onQueryTextSubmit(query: String?): Boolean {
+                    val isEvent = combinedSearchResult[1] as ArrayList<Boolean>
+                    val searchedEventID = combinedSearchResult[2] as ArrayList<String>
+
+                    if (isEvent.run { isNotEmpty() && first() }) {
+                        progressBarFragmentDialog.show(fragmentManager ?: return true, null)
+                        Event.downloadEventInformation(searchedEventID.first()) {
+                            viewModel.assertWhichViewToBeShowed(it)
+                            downloadEventSpecificInformationAndUpdateViewModel()
+                        }
+                    }
+
                     eventFeedSearchView.clearFocus()
                     eventFeedSearchView.setQuery("", true)
-                    return false
+                    return true
                 }
 
                 override fun onQueryTextChange(newText: String?): Boolean {
