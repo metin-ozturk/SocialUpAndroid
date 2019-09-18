@@ -63,8 +63,10 @@ class CreateEventWhoFragment : Fragment() {
             downloadFriendsNamesAndImagesAndNotifyRecyclerView()
         } else {
             friends = createEventViewModel.friends.value ?: ArrayList()
+            Log.d("OSMAN", "FRIENDS: $friends")
             if (friends.size == 0) customSearchAdapter.updateDefaultHolderText("You don't any have friends")
             friendsMap = createEventViewModel.friendsMap.value ?: mutableMapOf()
+            Log.d("OSMAN", friendsMap.toString())
             friendIDsArrayList = createEventViewModel.friendsIdsArrayList.value ?: ArrayList()
             customSearchAdapter.notifyDataSetChanged()
         }
@@ -141,7 +143,6 @@ class CreateEventWhoFragment : Fragment() {
                     } as ArrayList<FriendInfo>
 
                     customSearchAdapter.dataUpdated(friends)
-
 
                     return false
                 }

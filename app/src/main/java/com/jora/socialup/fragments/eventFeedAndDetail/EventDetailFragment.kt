@@ -19,17 +19,10 @@ import com.jora.socialup.adapters.EventDatesVoteRecyclerViewAdapter
 import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
+import com.jora.socialup.models.EventResponseStatus
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event_detail.*
 import java.lang.Exception
-
-enum class EventResponseStatus {
-    NotResponded,
-    NotGoing,
-    Maybe,
-    Going
-}
-
 
 class EventDetailFragment : Fragment() {
     private val eventDetailTag = "EventDetailTag"

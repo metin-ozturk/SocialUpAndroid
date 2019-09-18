@@ -40,6 +40,7 @@ import com.jora.socialup.activities.HomeFeedActivity
 import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import com.jora.socialup.models.Event
+import com.jora.socialup.models.EventResponseStatus
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event.view.*
 import kotlinx.coroutines.*
@@ -55,6 +56,8 @@ class EventFragment : Fragment() {
 
     private var eventsArray = ArrayList<Event>()
     private var combinedSearchResult = ArrayList<ArrayList<Any>>()
+    private var feedLayoutManager : LinearLayoutManager? = null
+    private val eventsNumberToDownloadPerRefresh = 5
 
     private val index = Client("3UQQK7YRC5", "2b6893313fb23c6d06eed7c75730d41e").getIndex( "usersAndEvents")
 
@@ -82,7 +85,7 @@ class EventFragment : Fragment() {
         super.onCreate(savedInstanceState)
         val previouslyDownloadedEvents = viewModel.eventsArray.value ?: ArrayList()
         if (previouslyDownloadedEvents.size != 0) return
-        viewModel.downloadEvents()
+        viewModel.downloadEvents(0, 5)
         viewModel.downloadCurrentUserProfilePhoto(firebaseAuthentication.currentUser?.uid ?: "")
 
     }
@@ -133,7 +136,6 @@ class EventFragment : Fragment() {
         viewToBeCreated?.eventFeedFounderImageView?.setOnTouchListener(OnGestureTouchListener(activity!!, object: OnGestureTouchListener.OnGestureInitiated {
             override fun longPressed() {
                 super.longPressed()
-
                 // SIGN OUT FROM GOOGLE
                 val googleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                     .requestIdToken(getString(R.string.google_sign_in_server_client_id))
@@ -226,21 +228,33 @@ class EventFragment : Fragment() {
 
     private fun setEventRecyclerView() {
 
-        val layoutManager = LinearLayoutManager(activity)
+        feedLayoutManager = LinearLayoutManager(activity)
 
         val point = Point()
         activity?.windowManager?.defaultDisplay?.getSize(point)
         val heightOfEventsRecycler = point.x * 9 / 16
 
         viewToBeCreated?.eventFeedRecyclerView?.apply {
-            this.layoutManager = layoutManager
+            layoutManager = feedLayoutManager
             itemAnimator = DefaultItemAnimator()
             eventsRecyclerViewAdapter =
                 EventsRecyclerViewAdapter(eventsArray, heightOfEventsRecycler)
             adapter = eventsRecyclerViewAdapter
         }
 
+        viewToBeCreated?.eventFeedRecyclerView?.addOnScrollListener(object: RecyclerView.OnScrollListener() {
+            override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                super.onScrolled(recyclerView, dx, dy)
+                if (dy > 0 && viewModel.isDownloadingMoreEvents.value == false && eventsArray.size == (feedLayoutManager?.findLastVisibleItemPosition() ?: 0) + 1) {
+                    // Scrolling Up, No other event is being downloaded and user viewed the bottom event.
+                    viewModel.downloadEvents(eventsArray.size, eventsArray.size + eventsNumberToDownloadPerRefresh)
+
+                }
+            }
+        })
     }
+
+
 
     private fun setEventRecyclerViewListener() {
         val recyclerView = viewToBeCreated?.eventFeedRecyclerView ?: return

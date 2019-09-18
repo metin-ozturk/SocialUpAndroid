@@ -205,6 +205,10 @@ class CreateEventWhatFragment : Fragment() {
                             val clickedEvent = historyEvents?.get(position)
                             eventToBePassed = clickedEvent
 
+                            // Nullify date and voted date info of the event, since we won't use previous date info.
+                            eventToBePassed?.date = null
+                            eventToBePassed?.dateVote = null
+
                             if (clickedEvent?.image == null) {
                                 eventHasImage = false
                                 createEventWhatImageView.setImageResource(R.drawable.imageplaceholder)

@@ -2,17 +2,12 @@ package com.jora.socialup.viewModels
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.google.firebase.storage.FirebaseStorage
-import com.jora.socialup.fragments.eventFeedAndDetail.EventResponseStatus
 import com.jora.socialup.models.Event
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.isActive
+import com.jora.socialup.models.EventResponseStatus
 import kotlin.collections.ArrayList
 
 
@@ -45,6 +40,10 @@ class EventViewModel : ViewModel() {
     private val isFavoriteData = MutableLiveData<Boolean>()
     val isFavorite : LiveData<Boolean>
         get() = isFavoriteData
+
+    private val isDownloadingMoreEventsData = MutableLiveData<Boolean>()
+    val isDownloadingMoreEvents : LiveData<Boolean>
+        get() = isDownloadingMoreEventsData
 
 
     fun assertWhichViewToBeShowed(eventToBeShowed: Event) {
@@ -95,15 +94,16 @@ class EventViewModel : ViewModel() {
         }
     }
 
-    fun downloadEvents() {
-
+    fun downloadEvents(startIndex: Int, endIndex: Int) {
+        isDownloadingMoreEventsData.value = true
         Event.downloadEventIDs { docIDs ->
-            docIDs.forEach { docID ->
-
+            val lastItemIndexToBeDownloaded = if (docIDs.size < endIndex) docIDs.size else endIndex
+            docIDs.subList(startIndex, lastItemIndexToBeDownloaded).forEach { docID ->
                 Event.downloadEventInformation(docID) {
                     val arrayToBeUpdated = eventsArrayData.value ?: ArrayList()
                     arrayToBeUpdated.add(it)
                     eventsArrayData.value = arrayToBeUpdated
+                    if (arrayToBeUpdated.size == lastItemIndexToBeDownloaded) isDownloadingMoreEventsData.value = false
                 }
             }
         }
