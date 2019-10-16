@@ -16,7 +16,9 @@ class ProgressBarFragmentDialog : DialogFragment() {
 
     interface ProgressBarFragmentDialogInterface {
         fun onCancel()
+        fun onDialogFragmentDestroyed()
     }
+
     private var viewToBeCreated : View? = null
 
     private var listener: ProgressBarFragmentDialogInterface? = null
@@ -74,7 +76,11 @@ class ProgressBarFragmentDialog : DialogFragment() {
     override fun dismiss() {
         super.dismiss()
         isLoadingInProgressData = false
+    }
 
+    override fun onDestroy() {
+        super.onDestroy()
+        listener?.onDialogFragmentDestroyed()
     }
 
     private fun setVoluntaryCancelAlertDialog() {

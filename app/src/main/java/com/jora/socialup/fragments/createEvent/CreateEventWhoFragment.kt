@@ -30,6 +30,7 @@ import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_who.view.*
 import kotlinx.android.synthetic.main.fragment_create_event_who.view.createEventWhoRecyclerView
 
+// Check whether selected friends from past events works correctly - it has a part in what fragment
 
 class CreateEventWhoFragment : Fragment() {
 
@@ -38,8 +39,6 @@ class CreateEventWhoFragment : Fragment() {
     }
 
     private var friends = ArrayList<FriendInfo>()
-    private var friendIDsArrayList = ArrayList<String>()
-    private var friendsMap : MutableMap<String, FriendInfo> = mutableMapOf()
 
     private var eventToBePassed : Event? = null
     private var viewToBeCreated : View? = null
@@ -63,11 +62,7 @@ class CreateEventWhoFragment : Fragment() {
             downloadFriendsNamesAndImagesAndNotifyRecyclerView()
         } else {
             friends = createEventViewModel.friends.value ?: ArrayList()
-            Log.d("OSMAN", "FRIENDS: $friends")
             if (friends.size == 0) customSearchAdapter.updateDefaultHolderText("You don't any have friends")
-            friendsMap = createEventViewModel.friendsMap.value ?: mutableMapOf()
-            Log.d("OSMAN", friendsMap.toString())
-            friendIDsArrayList = createEventViewModel.friendsIdsArrayList.value ?: ArrayList()
             customSearchAdapter.notifyDataSetChanged()
         }
 
@@ -87,8 +82,6 @@ class CreateEventWhoFragment : Fragment() {
         createEventViewModel.apply {
             updateEventData(eventToBePassed)
             updateFriendsData(this@CreateEventWhoFragment.friends)
-            updateFriendsMapData(this@CreateEventWhoFragment.friendsMap)
-            updateFriendIDsArrayListData(friendIDsArrayList)
         }
 
     }
@@ -132,17 +125,16 @@ class CreateEventWhoFragment : Fragment() {
                 override fun onQueryTextChange(newText: String?): Boolean {
                     if (newText?.isEmpty() == true) {
                         createEventWhoSearchView.clearFocus()
-                        friends = friendsMap.map { it.value } as ArrayList<FriendInfo>
                         customSearchAdapter.dataUpdated(friends)
                         return false
                     }
 
-                    friends = (friendsMap.map { it.value } as ArrayList<FriendInfo>).filter { retrievedFriend ->
+                    val searchedFriends = friends.filter { retrievedFriend ->
                         val retrievedFriendName = retrievedFriend.name ?: return false
                         retrievedFriendName.contains(newText.toString())
                     } as ArrayList<FriendInfo>
 
-                    customSearchAdapter.dataUpdated(friends)
+                    customSearchAdapter.dataUpdated(searchedFriends)
 
                     return false
                 }
@@ -168,13 +160,13 @@ class CreateEventWhoFragment : Fragment() {
                     override fun onItemClick(view: View, position: Int) {
                         super.onItemClick(view, position)
 
-                        if(friendsMap.isEmpty()) return
+                        if(friends.isEmpty()) return
 
                         view.apply {
                             isSelected = !isSelected
                             if (isSelected) setBackgroundColor(Color.GREEN) else setBackgroundColor(Color.WHITE)
                         }.also {
-                            friendsMap[friendIDsArrayList[position]]?.isSelected = view.isSelected
+                            friends[position].isSelected = view.isSelected
 
                         }
                     }
@@ -194,6 +186,7 @@ class CreateEventWhoFragment : Fragment() {
 
                     if (friendName == null || friendImage == null) {
                         friend = FriendInfo(
+                            friendID,
                             "ERROR",
                             BitmapFactory.decodeResource(activity!!.resources, R.drawable.imageplaceholder),
                             false
@@ -202,12 +195,14 @@ class CreateEventWhoFragment : Fragment() {
                     } else {
                         friend = if (eventToBePassed?.eventWithWhomID?.contains(friendID) == true) {
                             FriendInfo(
+                                friendID,
                                 friendName,
                                 BitmapFactory.decodeByteArray(friendImage, 0, friendImage.size),
                                 true
                             )
                         } else {
                             FriendInfo(
+                                friendID,
                                 friendName,
                                 BitmapFactory.decodeByteArray(friendImage, 0, friendImage.size),
                                 false
@@ -216,8 +211,6 @@ class CreateEventWhoFragment : Fragment() {
 
                     }
                     friends.add(friend)
-                    friendsMap[friendID] = friend
-                    friendIDsArrayList.add(friendID)
 
                     customSearchAdapter.notifyItemChanged(friends.size - 1)
 
@@ -255,10 +248,10 @@ class CreateEventWhoFragment : Fragment() {
     }
 
     private fun getSelectedFriendsIDsAndUpdateViewModel() {
-        val selectedFriends = friendsMap.filter { it.value.isSelected == true }
-        val selectedFriendsIDs = ArrayList(selectedFriends.keys)
-        eventToBePassed?.eventWithWhomID = selectedFriendsIDs
-        eventToBePassed?.eventWithWhomNames = selectedFriends.map { it.value.name } as ArrayList<String>
+        val selectedFriends = friends.filter { it.isSelected == true }
+        val selectedFriendsIDs = selectedFriends.map { it.iD }
+        eventToBePassed?.eventWithWhomID = selectedFriendsIDs as? ArrayList<String>
+        eventToBePassed?.eventWithWhomNames = selectedFriends.map { it.name } as? ArrayList<String>
 
         createEventViewModel.updateEventData(eventToBePassed)
 

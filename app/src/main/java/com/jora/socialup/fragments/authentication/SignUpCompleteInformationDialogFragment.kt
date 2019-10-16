@@ -27,6 +27,7 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
 
     interface SignUpCompleteInformationDialogFragmentInterface {
         fun onFinish()
+        fun onDialogFragmentDestroyed()
     }
 
     private var viewToBeCreated : View? = null
@@ -42,10 +43,10 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
     private var currentYear = 0
     private val years = (1900..2019).map { it.toString() }.toTypedArray()
 
-    var emailToBeRetrieved = ""
-    var nameToBeRetrieved = ""
-    var birthdayToBeRetrieved = ""
-    var urlToBeRetrieved = ""
+    private var emailToBeRetrieved = ""
+    private var nameToBeRetrieved = ""
+    private var birthdayToBeRetrieved = ""
+    private var urlToBeRetrieved = ""
 
     companion object {
         fun newInstance(listener: SignUpCompleteInformationDialogFragmentInterface) : SignUpCompleteInformationDialogFragment {
@@ -79,6 +80,11 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
         super.onResume()
         fillInitialInfo()
 
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        listener?.onDialogFragmentDestroyed()
     }
 
     fun completeSignUpInfo(email: String = "", name: String = "", imageUrl: String = "", birthday: String = "") {

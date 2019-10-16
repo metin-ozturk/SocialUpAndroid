@@ -26,6 +26,7 @@ import com.jora.socialup.fragments.authentication.SignUpDialogFragment
 import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
+import java.lang.ref.WeakReference
 
 private const val googleSignInRequestCode = 1
 private const val googleSignInTag = "GoogleSignInTag"
@@ -43,83 +44,11 @@ class HomeActivity : AppCompatActivity() {
 
     private var callbackManager : CallbackManager? = null
 
-    private val signUpCompleteInformationDialogFragment : SignUpCompleteInformationDialogFragment by lazy {
-        SignUpCompleteInformationDialogFragment.newInstance(object: SignUpCompleteInformationDialogFragment.SignUpCompleteInformationDialogFragmentInterface {
-            override fun onFinish() {
-                startActivity(Intent(this@HomeActivity, HomeFeedActivity::class.java))
-                signUpCompleteInformationDialogFragment.dismiss()
-            }
-        })
-    }
+    private var signInDialogFragment : SignInDialogFragment? = null
+    private var signUpDialogFragment : SignUpDialogFragment? = null
+    private var signUpCompleteInformationDialogFragment : SignUpCompleteInformationDialogFragment? = null
 
-
-    private val signUpDialogFragment : SignUpDialogFragment by lazy {
-        SignUpDialogFragment.newInstance(object: SignUpDialogFragment.SignUpDialogFragmentInterface {
-            override fun onFinish(email: String) {
-                // FIX
-                signUpCompleteInformationDialogFragment.apply {
-                    completeSignUpInfo(email)
-                    show(supportFragmentManager, null)
-                }
-                    signUpDialogFragment.dismiss()
-            }
-
-            override fun loginWithFacebook() {
-                LoginManager.getInstance().logIn(this@HomeActivity, arrayListOf("email", "public_profile"))
-            }
-
-            override fun loginWithGoogle() {
-                signInWithGoogle()
-            }
-        })
-    }
-//
-//    private val signInDialogFragment : SignInDialogFragment by lazy {
-//        SignInDialogFragment(object: SignInDialogFragment.SignInDialogFragmentInterface {
-//            override fun onFinish() {
-//                startActivity(Intent(this@HomeActivity, HomeFeedActivity::class.java))
-//            }
-//
-//            override fun informationMissing(email: String) {
-//                signUpCompleteInformationDialogFragment.apply {
-//                    completeSignUpInfo(email)
-//                    show(supportFragmentManager, null)
-//                }
-//            }
-//        })
-//    }
-
-    private val signInDialogFragment : SignInDialogFragment by lazy {
-        SignInDialogFragment.newInstance(object: SignInDialogFragment.SignInDialogFragmentInterface {
-            override fun onFinish() {
-                startActivity(Intent(this@HomeActivity, HomeFeedActivity::class.java))
-            }
-
-            override fun informationMissing(email: String) {
-                signUpCompleteInformationDialogFragment.apply {
-                    completeSignUpInfo(email)
-                    show(supportFragmentManager, null)
-                }
-            }
-
-            override fun loginWithGoogle() {
-                signInWithGoogle()
-            }
-
-            override fun loginWithFacebook() {
-                LoginManager.getInstance().logIn(this@HomeActivity, arrayListOf("email", "public_profile"))
-            }
-        })
-    }
-
-
-    private val progressBarFragmentDialog: ProgressBarFragmentDialog by lazy {
-        ProgressBarFragmentDialog.newInstance(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
-            override fun onCancel() {
-                logOut()
-            }
-        })
-    }
+    private var progressBarFragmentDialog: ProgressBarFragmentDialog? = null
 
     private var facebookCredential : AuthCredential? = null
     private var googleCredential : AuthCredential? = null
@@ -129,13 +58,14 @@ class HomeActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
-
         firebaseAuthentication = FirebaseAuth.getInstance()
 
         setSignUpWithEmailButton()
         setSignInButton()
         setGoogleSignInAndButton()
         setFacebookButton()
+
+        setProgressBar()
 
     }
 
@@ -153,12 +83,96 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onPause() {
         super.onPause()
-        if (progressBarFragmentDialog.isLoadingInProgress) progressBarFragmentDialog.dismiss()
+        if (progressBarFragmentDialog?.isLoadingInProgress == true) progressBarFragmentDialog?.dismiss()
+    }
+
+    private fun setProgressBar() {
+        progressBarFragmentDialog = ProgressBarFragmentDialog.newInstance(
+            object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
+                override fun onCancel() {
+                    logOut()
+                }
+                override fun onDialogFragmentDestroyed() {
+                    progressBarFragmentDialog = null
+                }
+            })
+    }
+
+
+
+    private fun setSignInFragmentDialog() {
+
+        signInDialogFragment = SignInDialogFragment.newInstance(object: SignInDialogFragment.SignInDialogFragmentInterface {
+            override fun onFinish() {
+                startActivity(Intent(this@HomeActivity, HomeFeedActivity::class.java))
+            }
+
+            override fun informationMissing(email: String) {
+                setSignUpCompleteInformationDialogFragment()
+                signUpCompleteInformationDialogFragment?.apply {
+                    completeSignUpInfo(email)
+                    show(supportFragmentManager, null)
+                }
+            }
+
+            override fun loginWithGoogle() {
+                signInWithGoogle()
+            }
+
+            override fun loginWithFacebook() {
+                LoginManager.getInstance().logIn(this@HomeActivity, arrayListOf("email", "public_profile"))
+            }
+
+            override fun onDialogFragmentDestroyed() {
+                signInDialogFragment = null
+            }
+        })
+    }
+
+    private fun setSignUpDialogFragment() {
+        signUpDialogFragment = SignUpDialogFragment.newInstance(object: SignUpDialogFragment.SignUpDialogFragmentInterface {
+            override fun onFinish(email: String) {
+                setSignUpCompleteInformationDialogFragment()
+                signUpCompleteInformationDialogFragment?.apply {
+                    completeSignUpInfo(email)
+                    show(supportFragmentManager, null)
+                }
+                signUpDialogFragment?.dismiss()
+            }
+
+            override fun loginWithFacebook() {
+                LoginManager.getInstance().logIn(this@HomeActivity, arrayListOf("email", "public_profile"))
+            }
+
+            override fun loginWithGoogle() {
+                signInWithGoogle()
+            }
+
+            override fun onDialogFragmentDestroyed() {
+                signUpDialogFragment = null
+            }
+        })
+    }
+
+    private fun setSignUpCompleteInformationDialogFragment() {
+        signUpCompleteInformationDialogFragment = SignUpCompleteInformationDialogFragment.newInstance(object: SignUpCompleteInformationDialogFragment.SignUpCompleteInformationDialogFragmentInterface {
+            override fun onFinish() {
+                startActivity(Intent(this@HomeActivity, HomeFeedActivity::class.java))
+                signUpCompleteInformationDialogFragment?.dismiss()
+            }
+
+            override fun onDialogFragmentDestroyed() {
+                signUpCompleteInformationDialogFragment = null
+            }
+        })
     }
 
     private fun setSignUpWithEmailButton() {
         signUpWithEmail.setOnClickListener {
-            if (!progressBarFragmentDialog.isLoadingInProgress) signUpDialogFragment.show(supportFragmentManager, null)
+            if (progressBarFragmentDialog?.isLoadingInProgress == false) {
+                setSignUpDialogFragment()
+                signUpDialogFragment?.show(supportFragmentManager, null)
+            }
         }
     }
 
@@ -169,12 +183,15 @@ class HomeActivity : AppCompatActivity() {
             .build()
 
         googleSignInClient = GoogleSignIn.getClient(this, googleSignInOptions)
-        googleSignInButton.setOnClickListener { if (!progressBarFragmentDialog.isLoadingInProgress) signInWithGoogle() }
+        googleSignInButton.setOnClickListener { if (progressBarFragmentDialog?.isLoadingInProgress == false) signInWithGoogle() }
     }
 
     private fun setSignInButton() {
         signInButton.setOnClickListener {
-            if (!progressBarFragmentDialog.isLoadingInProgress) signInDialogFragment.show(supportFragmentManager, null)
+            if (progressBarFragmentDialog?.isLoadingInProgress == false) {
+                setSignInFragmentDialog()
+                signInDialogFragment?.show(supportFragmentManager, null)
+            }
         }
     }
 
@@ -188,13 +205,13 @@ class HomeActivity : AppCompatActivity() {
         callbackManager = CallbackManager.Factory.create()
         facebookLoginButton.setPermissions(arrayListOf("email", "public_profile"))
 
-        facebookLoginButton?.setOnTouchListener { _, _ -> progressBarFragmentDialog.isLoadingInProgress }
+        facebookLoginButton?.setOnTouchListener { _, _ -> progressBarFragmentDialog?.isLoadingInProgress == true }
 
         facebookLoginButton.registerCallback(callbackManager, object: FacebookCallback<LoginResult> {
             override fun onSuccess(result: LoginResult?) {
                 Log.d(facebookSignInTag, "SUCCESS WITH FACEBOOK LOGIN")
 
-                progressBarFragmentDialog.show(supportFragmentManager, null)
+                progressBarFragmentDialog?.show(supportFragmentManager, null)
 
                 val accessToken = result?.accessToken ?: AccessToken.getCurrentAccessToken()
 
@@ -235,7 +252,7 @@ class HomeActivity : AppCompatActivity() {
                 // Google Sign In was successful, authenticate with Firebase
                 signedInAccount = task.getResult(ApiException::class.java)
                 checkOtherThanGoogleAuthProvidersPresent(signedInAccount ?: return)
-                progressBarFragmentDialog.show(supportFragmentManager, null)
+                progressBarFragmentDialog?.show(supportFragmentManager, null)
             } catch (e: ApiException) {
                 // Google Sign In failed, update UI appropriately
                 Log.w(googleSignInTag, "Google sign in failed", e)
@@ -261,7 +278,7 @@ class HomeActivity : AppCompatActivity() {
                         LoginManager.getInstance().logIn(this@HomeActivity, arrayListOf("email", "public_profile"))
                     }
 
-                    progressBarFragmentDialog.dismiss()
+                    progressBarFragmentDialog?.dismiss()
                     uiScope.cancel()
                 }
 
@@ -269,12 +286,12 @@ class HomeActivity : AppCompatActivity() {
                 currentSignInMethods.contains("password") &&  !currentSignInMethods.contains("google.com") -> {
 
                     showAlertDialog("Google", "email") {
-                        signInDialogFragment.retrievedAuthCredential = googleCredential
+                        signInDialogFragment?.retrievedAuthCredential = googleCredential
                         googleCredential = null
-                        signInDialogFragment.show(supportFragmentManager, null)
+                        signInDialogFragment?.show(supportFragmentManager, null)
                     }
 
-                    progressBarFragmentDialog.dismiss()
+                    progressBarFragmentDialog?.dismiss()
                     uiScope.cancel()
 
                 }
@@ -299,7 +316,7 @@ class HomeActivity : AppCompatActivity() {
                     // Sign in success, update UI with the signed-in user's information
                     if (task.result?.additionalUserInfo?.isNewUser == true) {
                         presentCompleteInformationDialogForFacebook(task, birthday)
-                        progressBarFragmentDialog.dismiss()
+                        progressBarFragmentDialog?.dismiss()
                         return@addOnCompleteListener
                     } else if (googleCredential != null) {
                         firebaseAuthentication?.currentUser?.linkWithCredential(googleCredential ?: return@addOnCompleteListener)
@@ -318,7 +335,7 @@ class HomeActivity : AppCompatActivity() {
                         val uiScope = CoroutineScope(Dispatchers.Main)
                         uiScope.launch {
                             val currentSignInMethods = firebaseAuthentication?.fetchSignInMethodsForEmail(facebookEmail)?.await()?.signInMethods
-                            progressBarFragmentDialog.dismiss()
+                            progressBarFragmentDialog?.dismiss()
 
                             if (currentSignInMethods?.contains("google.com") == true) {
 
@@ -330,9 +347,9 @@ class HomeActivity : AppCompatActivity() {
                             } else if (currentSignInMethods?.contains("password") == true) {
 
                                 showAlertDialog("Facebook", "email") {
-                                    signInDialogFragment.retrievedAuthCredential = facebookCredential
+                                    signInDialogFragment?.retrievedAuthCredential = facebookCredential
                                     facebookCredential = null
-                                    signInDialogFragment.show(supportFragmentManager, null)
+                                    signInDialogFragment?.show(supportFragmentManager, null)
                                 }
 
                                 uiScope.cancel()
@@ -355,8 +372,8 @@ class HomeActivity : AppCompatActivity() {
             .get("data") as Map<String, Any>)
             .get("url") as String
 
-
-        signUpCompleteInformationDialogFragment.apply {
+        setSignUpCompleteInformationDialogFragment()
+        signUpCompleteInformationDialogFragment?.apply {
             completeSignUpInfo(user?.email ?: "", user?.displayName ?: "", profileImageURL, birthday)
             show(supportFragmentManager, null)
 
@@ -373,7 +390,7 @@ class HomeActivity : AppCompatActivity() {
                 if (task.result?.additionalUserInfo?.isNewUser == true) {
                     presentCompleteInformationDialogForGoogle(task)
 
-                    progressBarFragmentDialog.dismiss()
+                    progressBarFragmentDialog?.dismiss()
 
                     return@addOnCompleteListener
                 } else if (facebookCredential != null) {
@@ -386,7 +403,7 @@ class HomeActivity : AppCompatActivity() {
                 }
 
             } else {
-                progressBarFragmentDialog.setCancelAlertDialog()
+                progressBarFragmentDialog?.setCancelAlertDialog()
                 // If sign in fails, display a message to the user.
                 Log.w(googleSignInTag, "signInWithCredential:failure", task.exception)
             }
@@ -398,7 +415,8 @@ class HomeActivity : AppCompatActivity() {
         val user = task.result?.user
         val profileImageURL = task.result?.additionalUserInfo?.profile?.get("picture") as? String
 
-        signUpCompleteInformationDialogFragment.apply {
+        setSignUpCompleteInformationDialogFragment()
+        signUpCompleteInformationDialogFragment?.apply {
             completeSignUpInfo(user?.email ?: "", user?.displayName ?: "", profileImageURL ?: "" )
             show(supportFragmentManager, null)
         }
@@ -444,7 +462,7 @@ class HomeActivity : AppCompatActivity() {
                     ifInfoNotExist()
                 else {
                     startActivity(Intent(this@HomeActivity, HomeFeedActivity::class.java))
-                    progressBarFragmentDialog.dismiss()
+                    progressBarFragmentDialog?.dismiss()
                 }
             }
 

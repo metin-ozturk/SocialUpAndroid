@@ -19,6 +19,7 @@ class TimePickerDialogFragment : DialogFragment() {
     interface TimePickerFragmentInterface {
         fun onFinishInitialTime(result: String)
         fun onFinishFinalTime(result: String)
+        fun onDialogFragmentDestroyed()
     }
 
     private var viewToBeCreated : View? = null
@@ -80,6 +81,11 @@ class TimePickerDialogFragment : DialogFragment() {
         }
 
         return viewToBeCreated
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        listener?.onDialogFragmentDestroyed()
     }
 
     private fun updateInitialAndFinalHoursMinutes(updateWith: String) {

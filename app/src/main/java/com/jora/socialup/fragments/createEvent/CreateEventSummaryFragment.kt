@@ -45,13 +45,7 @@ class CreateEventSummaryFragment : Fragment() {
         FirebaseAuth.getInstance().currentUser?.uid
     }
 
-    private val progressBarFragmentDialog: ProgressBarFragmentDialog by lazy {
-        ProgressBarFragmentDialog.newInstance(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
-            override fun onCancel() {
-
-            }
-        })
-    }
+    private var progressBarFragmentDialog: ProgressBarFragmentDialog? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_summary, container, false)
@@ -94,6 +88,18 @@ class CreateEventSummaryFragment : Fragment() {
         )
     }
 
+    private fun setProgressBar() {
+        progressBarFragmentDialog = ProgressBarFragmentDialog.newInstance(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
+            override fun onCancel() {
+
+            }
+
+            override fun onDialogFragmentDestroyed() {
+                progressBarFragmentDialog = null
+            }
+        })
+    }
+
     private fun fillEventFields() {
         eventToBePassed = createEventViewModel.event.value
         eventToBePassed?.status = 0
@@ -105,9 +111,10 @@ class CreateEventSummaryFragment : Fragment() {
     private fun setConfirmEventFunction() {
         viewToBeCreated?.createEventSummaryConfirmButton?.setOnClickListener {
 
-            if (progressBarFragmentDialog.isLoadingInProgress) return@setOnClickListener
+            if (progressBarFragmentDialog?.isLoadingInProgress == true) return@setOnClickListener
 
-            progressBarFragmentDialog.show(fragmentManager ?: return@setOnClickListener, null)
+            setProgressBar()
+            progressBarFragmentDialog?.show(fragmentManager ?: return@setOnClickListener, null)
 
             eventToBePassed?.timeStamp = FieldValue.serverTimestamp()
 
@@ -145,7 +152,7 @@ class CreateEventSummaryFragment : Fragment() {
                 userEventReference.set(votedForDate as Map<String, Boolean>, SetOptions.merge())
 
                 withContext(Dispatchers.Main) {
-                    progressBarFragmentDialog.dismiss()
+                    progressBarFragmentDialog?.dismiss()
                     startActivity(Intent(activity!!, HomeActivity::class.java))
                     cancel()
                 }

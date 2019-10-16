@@ -2,6 +2,7 @@ package com.jora.socialup.fragments.authentication
 
 import android.content.DialogInterface
 import android.os.Bundle
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -25,6 +26,7 @@ class SignInDialogFragment : DialogFragment() {
         fun informationMissing(email: String)
         fun loginWithGoogle()
         fun loginWithFacebook()
+        fun onDialogFragmentDestroyed()
     }
 
     var retrievedAuthCredential : AuthCredential? = null
@@ -78,6 +80,11 @@ class SignInDialogFragment : DialogFragment() {
 
 
         return viewToBeCreated
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        listener?.onDialogFragmentDestroyed()
     }
 
     private fun showAlertDialog(isGoogle: Boolean) {

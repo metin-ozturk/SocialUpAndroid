@@ -2,21 +2,31 @@ package com.jora.socialup.fragments.eventFeedAndDetail
 
 // FIX : WHEN DOWNLOADING SEARCH EVENTS, DOWNLOAD EVENT AND EVENT SPECIFIC INFORMATION TOGETHER
 
+import android.animation.Animator
+import android.animation.AnimatorListenerAdapter
+import android.animation.ObjectAnimator
+import android.animation.ValueAnimator
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Point
+import android.opengl.Visibility
 import android.os.Bundle
+import android.transition.TransitionManager
 import android.util.Log
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.ImageView
 import android.widget.SearchView
+import androidx.constraintlayout.widget.ConstraintSet
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DefaultItemAnimator
@@ -33,18 +43,19 @@ import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.adapters.EventsRecyclerViewAdapter
 import com.jora.socialup.adapters.EventSearchRecyclerViewAdapter
 import com.jora.socialup.R
-import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.activities.EventCreateActivity
 import com.jora.socialup.activities.HomeActivity
 import com.jora.socialup.activities.HomeFeedActivity
-import com.jora.socialup.helpers.OnGestureTouchListener
-import com.jora.socialup.helpers.ProgressBarFragmentDialog
+import com.jora.socialup.helpers.*
 import com.jora.socialup.models.Event
 import com.jora.socialup.models.EventResponseStatus
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event.view.*
 import kotlinx.coroutines.*
-import kotlin.coroutines.CoroutineContext
+import java.util.*
+import kotlin.collections.ArrayList
+import kotlin.concurrent.schedule
+
 
 class EventFragment : Fragment() {
     private val eventTag = "EventTag"
@@ -65,14 +76,12 @@ class EventFragment : Fragment() {
         FirebaseAuth.getInstance()
     }
 
+    private val favoriteEventsMenuTag = "favoriteEventsMenu"
+
+
     private var viewToBeCreated: View? = null
 
-    private val progressBarFragmentDialog: ProgressBarFragmentDialog by lazy {
-        ProgressBarFragmentDialog.newInstance(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
-            override fun onCancel() {
-            }
-        })
-    }
+    private var progressBarFragmentDialog: ProgressBarFragmentDialog? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -115,22 +124,79 @@ class EventFragment : Fragment() {
         setEventRecyclerViewListener()
         getEventsLiveDataFromEventViewModel()
         setLogOut()
+        setCreateEventFavoriteEventsButton()
+        setProgressBar()
+        getFavoriteEvents()
 
-
-        viewToBeCreated?.eventFeedCreateEventImageView?.setOnClickListener {
-            startActivity(Intent(activity!!, EventCreateActivity::class.java))
-        }
-
+        viewToBeCreated?.eventFeedProgressBar?.visibility = View.GONE
 
         return viewToBeCreated
     }
 
     override fun onPause() {
         super.onPause()
-        if (progressBarFragmentDialog.isLoadingInProgress) progressBarFragmentDialog.dismiss()
+        if (progressBarFragmentDialog?.isLoadingInProgress == true) progressBarFragmentDialog?.dismiss()
+
+        viewModel.eventsArray.removeObservers(activity!!)
+        viewToBeCreated = null
+
+
+        // If favoriteEventsMenu fragment is being shown, remove it
+        activity?.supportFragmentManager?.findFragmentByTag(favoriteEventsMenuTag)?.also {
+            val transaction = activity?.supportFragmentManager?.beginTransaction()
+            transaction?.remove(it)
+            transaction?.commit()
+        }
     }
 
+    private fun setProgressBar() {
+        progressBarFragmentDialog = ProgressBarFragmentDialog.newInstance(
+            object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
+                override fun onCancel() {
 
+                }
+
+                override fun onDialogFragmentDestroyed() {
+                    progressBarFragmentDialog = null
+                }
+            })
+    }
+
+    private fun setCreateEventFavoriteEventsButton() {
+        viewToBeCreated?.eventFeedCreateEventImageView?.setOnTouchListener(OnGestureTouchListener(activity!!, object: OnGestureTouchListener.OnGestureInitiated {
+            override fun longPressed() {
+                super.longPressed()
+
+                val transaction = activity?.supportFragmentManager?.beginTransaction()
+
+                if (activity?.supportFragmentManager?.findFragmentByTag(favoriteEventsMenuTag) == null) {
+                    val favoriteEventsMenu = FavoriteEventsMenu.newInstance(object: FavoriteEventsMenu.FavoriteEventsMenuInterface {
+                        override fun favoriteEventClicked() {
+                            progressBarFragmentDialog?.show(fragmentManager ?: return, null)
+                            downloadEventSpecificInformationAndUpdateViewModel()
+                        }
+
+                    })
+                    transaction?.add(R.id.favorite_events_menu_frame_layout, favoriteEventsMenu,
+                        favoriteEventsMenuTag)
+                    transaction?.commit()
+
+                } else {
+                    val fragment = activity?.supportFragmentManager?.findFragmentByTag(favoriteEventsMenuTag) as FavoriteEventsMenu
+                    fragment.makeFavoriteEventsDisappear {
+                        transaction?.remove(fragment)
+                        transaction?.commit()
+                    }
+                }
+
+            }
+
+            override fun singleTappedConfirmed() {
+                super.singleTappedConfirmed()
+                startActivity(Intent(activity!!, EventCreateActivity::class.java))
+            }
+        }))
+    }
 
     private fun setLogOut() {
         viewToBeCreated?.eventFeedFounderImageView?.setOnTouchListener(OnGestureTouchListener(activity!!, object: OnGestureTouchListener.OnGestureInitiated {
@@ -154,35 +220,52 @@ class EventFragment : Fragment() {
         }))
     }
 
+    private fun getFavoriteEvents() {
+        if (!viewModel.isFavoriteEventsToBeDownloaded) return
+        else viewModel.isFavoriteEventsToBeDownloaded = false
+
+        val userID = FirebaseAuth.getInstance().currentUser?.uid ?: return
+
+        FirebaseFirestore.getInstance().collection("users").document(userID)
+            .collection("events").whereEqualTo("EventIsFavorite", true).get()
+            .addOnSuccessListener { querySnapshot ->
+                viewModel.favoriteEvents = ArrayList()
+                querySnapshot.documents.forEach { documentSnapshot ->
+                    documentSnapshot.id.also { documentId ->
+                        Event.downloadEventInformation(documentId) { retrievedEvent ->
+                            viewModel.favoriteEvents.add(retrievedEvent)
+                        }
+                    }
+                }
+            }
+    }
+
 
     private fun getEventsLiveDataFromEventViewModel() {
 
-        if (viewModel.currentUserImage.value == null) {
-            viewModel.currentUserImage.observe(activity!!, Observer<Bitmap> { userImage ->
-                viewToBeCreated?.eventFeedFounderImageView?.setImageBitmap(userImage)
-            })
-        } else {
-            val userImageToBeRetrieved = viewModel.currentUserImage.value!!
-            viewToBeCreated?.eventFeedFounderImageView?.setImageBitmap(userImageToBeRetrieved)
+        viewModel.currentUserImage.observeOnce(activity!!) {
+            viewToBeCreated?.eventFeedFounderImageView?.setImageBitmap(it)
         }
 
-        if (viewModel.eventsArray.value == null) {
-            viewModel.eventsArray.observe(activity!!, Observer<ArrayList<Event>> { retrievedEventsArray ->
-                if (!retrievedEventsArray.isNullOrEmpty()) {
-                    eventsArray.add(retrievedEventsArray.last())
+
+        viewModel.eventsArray.observe(activity!!, Observer<ArrayList<Event>> { retrievedEventsArray ->
+            if (retrievedEventsArray.size == eventsArray.size + 1) {
+                // if a new event is downloaded, add it to the events array
+                eventsArray.add(retrievedEventsArray.last())
+                eventsRecyclerViewAdapter?.notifyItemChanged(eventsArray.count() - 1)
+            } else {
+                retrievedEventsArray.forEach {
+                    eventsArray.add(it)
                     eventsRecyclerViewAdapter?.notifyItemChanged(eventsArray.count() - 1)
                 }
 
-            })
-        } else {
-            val eventsRetrieved = viewModel.eventsArray.value ?: ArrayList()
-            eventsRetrieved.forEach {
-                eventsArray.add(it)
-                eventsRecyclerViewAdapter?.notifyItemChanged(eventsArray.count() - 1)
+                // When returning to the feed, display last focused row at top
+                val positionToBeScrolled = viewModel.lastFocusedRow.value ?: 0
+                viewToBeCreated?.eventFeedRecyclerView?.scrollToPosition(positionToBeScrolled)
             }
 
-            viewToBeCreated?.eventFeedSearchRecycleView?.scrollToPosition(viewModel.lastFocusedRow.value ?: 0) // Set which row to focused when fragment is reloaded
-        }
+        })
+
     }
 
     private fun downloadSearchResult(searchText: String, completion: (ArrayList<ArrayList<Any>>) -> Unit) {
@@ -248,10 +331,43 @@ class EventFragment : Fragment() {
                 if (dy > 0 && viewModel.isDownloadingMoreEvents.value == false && eventsArray.size == (feedLayoutManager?.findLastVisibleItemPosition() ?: 0) + 1) {
                     // Scrolling Up, No other event is being downloaded and user viewed the bottom event.
                     viewModel.downloadEvents(eventsArray.size, eventsArray.size + eventsNumberToDownloadPerRefresh)
-
+                    showProgressBarWhenDownloadingMoreEvents()
                 }
             }
         })
+    }
+
+    private fun showProgressBarWhenDownloadingMoreEvents() {
+        // To make layout animate, add: " android:animateLayoutChanges="true" " to layout's xml.
+        val constraintSetTo = ConstraintSet()
+        val progressBarHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 80f, resources.displayMetrics)
+
+        constraintSetTo.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return, ConstraintSet.START, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return, ConstraintSet.START, 8)
+        constraintSetTo.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return, ConstraintSet.END, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return, ConstraintSet.END, 8)
+        constraintSetTo.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return, ConstraintSet.TOP, viewToBeCreated?.eventFeedSearchView?.id ?: return, ConstraintSet.BOTTOM, 8)
+        constraintSetTo.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return, ConstraintSet.BOTTOM, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return, ConstraintSet.BOTTOM, progressBarHeight.toInt())
+        constraintSetTo.applyTo(viewToBeCreated?.eventFeedFragmentConstraintLayout)
+
+        viewToBeCreated?.eventFeedProgressBar?.visibility = View.VISIBLE
+        viewToBeCreated?.eventFeedCreateEventImageView?.visibility = View.INVISIBLE
+
+        val bgScope = CoroutineScope(Dispatchers.IO)
+        bgScope.launch {
+            delay(1000)
+
+            val constraintSetFrom = ConstraintSet()
+            constraintSetFrom.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return@launch, ConstraintSet.START, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return@launch, ConstraintSet.START, 8)
+            constraintSetFrom.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return@launch, ConstraintSet.END, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return@launch, ConstraintSet.END, 8)
+            constraintSetFrom.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return@launch, ConstraintSet.TOP, viewToBeCreated?.eventFeedSearchView?.id ?: return@launch, ConstraintSet.BOTTOM, 8)
+            constraintSetFrom.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return@launch, ConstraintSet.BOTTOM, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return@launch, ConstraintSet.BOTTOM, 8)
+
+            withContext(Dispatchers.Main) {
+                constraintSetFrom.applyTo(viewToBeCreated?.eventFeedFragmentConstraintLayout)
+                viewToBeCreated?.eventFeedProgressBar?.visibility = View.GONE
+                viewToBeCreated?.eventFeedCreateEventImageView?.visibility = View.VISIBLE
+                cancel()
+            }
+        }
     }
 
 
@@ -264,8 +380,8 @@ class EventFragment : Fragment() {
                 recyclerView,
                 object : RecyclerItemClickListener.OnItemClickListener {
                     override fun onItemClick(view: View, position: Int) {
-                        if (!progressBarFragmentDialog.isLoadingInProgress) {
-                            progressBarFragmentDialog.show(fragmentManager ?: return, null)
+                        if (progressBarFragmentDialog?.isLoadingInProgress == false) {
+                            progressBarFragmentDialog?.show(fragmentManager ?: return, null)
                             downloadEventSpecificInformationAndUpdateViewModel(position)
                         }
                     }
@@ -308,7 +424,7 @@ class EventFragment : Fragment() {
 
                 val isFavorite = data?.get("EventIsFavorite") as Boolean
 
-                viewModel.assertIsFavorite(isFavorite)
+                viewModel.isFavorite = isFavorite
                 viewModel.assertWhichDatesToBeUpdated(votedDates)
 
                 when(eventResponseStatusAsInt) {
@@ -324,7 +440,7 @@ class EventFragment : Fragment() {
                 transaction?.replace(R.id.homeRootFrameLayout, eventDetailFragment)
                 transaction?.commit()
 
-                progressBarFragmentDialog.dismiss()
+                progressBarFragmentDialog?.dismiss()
             }
     }
 
@@ -350,6 +466,7 @@ class EventFragment : Fragment() {
 
                             Event.downloadEventInformation(searchedEventID[position]) {
                                 viewModel.assertWhichViewToBeShowed(it)
+                                progressBarFragmentDialog?.show(fragmentManager ?: return@downloadEventInformation, null)
                                 downloadEventSpecificInformationAndUpdateViewModel()
 
                             }
@@ -396,7 +513,7 @@ class EventFragment : Fragment() {
                     val searchedEventID = combinedSearchResult[2] as ArrayList<String>
 
                     if (isEvent.run { isNotEmpty() && first() }) {
-                        progressBarFragmentDialog.show(fragmentManager ?: return true, null)
+                        progressBarFragmentDialog?.show(fragmentManager ?: return true, null)
                         Event.downloadEventInformation(searchedEventID.first()) {
                             viewModel.assertWhichViewToBeShowed(it)
                             downloadEventSpecificInformationAndUpdateViewModel()

@@ -18,6 +18,7 @@ class SignUpDialogFragment : DialogFragment() {
         fun onFinish(email: String)
         fun loginWithFacebook()
         fun loginWithGoogle()
+        fun onDialogFragmentDestroyed()
     }
     private var firebaseAuthentication : FirebaseAuth? = null
     private var listener: SignUpDialogFragmentInterface? = null
@@ -62,6 +63,11 @@ class SignUpDialogFragment : DialogFragment() {
         }
 
         return viewToBeCreated
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        listener?.onDialogFragmentDestroyed()
     }
 
     private fun showAlertDialog(isGoogle: Boolean) {

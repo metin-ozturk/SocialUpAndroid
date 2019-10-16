@@ -41,6 +41,7 @@ import com.jora.socialup.R
 import com.jora.socialup.adapters.LocationSearchRecyclerViewAdapter
 import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.RecyclerItemClickListener
+import com.jora.socialup.models.LocationSelectionStatus
 import kotlin.properties.Delegates
 
 // DEAL WITH "windowSoftInputMode" in MANIFEST
@@ -86,10 +87,14 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
                 )
                 locationDetailDialogFragment?.dismiss()
             }
+
+            override fun onDialogFragmentDestroyed() {
+                locationDetailDialogFragment = null
+            }
         }
     }
 
-    private var isLocationTickMenuPresent = false
+    private var locationSelectionStatus = LocationSelectionStatus.NotSelected
 
     private var markers = ArrayList<Marker>()
     private var customMarker : Marker? = null
@@ -104,9 +109,9 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_where, container, false)
-        eventToBePassed = createEventViewModel.event.value ?: Event()
+        eventToBePassed = createEventViewModel.event.value?.copy() ?: Event()
 
-        isLocationTickMenuPresent = createEventViewModel.isLocationTickMenuPresent.value ?: false
+        locationSelectionStatus = createEventViewModel.locationSelectionStatus.value ?: LocationSelectionStatus.NotSelected
 
         setSearchView()
         setSearchViewListeners()
@@ -116,6 +121,8 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
 
         return viewToBeCreated
     }
+
+
 
     private fun setSwipeGestures() {
         viewToBeCreated?.createEventWhereRootConstraintLayout?.setOnTouchListener( OnGestureTouchListener(activity!!,
@@ -137,11 +144,11 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
         googleMap = googleMapRetrieved
         googleMap?.setOnMarkerClickListener(this)
 
-        if (isLocationTickMenuPresent) {
+        if (locationSelectionStatus == LocationSelectionStatus.AboutToBeConfirmed) {
             placeMarkerOnMap(LatLng(eventToBePassed?.locationLatitude?.toDouble() ?: return, eventToBePassed?.locationLongitude?.toDouble() ?: return), false)
         } else {
 
-            if (eventToBePassed?.locationLongitude != null && eventToBePassed?.locationLatitude != null) {
+            if (locationSelectionStatus == LocationSelectionStatus.SettingNameAndDescription) {
                 locationDetailDialogFragment = eventToBePassed?.run {
                     LocationDetailDialogFragment.newInstance(LocationInfo(locationName, locationDescription, locationLatitude.toString(),
                         locationLongitude.toString(), locationAddress, null), locationDetailDialogListener)
@@ -153,7 +160,7 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
             // Check if user grants permission to access fine location and if not, ask for it. Then go to current location.
             if (checkFineLocationPermission()) {
                 goToCurrentLocationAndUpdateMapViewDetails()
-            } else if (!isLocationTickMenuPresent) {
+            } else {
                 requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
             }
         }
@@ -372,6 +379,8 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
             locationLongitude = null
             locationAddress = null
         }
+
+        createEventViewModel.updateEventData(eventToBePassed)
     }
 
 
@@ -393,7 +402,10 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
                     override fun onLocationResult(locationResult: LocationResult?) {
                         super.onLocationResult(locationResult)
 
-                        if (locationResult == null) return
+                        if (locationResult == null) {
+                            fusedLocationClient?.removeLocationUpdates(this)
+                            return
+                        }
 
                         lastLocation = locationResult.lastLocation.also { location ->
                             googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(location.latitude, location.longitude), 12f))
@@ -447,7 +459,7 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
     }
 
     private fun setConfirmInterface() {
-        isLocationTickMenuPresent = true
+        locationSelectionStatus = LocationSelectionStatus.AboutToBeConfirmed
 
         val confirmLocation = TextView(context!!)
         confirmLocation.text = "Confirm?"
@@ -496,7 +508,6 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
     private fun setConfirmInterfaceListeners(confirmLocationTick: ImageView, confirmLocationCancel: ImageView, confirmLocation: TextView) {
 
         confirmLocationTick.setOnClickListener {
-            isLocationTickMenuPresent = false
             val createEventSummaryFragment = CreateEventSummaryFragment()
             val transaction = activity?.supportFragmentManager?.beginTransaction()
             transaction?.replace(R.id.eventCreateFrameLayout, createEventSummaryFragment)
@@ -504,7 +515,7 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
         }
 
         confirmLocationCancel.setOnClickListener {
-            isLocationTickMenuPresent = false
+            locationSelectionStatus = LocationSelectionStatus.NotSelected
             clearEventToBeCreated()
 
             arrayOf(confirmLocation, confirmLocationCancel, confirmLocationTick, customMarker).forEach {viewToBeRemoved ->
@@ -551,11 +562,19 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
         mapView?.onPause()
 
         if (locationDetailDialogFragment?.isAdded == true) {
+            locationSelectionStatus = LocationSelectionStatus.SettingNameAndDescription
             createEventViewModel.updateEventData(locationDetailDialogFragment?.returnEventWithUpdatedLocation(eventToBePassed ?: return) ?: return)
             locationDetailDialogFragment?.dismiss()
         }
 
-        createEventViewModel.updateIsLocationTickMenuPresent(isLocationTickMenuPresent)
+        if ( locationSelectionStatus == LocationSelectionStatus.NotSelected
+            && eventToBePassed?.locationLatitude != null) {
+
+            clearEventToBeCreated()
+        }
+
+        createEventViewModel.updateLocationSelectionStatus(locationSelectionStatus)
+
     }
 
     override fun onStop() {

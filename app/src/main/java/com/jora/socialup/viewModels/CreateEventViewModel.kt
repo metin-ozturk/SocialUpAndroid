@@ -6,12 +6,12 @@ import androidx.lifecycle.ViewModel
 import com.jora.socialup.models.DateTimeInfo
 import com.jora.socialup.models.Event
 import com.jora.socialup.models.FriendInfo
+import com.jora.socialup.models.LocationSelectionStatus
 
 class CreateEventViewModel : ViewModel() {
     private var eventData = MutableLiveData<Event>()
     val event : LiveData<Event>
         get() = eventData
-
 
     private var eventHistoryData = MutableLiveData(ArrayList<Event>())
     val eventHistory : LiveData<ArrayList<Event>>
@@ -25,17 +25,9 @@ class CreateEventViewModel : ViewModel() {
     val friends : LiveData<ArrayList<FriendInfo>>
         get() = friendsData
 
-    private var friendIDsArrayListData = MutableLiveData<ArrayList<String>>()
-    val friendsIdsArrayList : LiveData<ArrayList<String>>
-        get() = friendIDsArrayListData
-
-    private var friendsMapData = MutableLiveData<MutableMap<String, FriendInfo>>()
-    val friendsMap : LiveData<MutableMap<String, FriendInfo>>
-        get() = friendsMapData
-
-    private var isLocationTickMenuPresentData = MutableLiveData<Boolean>()
-    val isLocationTickMenuPresent : LiveData<Boolean>
-        get() = isLocationTickMenuPresentData
+    private var locationSelectionStatusData = MutableLiveData<LocationSelectionStatus>()
+    val locationSelectionStatus : LiveData<LocationSelectionStatus>
+        get() = locationSelectionStatusData
 
 
 
@@ -43,8 +35,8 @@ class CreateEventViewModel : ViewModel() {
         eventDateTimeData.value = updateTo
     }
 
-    fun updateIsLocationTickMenuPresent(isPresent : Boolean) {
-        isLocationTickMenuPresentData.value = isPresent
+    fun updateLocationSelectionStatus(updateTo : LocationSelectionStatus) {
+        locationSelectionStatusData.value = updateTo
     }
 
     fun updateEventData(updateTo: Event?) {
@@ -55,12 +47,5 @@ class CreateEventViewModel : ViewModel() {
         updateTo?.let { friendsData.value = it }
     }
 
-    fun updateFriendIDsArrayListData(updateTo: ArrayList<String>?) {
-        updateTo?.let { friendIDsArrayListData.value = it }
-    }
-
-    fun updateFriendsMapData(updateTo: MutableMap<String, FriendInfo>?) {
-        updateTo?.let { friendsMapData.value = it }
-    }
 
 }

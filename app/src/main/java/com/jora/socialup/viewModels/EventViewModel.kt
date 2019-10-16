@@ -13,6 +13,14 @@ import kotlin.collections.ArrayList
 
 class EventViewModel : ViewModel() {
 
+    var favoriteEvents= ArrayList<Event>()
+    val favoriteEventsCount : Int
+        get() = favoriteEvents.size
+
+    var isFavoriteEventsToBeDownloaded = true
+
+    var isFavorite = false
+
     private var eventsArrayData = MutableLiveData<ArrayList<Event>>()
     val eventsArray : LiveData<ArrayList<Event>>
         get() = eventsArrayData
@@ -37,9 +45,6 @@ class EventViewModel : ViewModel() {
     val eventResponseStatus : LiveData<EventResponseStatus>
         get() = eventResponseStatusData
 
-    private val isFavoriteData = MutableLiveData<Boolean>()
-    val isFavorite : LiveData<Boolean>
-        get() = isFavoriteData
 
     private val isDownloadingMoreEventsData = MutableLiveData<Boolean>()
     val isDownloadingMoreEvents : LiveData<Boolean>
@@ -60,10 +65,6 @@ class EventViewModel : ViewModel() {
 
     fun assertEventResponseStatus(status: EventResponseStatus) {
         eventResponseStatusData.value = status
-    }
-
-    fun assertIsFavorite(isEventFavorite: Boolean) {
-        isFavoriteData.value = isEventFavorite
     }
 
     fun updateEventsArrayWithViewedEvent(updateEventsArrayTo:Event) {

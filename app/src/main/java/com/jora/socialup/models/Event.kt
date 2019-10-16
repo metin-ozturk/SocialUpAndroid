@@ -83,7 +83,6 @@ class Event(parcel: Parcel? = null) : Parcelable {
             eventWithWhomWontCome = parcel.readArrayList(ArrayList::class.java.classLoader) as ArrayList<String>
 
             hasImage = parcel.readInt() == 1
-//            timeStamp = parcel.readParcelable(FieldValue::class.java.classLoader)
         }
     }
 
@@ -113,11 +112,44 @@ class Event(parcel: Parcel? = null) : Parcelable {
         dest?.writeList(eventWithWhomWontCome?.toList())
 
         dest?.writeInt(if (hasImage == true) 1 else 0)
-//        dest?.writeParcelable(timeStamp, 0)
     }
 
     override fun describeContents(): Int {
         return 0
+    }
+
+    fun copy() : Event {
+        val event = Event()
+        event.iD = this.iD
+        event.name = this.name
+        event.description = this.description
+        event.isPrivate = this.isPrivate
+        event.image = this.image
+        event.isFavorite = this.isFavorite
+
+        event.founderID = this.founderID
+        event.founderName = this.founderName
+        event.founderImage = this.founderImage
+
+        event.status = this.status
+        event.date = this.date
+        event.dateVote = this.dateVote
+
+        event.locationName = this.locationName
+        event.locationDescription = this.locationDescription
+        event.locationLatitude = this.locationLatitude
+        event.locationLongitude = this.locationLongitude
+        event.locationAddress = this.locationAddress
+
+        event.eventWithWhomID = this.eventWithWhomID
+        event.eventWithWhomNames = this.eventWithWhomNames
+        event.eventWithWhomMayCome = this.eventWithWhomMayCome
+        event.eventWithWhomWillCome = this.eventWithWhomWillCome
+        event.eventWithWhomWontCome = this.eventWithWhomWontCome
+
+        event.hasImage = this.hasImage
+
+        return event
     }
 
     fun returnEventAsMap() : Map<String, Any> {

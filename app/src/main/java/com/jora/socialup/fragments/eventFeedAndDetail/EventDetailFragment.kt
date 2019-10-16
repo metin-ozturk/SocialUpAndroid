@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.*
 import android.view.View.GONE
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DefaultItemAnimator
@@ -18,11 +19,13 @@ import com.jora.socialup.R
 import com.jora.socialup.adapters.EventDatesVoteRecyclerViewAdapter
 import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import com.jora.socialup.helpers.RecyclerItemClickListener
+import com.jora.socialup.helpers.observeOnce
 import com.jora.socialup.models.Event
 import com.jora.socialup.models.EventResponseStatus
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event_detail.*
 import java.lang.Exception
+import java.lang.ref.WeakReference
 
 class EventDetailFragment : Fragment() {
     private val eventDetailTag = "EventDetailTag"
@@ -44,13 +47,11 @@ class EventDetailFragment : Fragment() {
         arrayList
     }
 
-    private var isFavorite = false
+    private var progressBarFragmentDialog: ProgressBarFragmentDialog? = null
 
-    private val progressBarFragmentDialog: ProgressBarFragmentDialog by lazy {
-        ProgressBarFragmentDialog.newInstance(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
-            override fun onCancel() {
-            }
-        })
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        getDataFromViewModel()
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -58,13 +59,6 @@ class EventDetailFragment : Fragment() {
             Log.d(eventDetailTag, "Activity is Null")
             return null
         }
-
-        event = ViewModelProviders.of(activity!!).get(EventViewModel::class.java).event.value
-
-        eventResponseStatus = viewModel.eventResponseStatus.value ?: EventResponseStatus.NotResponded
-
-        isFavorite = viewModel.isFavorite.value ?: false
-        votedForDates = viewModel.votedForDates.value ?: mutableMapOf()
 
         val eventReceived = event ?: return null
         customDatesAdapter = EventDatesVoteRecyclerViewAdapter(eventReceived, votedForDates)
@@ -91,17 +85,41 @@ class EventDetailFragment : Fragment() {
 
         setEventResponseStatusToButtons()
         setFavoriteImageView()
+        setProgressBar()
     }
 
     override fun onPause() {
         super.onPause()
-        if (progressBarFragmentDialog.isLoadingInProgress) progressBarFragmentDialog.dismiss()
+        if (progressBarFragmentDialog?.isLoadingInProgress == true) progressBarFragmentDialog?.dismiss()
+    }
+
+    private fun getDataFromViewModel() {
+        event = viewModel.event.value?.copy()
+        eventResponseStatus = viewModel.eventResponseStatus.value ?: EventResponseStatus.NotResponded
+        votedForDates = viewModel.votedForDates.value ?: mutableMapOf()
+
+        viewModel.votedForDates.observeOnce(activity!!) {
+            votedForDates = it
+        }
+
+    }
+
+    private fun setProgressBar() {
+        progressBarFragmentDialog = ProgressBarFragmentDialog.newInstance(
+            object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
+                override fun onCancel() {
+                }
+
+                override fun onDialogFragmentDestroyed() {
+                    progressBarFragmentDialog = null
+                }
+            })
     }
 
     private fun swipedToLeft() {
-        if (progressBarFragmentDialog.isLoadingInProgress) return
+        if (progressBarFragmentDialog?.isLoadingInProgress == true) return
 
-        progressBarFragmentDialog.show(fragmentManager ?: return, null)
+        progressBarFragmentDialog?.show(fragmentManager ?: return, null)
 
         val eventID = event?.iD ?: return
         val updateEventTo = event ?: return
@@ -151,7 +169,7 @@ class EventDetailFragment : Fragment() {
             val eventSpecificPath = FirebaseFirestore.getInstance().collection("users").document(FirebaseAuth.getInstance().currentUser?.uid ?: "")
                 .collection("events").document(eventID)
 
-            val toBeUpdated = mapOf("EventResponseStatus" to eventResponseStatusAsInt, "EventIsFavorite" to isFavorite) as MutableMap<String, Any>
+            val toBeUpdated = mapOf("EventResponseStatus" to eventResponseStatusAsInt, "EventIsFavorite" to viewModel.isFavorite) as MutableMap<String, Any>
             toBeUpdated.putAll(votedForDates)
 
             transaction.update(eventSpecificPath,toBeUpdated)
@@ -161,7 +179,7 @@ class EventDetailFragment : Fragment() {
             fragmentTransaction?.replace(R.id.homeRootFrameLayout, eventFragment)
             fragmentTransaction?.commit()
 
-            progressBarFragmentDialog.dismiss()
+            progressBarFragmentDialog?.dismiss()
         }
 
 
@@ -229,18 +247,29 @@ class EventDetailFragment : Fragment() {
     }
 
     private fun setFavoriteImageView() {
-        if (isFavorite) eventDetailFavoriteImageView.setImageResource(R.drawable.favorite_selected) else eventDetailFavoriteImageView.setImageResource(R.drawable.favorite)
+        if (viewModel.isFavorite) eventDetailFavoriteImageView.setImageResource(R.drawable.favorite_selected) else eventDetailFavoriteImageView.setImageResource(R.drawable.favorite)
 
         eventDetailFavoriteImageView.setOnClickListener {
-            isFavorite = if (isFavorite) {
+            viewModel.isFavorite = if (viewModel.isFavorite) {
                 eventDetailFavoriteImageView.setImageResource(R.drawable.favorite)
+                // If favorite event is deselected then remove it from viewmodel
+                viewModel.favoriteEvents = viewModel.favoriteEvents.filter { it.iD != event?.iD  } as ArrayList<Event>
                 false
             } else {
-                eventDetailFavoriteImageView.setImageResource(R.drawable.favorite_selected)
-                true
+                if (viewModel.favoriteEventsCount >= 3) {
+                    // If user have more than three favorite events, don't allow to add a new favorite event
+                    Toast.makeText(activity!!, "Cannot Have More Than 3 Favorite Events", Toast.LENGTH_SHORT).show()
+                    false
+                }
+                else {
+                    // If favorite event is select, add it to the viewmodel and show at favorite events menu
+                    eventDetailFavoriteImageView.setImageResource(R.drawable.favorite_selected)
+                    event?.also { viewModel.favoriteEvents.add(it) }
+                    true
+
+                }
             }
 
-            viewModel.assertIsFavorite(isFavorite)
         }
     }
 

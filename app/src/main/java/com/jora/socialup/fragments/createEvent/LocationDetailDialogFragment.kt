@@ -32,6 +32,7 @@ class LocationDetailDialogFragment : DialogFragment() {
 
     interface LocationDetailDialogFragmentInterface {
         fun onConfirmed(locationToBePassed: LocationInfo)
+        fun onDialogFragmentDestroyed()
     }
 
     private var locationInfo : LocationInfo? = null
@@ -96,6 +97,11 @@ class LocationDetailDialogFragment : DialogFragment() {
         attributes?.width = 800
         attributes?.height = 1000
         dialog?.window?.attributes = attributes
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        listener?.onDialogFragmentDestroyed()
     }
 
     fun returnEventWithUpdatedLocation(event: Event) : Event {

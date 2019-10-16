@@ -36,18 +36,7 @@ class CreateEventWhenFragment : Fragment() {
     private var monthMap = mapOf(0 to "January", 1 to "February", 2 to "March", 3 to "April", 4 to "May", 5 to "June",
                                             6 to "July", 7 to "August", 8 to "September", 9 to "October", 10 to "November", 11 to "December" )
 
-    private val timePickerDialogFragment : TimePickerDialogFragment by lazy {
-        TimePickerDialogFragment.newInstance(object: TimePickerDialogFragment.TimePickerFragmentInterface {
-            override fun onFinishInitialTime(result: String) {
-                customCalendarAdapter?.onFinishInitialTimePicker(result)
-            }
-
-            override fun onFinishFinalTime(result: String) {
-                customCalendarAdapter?.onFinishFinalTimePicker(result)
-                timePickerDialogFragment.dismiss()
-            }
-        })
-    }
+    private var timePickerDialogFragment : TimePickerDialogFragment? = null
 
     private var initialFinalHoursMinutes : String? = null
 
@@ -66,8 +55,9 @@ class CreateEventWhenFragment : Fragment() {
             customCalendarAdapter?.dateTime = createEventViewModel.eventDateTime.value ?: arrayListOf()
             if (savedInstanceState != null) {
                 savedInstanceState.getString("initialFinalHoursMinutes")?.also {
-                    timePickerDialogFragment.initialFinalHoursMinutes = it
-                    timePickerDialogFragment.show(fragmentManager ?: return@also, null)
+                    setTimePickerDialogFragment()
+                    timePickerDialogFragment?.initialFinalHoursMinutes = it
+                    timePickerDialogFragment?.show(fragmentManager ?: return@also, null)
                 }
             }
         }
@@ -80,9 +70,9 @@ class CreateEventWhenFragment : Fragment() {
         // Persist Checked and Selected Dates and Times
         createEventViewModel.updateEventDateTime(customCalendarAdapter?.dateTime ?: arrayListOf())
 
-        if (timePickerDialogFragment.isAdded){
-            initialFinalHoursMinutes = timePickerDialogFragment.getInitialAndFinalHoursMinutes()
-            timePickerDialogFragment.dismiss()
+        if (timePickerDialogFragment?.isAdded == true){
+            initialFinalHoursMinutes = timePickerDialogFragment?.getInitialAndFinalHoursMinutes()
+            timePickerDialogFragment?.dismiss()
         } else initialFinalHoursMinutes = null
 
     }
@@ -91,6 +81,23 @@ class CreateEventWhenFragment : Fragment() {
         super.onSaveInstanceState(outState)
 
         outState.putString("initialFinalHoursMinutes", initialFinalHoursMinutes)
+    }
+
+    private fun setTimePickerDialogFragment() {
+        timePickerDialogFragment = TimePickerDialogFragment.newInstance(object: TimePickerDialogFragment.TimePickerFragmentInterface {
+            override fun onFinishInitialTime(result: String) {
+                customCalendarAdapter?.onFinishInitialTimePicker(result)
+            }
+
+            override fun onFinishFinalTime(result: String) {
+                customCalendarAdapter?.onFinishFinalTimePicker(result)
+                timePickerDialogFragment?.dismiss()
+            }
+
+            override fun onDialogFragmentDestroyed() {
+                timePickerDialogFragment = null
+            }
+        })
     }
 
     private fun setSwipeGestures() {
@@ -158,7 +165,10 @@ class CreateEventWhenFragment : Fragment() {
 
                 override fun onLongItemClick(view: View, position: Int) {
                     super.onLongItemClick(view, position)
-                    if (customCalendarAdapter?.isLongClickedDateChecked(position) == true) timePickerDialogFragment.show(fragmentManager ?: return, null)
+                    if (customCalendarAdapter?.isLongClickedDateChecked(position) == true)  {
+                        setTimePickerDialogFragment()
+                        timePickerDialogFragment?.show(fragmentManager ?: return, null)
+                    }
                 }
             }
         ))

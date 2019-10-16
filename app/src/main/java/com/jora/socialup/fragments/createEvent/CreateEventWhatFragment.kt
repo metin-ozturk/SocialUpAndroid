@@ -30,6 +30,7 @@ import com.jora.socialup.adapters.EventHistoryRecyclerViewAdapter
 import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
+import com.jora.socialup.models.LocationSelectionStatus
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_what.*
 import kotlinx.android.synthetic.main.fragment_create_event_what.view.*
@@ -202,26 +203,34 @@ class CreateEventWhatFragment : Fragment() {
                         override fun onItemClick(view: View, position: Int) {
                             if (historyEvents?.size == 0) return
 
-                            val clickedEvent = historyEvents?.get(position)
-                            eventToBePassed = clickedEvent
+                            eventToBePassed = historyEvents?.get(position)?.copy()
 
                             // Nullify date and voted date info of the event, since we won't use previous date info.
                             eventToBePassed?.date = null
                             eventToBePassed?.dateVote = null
 
-                            if (clickedEvent?.image == null) {
+                            if (eventToBePassed?.image == null) {
                                 eventHasImage = false
                                 createEventWhatImageView.setImageResource(R.drawable.imageplaceholder)
                             } else {
                                 eventHasImage = true
-                                createEventWhatImageView.setImageBitmap(clickedEvent.image)
+                                createEventWhatImageView.setImageBitmap(eventToBePassed?.image)
                             }
 
-                            createEventWhatIsPublic.isChecked = clickedEvent?.isPrivate ?: false
+                            // Select loaded past event's Invited Friends at the current friends list
+                            createEventViewModel.friends.value?.forEach { friend ->
+                                friend.isSelected = eventToBePassed?.eventWithWhomID?.contains(friend.iD) == true
+                            }
+
+                            // Changed Selected past event's location status as AboutToBeConfirmed
+                            createEventViewModel.updateLocationSelectionStatus(LocationSelectionStatus.AboutToBeConfirmed)
+
+                            createEventWhatIsPublic.isChecked = eventToBePassed?.isPrivate ?: false
                             createEventWhatName.text.clear()
-                            createEventWhatName.text.insert(0, clickedEvent?.name)
+                            createEventWhatName.text.insert(0, eventToBePassed?.name)
                             createEventWhatDescription.text.clear()
-                            createEventWhatDescription.text.insert(0, clickedEvent?.description)
+                            createEventWhatDescription.text.insert(0, eventToBePassed?.description)
+
                         }
 
                     })
