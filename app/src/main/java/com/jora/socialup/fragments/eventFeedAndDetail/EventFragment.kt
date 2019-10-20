@@ -23,6 +23,7 @@ import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.ImageView
 import android.widget.SearchView
+import android.widget.Toast
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
@@ -37,8 +38,10 @@ import com.algolia.search.saas.Query
 import com.facebook.login.LoginManager
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.iid.FirebaseInstanceId
 import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.adapters.EventsRecyclerViewAdapter
 import com.jora.socialup.adapters.EventSearchRecyclerViewAdapter
@@ -63,6 +66,10 @@ class EventFragment : Fragment() {
     private val viewModel : EventViewModel by lazy {
         ViewModelProviders.of(activity!!).get(EventViewModel::class.java)
     }
+
+    private val userID : String? by lazy {
+        FirebaseAuth.getInstance().currentUser?.uid
+    }
     private var eventsRecyclerViewAdapter : EventsRecyclerViewAdapter? =  null
 
     private var eventsArray = ArrayList<Event>()
@@ -72,12 +79,7 @@ class EventFragment : Fragment() {
 
     private val index = Client("3UQQK7YRC5", "2b6893313fb23c6d06eed7c75730d41e").getIndex( "usersAndEvents")
 
-    private val firebaseAuthentication : FirebaseAuth by lazy {
-        FirebaseAuth.getInstance()
-    }
-
     private val favoriteEventsMenuTag = "favoriteEventsMenu"
-
 
     private var viewToBeCreated: View? = null
 
@@ -95,14 +97,12 @@ class EventFragment : Fragment() {
         val previouslyDownloadedEvents = viewModel.eventsArray.value ?: ArrayList()
         if (previouslyDownloadedEvents.size != 0) return
         viewModel.downloadEvents(0, 5)
-        viewModel.downloadCurrentUserProfilePhoto(firebaseAuthentication.currentUser?.uid ?: "")
+        viewModel.downloadCurrentUserProfilePhoto(userID ?: return)
 
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_event, container,false)
-
-        val userID = firebaseAuthentication.currentUser?.uid
 
 
         userID?.also {
@@ -128,6 +128,13 @@ class EventFragment : Fragment() {
         setProgressBar()
         getFavoriteEvents()
 
+        val bgScope = CoroutineScope(Dispatchers.IO)
+        bgScope.launch {
+            receiveCloudMessagingToken()
+            cancel()
+        }
+
+
         viewToBeCreated?.eventFeedProgressBar?.visibility = View.GONE
 
         return viewToBeCreated
@@ -147,6 +154,27 @@ class EventFragment : Fragment() {
             transaction?.remove(it)
             transaction?.commit()
         }
+    }
+
+    private fun receiveCloudMessagingToken() {
+        FirebaseInstanceId.getInstance().instanceId
+            .addOnCompleteListener(OnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    Log.w(eventTag, "getInstanceId failed", task.exception)
+                    return@OnCompleteListener
+                }
+
+                // Get new Instance ID token
+                task.result?.token?.also {
+                    sendCloudMessagingRegistrationTokenToServer(it)
+                }
+
+            })
+    }
+
+    private fun sendCloudMessagingRegistrationTokenToServer(token: String) {
+        FirebaseFirestore.getInstance().collection("users").document(userID ?: return)
+            .update("CloudMessagingToken", token)
     }
 
     private fun setProgressBar() {
@@ -202,6 +230,9 @@ class EventFragment : Fragment() {
         viewToBeCreated?.eventFeedFounderImageView?.setOnTouchListener(OnGestureTouchListener(activity!!, object: OnGestureTouchListener.OnGestureInitiated {
             override fun longPressed() {
                 super.longPressed()
+                // Nullify Cloud Messaging Token
+                sendCloudMessagingRegistrationTokenToServer("")
+
                 // SIGN OUT FROM GOOGLE
                 val googleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                     .requestIdToken(getString(R.string.google_sign_in_server_client_id))
@@ -224,9 +255,8 @@ class EventFragment : Fragment() {
         if (!viewModel.isFavoriteEventsToBeDownloaded) return
         else viewModel.isFavoriteEventsToBeDownloaded = false
 
-        val userID = FirebaseAuth.getInstance().currentUser?.uid ?: return
 
-        FirebaseFirestore.getInstance().collection("users").document(userID)
+        FirebaseFirestore.getInstance().collection("users").document(userID ?: return)
             .collection("events").whereEqualTo("EventIsFavorite", true).get()
             .addOnSuccessListener { querySnapshot ->
                 viewModel.favoriteEvents = ArrayList()
@@ -341,10 +371,11 @@ class EventFragment : Fragment() {
         // To make layout animate, add: " android:animateLayoutChanges="true" " to layout's xml.
         val constraintSetTo = ConstraintSet()
         val progressBarHeight = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 80f, resources.displayMetrics)
+        val marginSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 8f, resources.displayMetrics).toInt()
 
-        constraintSetTo.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return, ConstraintSet.START, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return, ConstraintSet.START, 8)
-        constraintSetTo.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return, ConstraintSet.END, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return, ConstraintSet.END, 8)
-        constraintSetTo.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return, ConstraintSet.TOP, viewToBeCreated?.eventFeedSearchView?.id ?: return, ConstraintSet.BOTTOM, 8)
+        constraintSetTo.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return, ConstraintSet.START, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return, ConstraintSet.START, marginSize)
+        constraintSetTo.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return, ConstraintSet.END, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return, ConstraintSet.END, marginSize)
+        constraintSetTo.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return, ConstraintSet.TOP, viewToBeCreated?.eventFeedSearchView?.id ?: return, ConstraintSet.BOTTOM, marginSize)
         constraintSetTo.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return, ConstraintSet.BOTTOM, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return, ConstraintSet.BOTTOM, progressBarHeight.toInt())
         constraintSetTo.applyTo(viewToBeCreated?.eventFeedFragmentConstraintLayout)
 
@@ -356,10 +387,10 @@ class EventFragment : Fragment() {
             delay(1000)
 
             val constraintSetFrom = ConstraintSet()
-            constraintSetFrom.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return@launch, ConstraintSet.START, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return@launch, ConstraintSet.START, 8)
-            constraintSetFrom.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return@launch, ConstraintSet.END, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return@launch, ConstraintSet.END, 8)
-            constraintSetFrom.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return@launch, ConstraintSet.TOP, viewToBeCreated?.eventFeedSearchView?.id ?: return@launch, ConstraintSet.BOTTOM, 8)
-            constraintSetFrom.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return@launch, ConstraintSet.BOTTOM, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return@launch, ConstraintSet.BOTTOM, 8)
+            constraintSetFrom.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return@launch, ConstraintSet.START, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return@launch, ConstraintSet.START, marginSize)
+            constraintSetFrom.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return@launch, ConstraintSet.END, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return@launch, ConstraintSet.END, marginSize)
+            constraintSetFrom.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return@launch, ConstraintSet.TOP, viewToBeCreated?.eventFeedSearchView?.id ?: return@launch, ConstraintSet.BOTTOM, marginSize)
+            constraintSetFrom.connect(viewToBeCreated?.eventFeedRecyclerView?.id ?: return@launch, ConstraintSet.BOTTOM, viewToBeCreated?.eventFeedFragmentConstraintLayout?.id ?: return@launch, ConstraintSet.BOTTOM, 0)
 
             withContext(Dispatchers.Main) {
                 constraintSetFrom.applyTo(viewToBeCreated?.eventFeedFragmentConstraintLayout)
@@ -410,7 +441,7 @@ class EventFragment : Fragment() {
         val eventID = event?.iD ?: return
 
 
-        FirebaseFirestore.getInstance().collection("users").document(firebaseAuthentication.currentUser?.uid ?: "")
+        FirebaseFirestore.getInstance().collection("users").document(userID ?: return)
             .collection("events").document(eventID).get().addOnSuccessListener {
                 val data = it.data
 

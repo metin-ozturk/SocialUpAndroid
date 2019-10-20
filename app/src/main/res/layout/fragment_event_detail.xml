@@ -2,10 +2,12 @@
 
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
     <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/eventDetailRootLayout"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
@@ -49,28 +51,14 @@
                 app:layout_constraintTop_toBottomOf="@+id/eventDetailImageView" />
 
         <TextView
-                android:id="@+id/eventDetailDate"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:singleLine="false"
-                android:text="TextView"
-                android:textSize="16sp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="@+id/eventDetailTitle" />
-
-        <TextView
                 android:id="@+id/eventDetailTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:layout_marginEnd="8dp"
                 android:ellipsize="end"
                 android:maxLines="1"
                 android:text="TextView"
                 android:textSize="20sp"
-                app:layout_constraintEnd_toStartOf="@+id/eventDetailDate"
-                app:layout_constraintHorizontal_bias="0.0"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/eventDetailGoingButton" />
 
@@ -108,16 +96,6 @@
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/eventDetailFounderImageView" />
 
-        <Button
-                android:id="@+id/eventDetailDeleteButton"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:text="DELETE"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/eventDetailLocation" />
-
         <ImageView
                 android:id="@+id/eventDetailLandmarkImageView"
                 android:layout_width="27dp"
@@ -142,7 +120,45 @@
                 android:layout_marginTop="8dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@+id/eventDetailDeleteButton" />
+                app:layout_constraintTop_toBottomOf="@+id/eventDetailVotesForPossibleDates" />
+
+        <TextView
+                android:id="@+id/eventDetailVotesForPossibleDates"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:gravity="start"
+                android:text="Votes For Possible Dates:"
+                android:textSize="24sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/eventDetailLocation" />
+
+        <ImageView
+                android:id="@+id/eventDetailCancelImageView"
+                android:layout_width="27dp"
+                android:layout_height="27dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@+id/eventDetailTitle"
+                app:srcCompat="@drawable/cancel" />
+
+        <ImageView
+                android:id="@+id/eventDetailInviteImageView"
+                android:layout_width="27dp"
+                android:layout_height="27dp"
+                android:layout_marginEnd="8dp"
+                app:layout_constraintBottom_toBottomOf="@+id/eventDetailFavoriteImageView"
+                app:layout_constraintEnd_toStartOf="@+id/eventDetailFavoriteImageView"
+                app:srcCompat="@drawable/people" />
+
+        <ImageView
+                android:id="@+id/eventDetailFinalizeDateImageView"
+                android:layout_width="27dp"
+                android:layout_height="27dp"
+                android:layout_marginEnd="8dp"
+                app:layout_constraintEnd_toStartOf="@+id/eventDetailCancelImageView"
+                app:layout_constraintTop_toTopOf="@+id/eventDetailTitle"
+                app:srcCompat="@drawable/date_range" />
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 </ScrollView>

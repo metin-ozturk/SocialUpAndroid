@@ -34,9 +34,7 @@ import com.jora.socialup.models.LocationSelectionStatus
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_what.*
 import kotlinx.android.synthetic.main.fragment_create_event_what.view.*
-import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.*
 import kotlin.coroutines.CoroutineContext
 
 
@@ -176,9 +174,12 @@ class CreateEventWhatFragment : Fragment() {
 
                     else -> {
                         createEventWhatHistoryRecyclerView.animate().alpha(0f).setDuration(500L).setListener(null)
-                        Handler().postDelayed({
+                        val uiScope = CoroutineScope(Dispatchers.Main)
+                        uiScope.launch {
+                            delay(500)
                             createEventWhatHistoryRecyclerView.visibility = GONE
-                        }, 500)
+                            cancel()
+                        }
                     }
                 }
             }

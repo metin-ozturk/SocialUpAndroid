@@ -23,9 +23,8 @@ import com.jora.socialup.helpers.observeOnce
 import com.jora.socialup.models.Event
 import com.jora.socialup.models.EventResponseStatus
 import com.jora.socialup.viewModels.EventViewModel
-import kotlinx.android.synthetic.main.fragment_event_detail.*
+import kotlinx.android.synthetic.main.fragment_event_detail.view.*
 import java.lang.Exception
-import java.lang.ref.WeakReference
 
 class EventDetailFragment : Fragment() {
     private val eventDetailTag = "EventDetailTag"
@@ -40,14 +39,16 @@ class EventDetailFragment : Fragment() {
 
     private var eventResponseStatus : EventResponseStatus = EventResponseStatus.NotResponded
 
+    private var progressBarFragmentDialog: ProgressBarFragmentDialog? = null
+
+    private var viewToBeCreated: View? = null
+
     private val dateVotesChangedBy : ArrayList<Int> by lazy {
         val arraySize = event?.dateVote?.size ?: 0
         val arrayList = ArrayList<Int>()
-        (0..arraySize).forEach { _ ->  arrayList.add(0)  }
+        (0 until arraySize).forEach { _ ->  arrayList.add(0)  }
         arrayList
     }
-
-    private var progressBarFragmentDialog: ProgressBarFragmentDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -55,25 +56,15 @@ class EventDetailFragment : Fragment() {
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-        if (activity == null || context == null)  {
-            Log.d(eventDetailTag, "Activity is Null")
-            return null
-        }
+        viewToBeCreated = inflater.inflate(R.layout.fragment_event_detail, container,false)
 
-        val eventReceived = event ?: return null
-        customDatesAdapter = EventDatesVoteRecyclerViewAdapter(eventReceived, votedForDates)
-
-        return inflater.inflate(R.layout.fragment_event_detail, container,false)
-    }
-
-    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
-        super.onViewCreated(view, savedInstanceState)
+        customDatesAdapter = EventDatesVoteRecyclerViewAdapter(event ?: return null, votedForDates)
 
         setCustomDatesToVoteRecyclerView()
         setCustomDatesToVoteRecyclerViewListeners()
         setTextViewsButtonsAndImages()
 
-        view.setOnTouchListener(
+        viewToBeCreated?.eventDetailRootLayout?.setOnTouchListener(
             OnGestureTouchListener(
                 context!!,
                 object : OnGestureTouchListener.OnGestureInitiated {
@@ -86,7 +77,10 @@ class EventDetailFragment : Fragment() {
         setEventResponseStatusToButtons()
         setFavoriteImageView()
         setProgressBar()
+
+        return viewToBeCreated
     }
+
 
     override fun onPause() {
         super.onPause()
@@ -96,7 +90,6 @@ class EventDetailFragment : Fragment() {
     private fun getDataFromViewModel() {
         event = viewModel.event.value?.copy()
         eventResponseStatus = viewModel.eventResponseStatus.value ?: EventResponseStatus.NotResponded
-        votedForDates = viewModel.votedForDates.value ?: mutableMapOf()
 
         viewModel.votedForDates.observeOnce(activity!!) {
             votedForDates = it
@@ -122,11 +115,6 @@ class EventDetailFragment : Fragment() {
         progressBarFragmentDialog?.show(fragmentManager ?: return, null)
 
         val eventID = event?.iD ?: return
-        val updateEventTo = event ?: return
-
-        viewModel.assertWhichViewToBeShowed(updateEventTo)
-        viewModel.updateEventsArrayWithViewedEvent(updateEventTo)
-
 
         FirebaseFirestore.getInstance().runTransaction { transaction ->
             var whenDocumentSnapshot : DocumentSnapshot? = null
@@ -139,22 +127,16 @@ class EventDetailFragment : Fragment() {
 
             val readEventDateData = whenDocumentSnapshot?.data?.get("When") as ArrayList<String>?
 
-            val readEventDate = readEventDateData?.map { eventDate ->
-                eventDate.substring(0, 16)
+            val updatedReadEventDateData = readEventDateData?.zip(dateVotesChangedBy)?.map { zippedPair ->
+                val eventDateData = zippedPair.first
+
+                val date = eventDateData.substring(0, 16)
+                val currentVote = eventDateData.substring(16)
+                val voteChangedBy = zippedPair.second
+
+                date + (currentVote.toInt() + voteChangedBy).toString()
             } as ArrayList<String>
 
-            var readEventDateVote = readEventDateData.map {eventDateVote ->
-                eventDateVote.substring(16)
-            } as ArrayList<String>
-
-            readEventDateVote = readEventDateVote.zip(dateVotesChangedBy).map { pair ->
-                (pair.second + pair.first.toInt()).toString()
-            } as ArrayList<String>
-
-
-            val updatedReadEventDateData = readEventDate.zip(readEventDateVote).map { pair ->
-                pair.first + pair.second
-            } as ArrayList<String>
 
             transaction.update(FirebaseFirestore.getInstance().collection("events").document(eventID),
                 mapOf( "When" to updatedReadEventDateData))
@@ -188,57 +170,57 @@ class EventDetailFragment : Fragment() {
     private fun setEventResponseStatusToButtons() {
         when (eventResponseStatus) {
             EventResponseStatus.Going -> {
-                eventDetailGoingButton.setBackgroundColor(Color.GREEN)
+                viewToBeCreated?.eventDetailGoingButton?.setBackgroundColor(Color.GREEN)
             }
             EventResponseStatus.Maybe -> {
-                eventDetailMaybeButton.setBackgroundColor(Color.YELLOW)
+                viewToBeCreated?.eventDetailMaybeButton?.setBackgroundColor(Color.YELLOW)
             }
             EventResponseStatus.NotGoing -> {
-                eventDetailNotGoingButton.setBackgroundColor(Color.RED)
+                viewToBeCreated?.eventDetailNotGoingButton?.setBackgroundColor(Color.RED)
             }
             else -> {
-                eventDetailGoingButton.setBackgroundColor(Color.LTGRAY)
-                eventDetailMaybeButton.setBackgroundColor(Color.LTGRAY)
-                eventDetailNotGoingButton.setBackgroundColor(Color.LTGRAY)
+                viewToBeCreated?.eventDetailGoingButton?.setBackgroundColor(Color.LTGRAY)
+                viewToBeCreated?.eventDetailMaybeButton?.setBackgroundColor(Color.LTGRAY)
+                viewToBeCreated?.eventDetailNotGoingButton?.setBackgroundColor(Color.LTGRAY)
             }
         }
 
-        eventDetailGoingButton.setOnClickListener {
+        viewToBeCreated?.eventDetailGoingButton?.setOnClickListener {
             if (eventResponseStatus == EventResponseStatus.Going) {
                 eventResponseStatus = EventResponseStatus.NotResponded
-                eventDetailGoingButton.setBackgroundColor(Color.LTGRAY)
+                viewToBeCreated?.eventDetailGoingButton?.setBackgroundColor(Color.LTGRAY)
             } else {
                 eventResponseStatus = EventResponseStatus.Going
-                eventDetailGoingButton.setBackgroundColor(Color.GREEN)
-                eventDetailMaybeButton.setBackgroundColor(Color.LTGRAY)
-                eventDetailNotGoingButton.setBackgroundColor(Color.LTGRAY)
+                viewToBeCreated?.eventDetailGoingButton?.setBackgroundColor(Color.GREEN)
+                viewToBeCreated?.eventDetailMaybeButton?.setBackgroundColor(Color.LTGRAY)
+                viewToBeCreated?.eventDetailNotGoingButton?.setBackgroundColor(Color.LTGRAY)
             }
             viewModel.assertEventResponseStatus(eventResponseStatus)
         }
 
-        eventDetailMaybeButton.setOnClickListener {
+        viewToBeCreated?.eventDetailMaybeButton?.setOnClickListener {
             if (eventResponseStatus == EventResponseStatus.Maybe) {
                 eventResponseStatus = EventResponseStatus.NotResponded
-                eventDetailMaybeButton.setBackgroundColor(Color.LTGRAY)
+                viewToBeCreated?.eventDetailMaybeButton?.setBackgroundColor(Color.LTGRAY)
             } else {
                 eventResponseStatus = EventResponseStatus.Maybe
-                eventDetailMaybeButton.setBackgroundColor(Color.YELLOW)
-                eventDetailNotGoingButton.setBackgroundColor(Color.LTGRAY)
-                eventDetailGoingButton.setBackgroundColor(Color.LTGRAY)
+                viewToBeCreated?.eventDetailMaybeButton?.setBackgroundColor(Color.YELLOW)
+                viewToBeCreated?.eventDetailNotGoingButton?.setBackgroundColor(Color.LTGRAY)
+                viewToBeCreated?.eventDetailGoingButton?.setBackgroundColor(Color.LTGRAY)
             }
             viewModel.assertEventResponseStatus(eventResponseStatus)
 
         }
 
-        eventDetailNotGoingButton.setOnClickListener {
+        viewToBeCreated?.eventDetailNotGoingButton?.setOnClickListener {
             if (eventResponseStatus == EventResponseStatus.NotGoing) {
                 eventResponseStatus = EventResponseStatus.NotResponded
-                eventDetailNotGoingButton.setBackgroundColor(Color.LTGRAY)
+                viewToBeCreated?.eventDetailNotGoingButton?.setBackgroundColor(Color.LTGRAY)
             } else {
                 eventResponseStatus = EventResponseStatus.NotGoing
-                eventDetailNotGoingButton.setBackgroundColor(Color.RED)
-                eventDetailGoingButton.setBackgroundColor(Color.LTGRAY)
-                eventDetailMaybeButton.setBackgroundColor(Color.LTGRAY)
+                viewToBeCreated?.eventDetailNotGoingButton?.setBackgroundColor(Color.RED)
+                viewToBeCreated?.eventDetailGoingButton?.setBackgroundColor(Color.LTGRAY)
+                viewToBeCreated?.eventDetailMaybeButton?.setBackgroundColor(Color.LTGRAY)
             }
             viewModel.assertEventResponseStatus(eventResponseStatus)
         }
@@ -247,11 +229,11 @@ class EventDetailFragment : Fragment() {
     }
 
     private fun setFavoriteImageView() {
-        if (viewModel.isFavorite) eventDetailFavoriteImageView.setImageResource(R.drawable.favorite_selected) else eventDetailFavoriteImageView.setImageResource(R.drawable.favorite)
+        if (viewModel.isFavorite) viewToBeCreated?.eventDetailFavoriteImageView?.setImageResource(R.drawable.favorite_selected) else viewToBeCreated?.eventDetailFavoriteImageView?.setImageResource(R.drawable.favorite)
 
-        eventDetailFavoriteImageView.setOnClickListener {
+        viewToBeCreated?.eventDetailFavoriteImageView?.setOnClickListener {
             viewModel.isFavorite = if (viewModel.isFavorite) {
-                eventDetailFavoriteImageView.setImageResource(R.drawable.favorite)
+                viewToBeCreated?.eventDetailFavoriteImageView?.setImageResource(R.drawable.favorite)
                 // If favorite event is deselected then remove it from viewmodel
                 viewModel.favoriteEvents = viewModel.favoriteEvents.filter { it.iD != event?.iD  } as ArrayList<Event>
                 false
@@ -263,7 +245,7 @@ class EventDetailFragment : Fragment() {
                 }
                 else {
                     // If favorite event is select, add it to the viewmodel and show at favorite events menu
-                    eventDetailFavoriteImageView.setImageResource(R.drawable.favorite_selected)
+                    viewToBeCreated?.eventDetailFavoriteImageView?.setImageResource(R.drawable.favorite_selected)
                     event?.also { viewModel.favoriteEvents.add(it) }
                     true
 
@@ -274,21 +256,21 @@ class EventDetailFragment : Fragment() {
     }
 
     private fun setCustomDatesToVoteRecyclerView() {
-        datesToVoteRecyclerView.adapter = customDatesAdapter
+        viewToBeCreated?.datesToVoteRecyclerView?.adapter = customDatesAdapter
 
         val eventReceived = event ?: return
         customDatesAdapter?.loadData(eventReceived, votedForDates)
 
         val layoutManager = LinearLayoutManager(activity)
-        datesToVoteRecyclerView.layoutManager = layoutManager
-        datesToVoteRecyclerView.itemAnimator = DefaultItemAnimator()
+        viewToBeCreated?.datesToVoteRecyclerView?.layoutManager = layoutManager
+        viewToBeCreated?.datesToVoteRecyclerView?.itemAnimator = DefaultItemAnimator()
     }
 
     private fun setCustomDatesToVoteRecyclerViewListeners() {
-        datesToVoteRecyclerView.addOnItemTouchListener(
+        viewToBeCreated?.datesToVoteRecyclerView?.addOnItemTouchListener(
             RecyclerItemClickListener(
                 context!!,
-                datesToVoteRecyclerView,
+                viewToBeCreated?.datesToVoteRecyclerView ?: return,
                 object : RecyclerItemClickListener.OnItemClickListener {
                     override fun onItemClick(view: View, position: Int) {
                         val eventReceived = event ?: return
@@ -300,15 +282,16 @@ class EventDetailFragment : Fragment() {
                             var vote = event?.dateVote?.get(position)?.toInt() ?: return
                             if (it.isSelected) {
                                 vote++
-                                dateVotesChangedBy[position] = 1
+                                dateVotesChangedBy[position] += 1
                             } else {
                                 vote--
-                                dateVotesChangedBy[position] = -1
+                                dateVotesChangedBy[position] -= 1
                             }
+
                             event?.dateVote!![position] = vote.toString()
 
-                            val eventDate = event?.date!![position]
-                            votedForDates[eventDate] = it.isSelected
+                            val date = event?.date?.get(position) ?: return
+                            votedForDates[date] = votedForDates[date] != true
 
                             customDatesAdapter?.loadData(eventReceived, votedForDates)
                             customDatesAdapter?.notifyItemChanged(event?.dateVote!!.count() - 1)
@@ -320,27 +303,34 @@ class EventDetailFragment : Fragment() {
     }
 
     private fun setTextViewsButtonsAndImages() {
-        if (event?.hasImage == false) eventDetailImageView.visibility = GONE // if event hasn't an image, hide the image view
+        if (event?.hasImage == false) viewToBeCreated?.eventDetailImageView?.visibility = GONE // if event hasn't an image, hide the image view
+
+        if (event?.founderID != FirebaseAuth.getInstance().currentUser?.uid) {
+            viewToBeCreated?.apply {
+                eventDetailCancelImageView?.visibility = GONE
+                eventDetailFinalizeDateImageView?.visibility = GONE
+            }
+
+        }
+
 
         val point = Point()
         activity?.windowManager?.defaultDisplay?.getSize(point)
 
         val heightOfEventDetailImageView = point.x * 9 / 16
 
-        eventDetailImageView.layoutParams.height = heightOfEventDetailImageView
+        viewToBeCreated?.apply {
+            eventDetailImageView?.layoutParams?.height = heightOfEventDetailImageView
 
-        eventDetailImageView.setImageBitmap(event?.image)
-        eventDetailImageView.requestLayout()
+            eventDetailImageView?.setImageBitmap(event?.image)
+            eventDetailImageView?.requestLayout()
 
-        eventDetailDate.text = when (event?.date?.size) {
-            0 -> "ERROR"
-            1 -> Event.convertDateToReadableFormat(event?.date?.first()!!)
-            else -> "Multiple Dates Are Proposed"
+            eventDetailFounder?.text = event?.founderName
+            eventDetailFounderImageView?.setImageBitmap(event?.founderImage)
+            eventDetailLocation?.text = event?.locationName
+            eventDetailTitle?.text = event?.name
         }
 
-        eventDetailFounder.text = event?.founderName
-        eventDetailFounderImageView.setImageBitmap(event?.founderImage)
-        eventDetailLocation.text = event?.locationName
-        eventDetailTitle.text = event?.name
+
     }
 }
