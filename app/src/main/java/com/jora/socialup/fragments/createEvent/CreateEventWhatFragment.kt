@@ -80,6 +80,8 @@ class CreateEventWhatFragment : Fragment() {
         setHistoryRecyclerViewListener()
         setSwipeRightGesture()
 
+        if (eventToBePassed?.hasImage == true) eventHasImage = true
+
         return viewToBeCreated
     }
 
@@ -123,6 +125,7 @@ class CreateEventWhatFragment : Fragment() {
         eventToBePassed?.apply {
             name = createEventWhatName.text.toString()
             description = createEventWhatDescription.text.toString()
+            Log.d("OSMAN", eventHasImage.toString())
             hasImage = eventHasImage
             image = createEventWhatImageView.drawable.toBitmap()
             isPrivate = createEventWhatIsPublic.isChecked

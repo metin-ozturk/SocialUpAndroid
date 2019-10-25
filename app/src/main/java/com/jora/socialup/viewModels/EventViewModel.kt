@@ -13,7 +13,7 @@ import kotlin.collections.ArrayList
 
 class EventViewModel : ViewModel() {
 
-    var favoriteEvents= ArrayList<Event>()
+    var favoriteEvents = ArrayList<Event>()
     val favoriteEventsCount : Int
         get() = favoriteEvents.size
 
@@ -65,6 +65,10 @@ class EventViewModel : ViewModel() {
 
     fun assertEventResponseStatus(status: EventResponseStatus) {
         eventResponseStatusData.value = status
+    }
+
+    fun assertEventsArray(updateTo: ArrayList<Event>) {
+        eventsArrayData.value  = updateTo
     }
 
 

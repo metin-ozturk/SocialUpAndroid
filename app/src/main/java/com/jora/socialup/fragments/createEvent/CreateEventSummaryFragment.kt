@@ -18,19 +18,23 @@ import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
+import com.google.firebase.storage.UploadTask
 import com.jora.socialup.R
 import com.jora.socialup.activities.HomeActivity
 import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import com.jora.socialup.helpers.isInPortraitMode
 import com.jora.socialup.models.Event
+import com.jora.socialup.models.EventStatus
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_summary.view.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.tasks.asDeferred
 import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
+import kotlin.system.measureTimeMillis
 
 class CreateEventSummaryFragment : Fragment() {
     private var viewToBeCreated : View? = null
@@ -102,7 +106,7 @@ class CreateEventSummaryFragment : Fragment() {
 
     private fun fillEventFields() {
         eventToBePassed = createEventViewModel.event.value
-        eventToBePassed?.status = 0
+        eventToBePassed?.status = EventStatus.Default.value
         eventToBePassed?.founderID = userID
         eventToBePassed?.founderName = FirebaseAuth.getInstance().currentUser?.displayName
     }
@@ -125,8 +129,6 @@ class CreateEventSummaryFragment : Fragment() {
             val eventImageStorageReference = FirebaseStorage.getInstance().reference.child("Images/Events/$eventID/eventPhoto.jpeg")
             val eventReference = FirebaseFirestore.getInstance().collection("events").document(eventID)
 
-            val eventInformationTask = eventReference.set(eventToBePassed?.returnEventAsMap() ?: return@setOnClickListener)
-
             var eventImageAsInputStream : ByteArrayInputStream? = null
             if (eventToBePassed?.hasImage == true) {
                 val eventImageToBeUploadedAsBitmap = viewToBeCreated?.createEventSummaryEventImage?.drawToBitmap() ?: return@setOnClickListener
@@ -142,14 +144,31 @@ class CreateEventSummaryFragment : Fragment() {
                 votedForDate[it.substring(0, it.length)] = false
             }
 
+            var eventImageTaskDeferred : Deferred<UploadTask.TaskSnapshot>? = null
+            if (eventToBePassed?.hasImage == true)
+                eventImageTaskDeferred = eventImageStorageReference.putStream(eventImageAsInputStream ?: return@setOnClickListener).asDeferred()
+
+
+            val eventInformationTaskDeferred = eventReference.set(eventToBePassed?.returnEventAsMap() ?: return@setOnClickListener).asDeferred()
+
+            val eventUserSpecificInformationMap = mutableMapOf("EventResponseStatus" to 0,
+                "EventIsFavorite" to (eventToBePassed?.isFavorite ?: false))
+            votedForDate.map { eventUserSpecificInformationMap[it.key] = it.value }
+            val eventUserSpecificInformationTaskDeferred = userEventReference.set(eventUserSpecificInformationMap).asDeferred()
+
+            // For Invited Persons, event is never favorite.
+            eventUserSpecificInformationMap["EventIsFavorite"] = false
+            val invitedPersonsUserSpecificEventInformationTaskDeferred = eventToBePassed?.eventWithWhomID?.map {
+                FirebaseFirestore.getInstance().collection("users").document(it)
+                    .collection("events").document(eventID).set(eventUserSpecificInformationMap).asDeferred()
+            }
 
             val bgScope = CoroutineScope(Dispatchers.IO)
-
             bgScope.launch {
-                if (eventToBePassed?.hasImage == true) eventImageStorageReference.putStream(eventImageAsInputStream ?: return@launch).await()
-                eventInformationTask.await()
-                userEventReference.set(mapOf("EventResponseStatus" to 0, "EventIsFavorite" to (eventToBePassed?.isFavorite ?: false)))
-                userEventReference.set(votedForDate as Map<String, Boolean>, SetOptions.merge())
+                eventUserSpecificInformationTaskDeferred.await()
+                eventInformationTaskDeferred.await()
+                eventImageTaskDeferred?.await()
+                invitedPersonsUserSpecificEventInformationTaskDeferred?.map {it.await()}
 
                 withContext(Dispatchers.Main) {
                     progressBarFragmentDialog?.dismiss()
@@ -161,6 +180,7 @@ class CreateEventSummaryFragment : Fragment() {
 
         }
     }
+
 
     private fun setFavoriteEventButton() {
         viewToBeCreated?.createEventSummaryFavoriteImage?.setOnClickListener {

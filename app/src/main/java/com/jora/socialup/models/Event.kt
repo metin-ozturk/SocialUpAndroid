@@ -34,9 +34,10 @@ class Event(parcel: Parcel? = null) : Parcelable {
     var founderName : String? = null
     var founderImage : Bitmap? = null
 
-    var status : Long? = null
+    var status : Int? = null
     var date : ArrayList<String>? = null
     var dateVote : ArrayList<String>? = null
+    var finalizedDate : String? = null
 
     var locationName : String? = null
     var locationLatitude : String? = null
@@ -66,9 +67,10 @@ class Event(parcel: Parcel? = null) : Parcelable {
             founderID = parcel.readString()
             founderName = parcel.readString()
 
-            status = parcel.readLong()
+            status = parcel.readInt()
             date = parcel.readArrayList(ArrayList::class.java.classLoader) as ArrayList<String>
             dateVote = parcel.readArrayList(ArrayList::class.java.classLoader) as ArrayList<String>
+            finalizedDate = parcel.readString()
 
             locationAddress = parcel.readString()
             locationDescription = parcel.readString()
@@ -95,9 +97,10 @@ class Event(parcel: Parcel? = null) : Parcelable {
         dest?.writeString(founderID)
         dest?.writeString(founderName)
 
-        dest?.writeLong(status ?: 0)
+        dest?.writeLong(status?.toLong() ?: 0)
         dest?.writeList(date?.toList())
         dest?.writeList(dateVote?.toList())
+        dest?.writeString(finalizedDate)
 
         dest?.writeString(locationAddress)
         dest?.writeString(locationDescription)
@@ -134,6 +137,7 @@ class Event(parcel: Parcel? = null) : Parcelable {
         event.status = this.status
         event.date = this.date
         event.dateVote = this.dateVote
+        event.finalizedDate = this.finalizedDate
 
         event.locationName = this.locationName
         event.locationDescription = this.locationDescription
@@ -160,6 +164,7 @@ class Event(parcel: Parcel? = null) : Parcelable {
             "EventFounder" to (founderID ?: "ERROR"),
             "EventFounderName" to (founderName ?: "ERROR"),
             "EventStatus" to (status ?: "ERROR"),
+            "FinalizedDate" to (finalizedDate ?: ""),
             "LocationName" to (locationName ?: "ERROR"),
             "LocationDescription" to (locationDescription ?: "ERROR"),
             "LocationAddress" to (locationAddress ?: "ERROR"),
@@ -217,7 +222,8 @@ class Event(parcel: Parcel? = null) : Parcelable {
 
                         this.founderID = founderID
                         founderName = eventData["EventFounderName"] as String
-                        status = eventData["EventStatus"] as Long
+                        status = (eventData["EventStatus"] as Long).toInt()
+                        finalizedDate = eventData["FinalizedDate"] as String
 
                         locationName = eventData["LocationName"] as String
                         locationDescription = eventData["LocationDescription"] as String

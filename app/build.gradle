@@ -59,6 +59,9 @@ dependencies {
     // Firebase Auth
     implementation 'com.google.firebase:firebase-auth:19.1.0'
 
+    // Firebase Functions
+    implementation 'com.google.firebase:firebase-functions:19.0.1'
+
     // Google Auth
     implementation 'com.google.android.gms:play-services-auth:17.0.0'
 

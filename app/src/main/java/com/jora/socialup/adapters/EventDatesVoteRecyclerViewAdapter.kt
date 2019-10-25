@@ -9,6 +9,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.jora.socialup.R
 import com.jora.socialup.models.Event
+import com.jora.socialup.models.EventStatus
 
 class EventDatesVoteRecyclerViewAdapter(private var event: Event,
                                         private var votedForDate: Map<String, Boolean>) : RecyclerView.Adapter<BaseViewHolder>() {
@@ -23,11 +24,22 @@ class EventDatesVoteRecyclerViewAdapter(private var event: Event,
     }
 
     override fun getItemCount(): Int {
+        if (event.status == EventStatus.Date_Finalized.value) {
+            return 1
+        }
         return event.date?.size ?: 0
     }
 
     override fun onBindViewHolder(holder: BaseViewHolder, position: Int) {
         val castedHolder = holder as DateItemHolder
+
+        if (event.status == EventStatus.Date_Finalized.value) {
+            castedHolder.date.text = Event.convertDateToReadableFormat(event.finalizedDate ?: "ERROR")
+            castedHolder.vote.text = ""
+            castedHolder.itemView.isSelected = false
+            castedHolder.itemView.setBackgroundColor(Color.GREEN)
+            return
+        }
 
         val receivedDate = event.date?.get(position) ?: return
         castedHolder.date.text = Event.convertDateToReadableFormat(receivedDate)
@@ -37,16 +49,17 @@ class EventDatesVoteRecyclerViewAdapter(private var event: Event,
 
         if (isViewSelected) {
             castedHolder.itemView.isSelected = true
-            castedHolder.itemView.setBackgroundColor(Color.GREEN)
+            castedHolder.itemView.setBackgroundColor(Color.YELLOW)
         } else {
             castedHolder.itemView.isSelected = false
             castedHolder.itemView.setBackgroundColor(Color.WHITE)
         }
     }
 
-    fun loadData(eventData: Event, votedForDateData: Map<String, Boolean>) {
+    fun loadData(eventData: Event, votedForDateData: Map<String, Boolean>?) {
         event = eventData
-        votedForDate = votedForDateData
+        votedForDateData?.also { votedForDate = it }
         notifyDataSetChanged()
     }
 }
+

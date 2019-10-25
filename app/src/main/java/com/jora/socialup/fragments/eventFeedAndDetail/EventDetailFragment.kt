@@ -1,5 +1,7 @@
 package com.jora.socialup.fragments.eventFeedAndDetail
 
+import android.app.AlertDialog
+import android.content.DialogInterface
 import android.graphics.Color
 import android.graphics.Point
 import android.os.Bundle
@@ -14,6 +16,8 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.firestore.SetOptions
+import com.google.firebase.functions.FirebaseFunctions
 import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.R
 import com.jora.socialup.adapters.EventDatesVoteRecyclerViewAdapter
@@ -22,8 +26,10 @@ import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.helpers.observeOnce
 import com.jora.socialup.models.Event
 import com.jora.socialup.models.EventResponseStatus
+import com.jora.socialup.models.EventStatus
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event_detail.view.*
+import kotlinx.coroutines.tasks.asDeferred
 import java.lang.Exception
 
 class EventDetailFragment : Fragment() {
@@ -40,6 +46,8 @@ class EventDetailFragment : Fragment() {
     private var eventResponseStatus : EventResponseStatus = EventResponseStatus.NotResponded
 
     private var progressBarFragmentDialog: ProgressBarFragmentDialog? = null
+
+    private var finalizeEvenDateDialogFragment : FinalizeEventDateDialogFragment? = null
 
     private var viewToBeCreated: View? = null
 
@@ -74,8 +82,11 @@ class EventDetailFragment : Fragment() {
                 })
         )
 
-        setEventResponseStatusToButtons()
         setFavoriteImageView()
+        setDeleteEventImageView()
+        setFinalizeEventDateImageView()
+
+        setEventResponseStatusToButtons()
         setProgressBar()
 
         return viewToBeCreated
@@ -109,6 +120,20 @@ class EventDetailFragment : Fragment() {
             })
     }
 
+    private fun setFinalizeEventDateDialogFragment() {
+        finalizeEvenDateDialogFragment = FinalizeEventDateDialogFragment.newInstance(
+            object: FinalizeEventDateDialogFragment.FinalizeEventDateDialogFragmentInterface {
+                override fun onDateSelected(result: String) {
+                    finalizeEventDate(result)
+                }
+
+                override fun onDialogFragmentDestroyed() {
+                    finalizeEvenDateDialogFragment = null
+                }
+            }
+        )
+    }
+
     private fun swipedToLeft() {
         if (progressBarFragmentDialog?.isLoadingInProgress == true) return
 
@@ -137,9 +162,8 @@ class EventDetailFragment : Fragment() {
                 date + (currentVote.toInt() + voteChangedBy).toString()
             } as ArrayList<String>
 
-
             transaction.update(FirebaseFirestore.getInstance().collection("events").document(eventID),
-                mapOf( "When" to updatedReadEventDateData))
+                mapOf( "When" to updatedReadEventDateData, "FinalizedDate" to event?.finalizedDate, "EventStatus" to event?.status))
 
             val eventResponseStatusAsInt = when(eventResponseStatus) {
                 EventResponseStatus.NotResponded -> 0
@@ -255,10 +279,124 @@ class EventDetailFragment : Fragment() {
         }
     }
 
+    private fun setDeleteEventImageView() {
+        viewToBeCreated?.eventDetailCancelImageView?.setOnClickListener {
+
+            val alertDialog = AlertDialog.Builder(context)
+
+            alertDialog.apply {
+                setTitle("Delete Event")
+                setMessage("Are you sure you want to delete the event?")
+                setPositiveButton("YES") { dialog, _ ->
+                    progressBarFragmentDialog?.show(fragmentManager ?: return@setPositiveButton, null)
+                    deleteEvent()
+                    dialog.dismiss()
+                }
+                setNegativeButton("NO") { dialog, _ ->
+                    dialog.dismiss()
+                    return@setNegativeButton
+                }
+                create()
+                show()
+            }
+
+        }
+    }
+
+    private fun deleteEvent() {
+
+        val data = hashMapOf("eventID" to (event?.iD ?: return),
+            "founderID" to (event?.founderID ?: return))
+
+        FirebaseFunctions.getInstance().getHttpsCallable("deleteEventByID").call(data)
+            .addOnSuccessListener { _ ->
+
+                val eventsArray = viewModel.eventsArray.value
+                val updatedEventsArray = ArrayList<Event>()
+
+                eventsArray?.map {
+                    if (it.iD != event?.iD)
+                        updatedEventsArray.add(it)
+                }
+
+                viewModel.assertEventsArray(updatedEventsArray)
+
+                val eventFragment = EventFragment()
+                val fragmentTransaction = activity?.supportFragmentManager?.beginTransaction()
+                fragmentTransaction?.replace(R.id.homeRootFrameLayout, eventFragment)
+                fragmentTransaction?.commit()
+
+                progressBarFragmentDialog?.dismiss()
+
+            }
+    }
+
+    private fun setFinalizeEventDateImageView() {
+        viewToBeCreated?.eventDetailFinalizeDateImageView?.setOnClickListener {
+            val alertDialog = AlertDialog.Builder(context)
+
+            alertDialog.apply {
+                setTitle("Finalize Event Date")
+                setMessage("Are you sure you want to finalize the event date? \n(Most voted option will be selected)")
+                setPositiveButton("YES") { dialog, _ ->
+                    finalizeEventDateCheckForDatesWithSameVote()
+                    dialog.dismiss()
+                }
+                setNegativeButton("NO") { dialog, _ ->
+                    dialog.dismiss()
+                    return@setNegativeButton
+                }
+                create()
+                show()
+            }
+        }
+    }
+
+    private fun finalizeEventDateCheckForDatesWithSameVote() {
+        val eventDate = event?.date?.zip(event?.dateVote ?: return)
+        var mostVoteCount = 0
+        var mostVotedDay = arrayListOf<String>()
+
+        eventDate?.map {
+            val date = it.first
+            val vote = it.second.toInt()
+
+            if (vote > mostVoteCount) {
+                mostVoteCount = vote
+                mostVotedDay = arrayListOf(date)
+            } else if( vote == mostVoteCount) {
+                mostVotedDay.add(date)
+            }
+        }
+
+        if (mostVotedDay.size > 1) {
+            setFinalizeEventDateDialogFragment()
+            finalizeEvenDateDialogFragment?.loadEventDates(mostVotedDay)
+            finalizeEvenDateDialogFragment?.show(fragmentManager ?: return, null)
+        } else {
+            finalizeEventDate(mostVotedDay.first())
+        }
+    }
+
+    private fun finalizeEventDate(finalizedDate: String) {
+        event?.finalizedDate = finalizedDate
+        event?.status = EventStatus.Date_Finalized.value
+        customDatesAdapter?.loadData(event ?: return, null)
+        finalizeEvenDateDialogFragment?.dismiss()
+
+        val eventsArray = viewModel.eventsArray.value
+        eventsArray?.first { event?.iD == it.iD }?.apply {
+            this.finalizedDate = finalizedDate
+            status = EventStatus.Date_Finalized.value
+        }
+
+    }
+
     private fun setCustomDatesToVoteRecyclerView() {
         viewToBeCreated?.datesToVoteRecyclerView?.adapter = customDatesAdapter
 
         val eventReceived = event ?: return
+        Log.d("OSMAN", eventReceived.status.toString())
         customDatesAdapter?.loadData(eventReceived, votedForDates)
 
         val layoutManager = LinearLayoutManager(activity)
