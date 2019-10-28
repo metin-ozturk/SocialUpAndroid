@@ -8,6 +8,7 @@ import androidx.lifecycle.ViewModel
 import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.models.Event
 import com.jora.socialup.models.EventResponseStatus
+import com.jora.socialup.models.FriendInfo
 import kotlin.collections.ArrayList
 
 
@@ -20,6 +21,8 @@ class EventViewModel : ViewModel() {
     var isFavoriteEventsToBeDownloaded = true
 
     var isFavorite = false
+
+    var friends : ArrayList<FriendInfo>? = null
 
     private var eventsArrayData = MutableLiveData<ArrayList<Event>>()
     val eventsArray : LiveData<ArrayList<Event>>

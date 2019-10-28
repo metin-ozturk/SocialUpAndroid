@@ -24,9 +24,7 @@ import com.jora.socialup.adapters.EventDatesVoteRecyclerViewAdapter
 import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.helpers.observeOnce
-import com.jora.socialup.models.Event
-import com.jora.socialup.models.EventResponseStatus
-import com.jora.socialup.models.EventStatus
+import com.jora.socialup.models.*
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event_detail.view.*
 import kotlinx.coroutines.tasks.asDeferred
@@ -48,8 +46,10 @@ class EventDetailFragment : Fragment() {
     private var progressBarFragmentDialog: ProgressBarFragmentDialog? = null
 
     private var finalizeEvenDateDialogFragment : FinalizeEventDateDialogFragment? = null
+    private var inviteFriendsDialogFragment : InviteFriendsDialogFragment? = null
 
     private var viewToBeCreated: View? = null
+    private var isInviteFriendMenuAdded : Boolean? = null
 
     private val dateVotesChangedBy : ArrayList<Int> by lazy {
         val arraySize = event?.dateVote?.size ?: 0
@@ -68,6 +68,8 @@ class EventDetailFragment : Fragment() {
 
         customDatesAdapter = EventDatesVoteRecyclerViewAdapter(event ?: return null, votedForDates)
 
+        isInviteFriendMenuAdded = savedInstanceState?.getBoolean("isInviteFriendMenuAdded")
+
         setCustomDatesToVoteRecyclerView()
         setCustomDatesToVoteRecyclerViewListeners()
         setTextViewsButtonsAndImages()
@@ -85,6 +87,7 @@ class EventDetailFragment : Fragment() {
         setFavoriteImageView()
         setDeleteEventImageView()
         setFinalizeEventDateImageView()
+        setInviteFriendsImageView()
 
         setEventResponseStatusToButtons()
         setProgressBar()
@@ -96,7 +99,20 @@ class EventDetailFragment : Fragment() {
     override fun onPause() {
         super.onPause()
         if (progressBarFragmentDialog?.isLoadingInProgress == true) progressBarFragmentDialog?.dismiss()
+
+        if (inviteFriendsDialogFragment?.isAdded == true) {
+            isInviteFriendMenuAdded = true
+            inviteFriendsDialogFragment?.dismiss()
+        }
+
+
     }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean("isInviteFriendMenuAdded", isInviteFriendMenuAdded ?: false)
+    }
+
 
     private fun getDataFromViewModel() {
         event = viewModel.event.value?.copy()
@@ -179,6 +195,9 @@ class EventDetailFragment : Fragment() {
             toBeUpdated.putAll(votedForDates)
 
             transaction.update(eventSpecificPath,toBeUpdated)
+
+            //Nullify friends list so when a new event is viewed in detail, it won't show this event's friends data.
+            viewModel.friends = null
 
             val eventFragment = EventFragment()
             val fragmentTransaction = activity?.supportFragmentManager?.beginTransaction()
@@ -384,19 +403,77 @@ class EventDetailFragment : Fragment() {
         customDatesAdapter?.loadData(event ?: return, null)
         finalizeEvenDateDialogFragment?.dismiss()
 
-        val eventsArray = viewModel.eventsArray.value
-        eventsArray?.first { event?.iD == it.iD }?.apply {
-            this.finalizedDate = finalizedDate
-            status = EventStatus.Date_Finalized.value
+        updateEventAtEventsArray {
+            it.finalizedDate = finalizedDate
+            it.status = EventStatus.Date_Finalized.value
         }
 
+    }
+
+    private fun setInviteFriendsDialogFragment() {
+        inviteFriendsDialogFragment = InviteFriendsDialogFragment.newInstance(
+            object: InviteFriendsDialogFragment.InviteFriendsDialogFragmentInterface {
+                override fun onDialogFragmentDestroyed() {
+                    inviteFriendsDialogFragment = null
+                }
+
+                override fun onFinish(friends: ArrayList<FriendInfo>) {
+                    updateEventAtEventsArray {eventAtEventsArray ->
+                        var invitedFriendCount = 0
+                        friends.forEach { friend ->
+                            if (friend.friendInviteStatus != FriendInviteStatus.AboutToBeSelected) return@forEach
+                            friend.friendInviteStatus = FriendInviteStatus.Selected
+                            invitedFriendCount += 1
+                        }
+
+                        val invitedFriends = friends.filter { it.friendInviteStatus == FriendInviteStatus.Selected }
+                        val invitedFriendIDs = invitedFriends.map { it.iD ?: return@updateEventAtEventsArray}
+                        val invitedFriendNames = invitedFriends.map { it.name ?: return@updateEventAtEventsArray}
+
+
+                        FirebaseFirestore.getInstance().collection("events")
+                            .document(eventAtEventsArray.iD ?: return@updateEventAtEventsArray)
+                            .update(mapOf("WithWhomInvited" to invitedFriendIDs,
+                                "WithWhomInvitedNames" to invitedFriendNames))
+                            .addOnCompleteListener {
+                                if (it.isSuccessful) {
+                                    eventAtEventsArray.eventWithWhomNames?.addAll(invitedFriendNames)
+                                    eventAtEventsArray.eventWithWhomID?.addAll(invitedFriendIDs)
+                                    Toast.makeText(context, "Invited $invitedFriendCount more friends to the event", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Log.d(eventDetailTag, "ERROR WHILE UPDATING INVITED LIST", it.exception)
+                                }
+                            }
+
+                    }
+                }
+            })
+    }
+
+    private fun setInviteFriendsImageView() {
+        viewToBeCreated?.eventDetailInviteImageView?.setOnClickListener {
+            if (inviteFriendsDialogFragment == null) setInviteFriendsDialogFragment()
+            inviteFriendsDialogFragment?.show(fragmentManager ?: return@setOnClickListener, null)
+        }
+
+        if (isInviteFriendMenuAdded == true) {
+            setInviteFriendsDialogFragment()
+            inviteFriendsDialogFragment?.show(fragmentManager ?: return, null)
+            isInviteFriendMenuAdded = false
+        }
+    }
+
+    private fun updateEventAtEventsArray(updateTo: (Event) -> Unit) {
+        val eventsArray = viewModel.eventsArray.value
+        eventsArray?.first { event?.iD == it.iD }?.apply {
+            updateTo(this)
+        }
     }
 
     private fun setCustomDatesToVoteRecyclerView() {
         viewToBeCreated?.datesToVoteRecyclerView?.adapter = customDatesAdapter
 
         val eventReceived = event ?: return
-        Log.d("OSMAN", eventReceived.status.toString())
         customDatesAdapter?.loadData(eventReceived, votedForDates)
 
         val layoutManager = LinearLayoutManager(activity)

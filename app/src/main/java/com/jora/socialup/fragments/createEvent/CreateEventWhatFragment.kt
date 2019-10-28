@@ -30,6 +30,7 @@ import com.jora.socialup.adapters.EventHistoryRecyclerViewAdapter
 import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
+import com.jora.socialup.models.FriendInviteStatus
 import com.jora.socialup.models.LocationSelectionStatus
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_what.*
@@ -125,7 +126,6 @@ class CreateEventWhatFragment : Fragment() {
         eventToBePassed?.apply {
             name = createEventWhatName.text.toString()
             description = createEventWhatDescription.text.toString()
-            Log.d("OSMAN", eventHasImage.toString())
             hasImage = eventHasImage
             image = createEventWhatImageView.drawable.toBitmap()
             isPrivate = createEventWhatIsPublic.isChecked
@@ -223,7 +223,7 @@ class CreateEventWhatFragment : Fragment() {
 
                             // Select loaded past event's Invited Friends at the current friends list
                             createEventViewModel.friends.value?.forEach { friend ->
-                                friend.isSelected = eventToBePassed?.eventWithWhomID?.contains(friend.iD) == true
+                                if (eventToBePassed?.eventWithWhomID?.contains(friend.iD) == true) friend.friendInviteStatus = FriendInviteStatus.Selected
                             }
 
                             // Changed Selected past event's location status as AboutToBeConfirmed

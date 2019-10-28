@@ -1,6 +1,7 @@
 package com.jora.socialup.adapters
 
 import android.graphics.Color
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.GONE
@@ -11,6 +12,7 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.jora.socialup.R
 import com.jora.socialup.models.FriendInfo
+import com.jora.socialup.models.FriendInviteStatus
 
 class SearchFriendsRecyclerViewAdapter(private var friends: ArrayList<FriendInfo>)
                                         : RecyclerView.Adapter<BaseViewHolder>() {
@@ -40,12 +42,10 @@ class SearchFriendsRecyclerViewAdapter(private var friends: ArrayList<FriendInfo
             castedHolder.friendName.text = friends[position].name
             castedHolder.friendImage.setImageBitmap(friends[position].image)
 
-            if (friends[position].isSelected == true) {
-                castedHolder.itemView.isSelected = true
-                castedHolder.itemView.setBackgroundColor(Color.GREEN)
-            } else {
-                castedHolder.itemView.isSelected = false
-                castedHolder.itemView.setBackgroundColor(Color.WHITE)
+            when(friends[position].friendInviteStatus) {
+                FriendInviteStatus.Selected -> castedHolder.itemView.setBackgroundColor(Color.GREEN)
+                FriendInviteStatus.AboutToBeSelected -> castedHolder.itemView.setBackgroundColor(Color.YELLOW)
+                else -> castedHolder.itemView.setBackgroundColor(Color.WHITE)
             }
         } else {
             castedHolder.friendName.text = defaultHolderText
