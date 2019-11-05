@@ -5,6 +5,7 @@ package com.jora.socialup.fragments.eventFeedAndDetail
 import android.app.SearchManager
 import android.content.Context
 import android.content.Intent
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Point
 import android.os.Bundle
@@ -39,9 +40,11 @@ import com.jora.socialup.R
 import com.jora.socialup.activities.EventCreateActivity
 import com.jora.socialup.activities.HomeActivity
 import com.jora.socialup.activities.HomeFeedActivity
+import com.jora.socialup.fragments.UserProfileDialogFragment
 import com.jora.socialup.helpers.*
 import com.jora.socialup.models.Event
 import com.jora.socialup.models.EventResponseStatus
+import com.jora.socialup.models.User
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event.view.*
 import kotlinx.coroutines.*
@@ -72,6 +75,7 @@ class EventFragment : Fragment() {
     private var viewToBeCreated: View? = null
 
     private var progressBarFragmentDialog: ProgressBarFragmentDialog? = null
+    private var userProfileDialogFragment : UserProfileDialogFragment? = null
 
     override fun onAttach(context: Context) {
         super.onAttach(context)
@@ -151,7 +155,6 @@ class EventFragment : Fragment() {
                     Log.w(eventTag, "getInstanceId failed", task.exception)
                     return@OnCompleteListener
                 }
-
                 // Get new Instance ID token
                 task.result?.token?.also {
                     sendCloudMessagingRegistrationTokenToServer(it)
@@ -163,6 +166,14 @@ class EventFragment : Fragment() {
     private fun sendCloudMessagingRegistrationTokenToServer(token: String) {
         FirebaseFirestore.getInstance().collection("users").document(userID ?: return)
             .update("CloudMessagingToken", token)
+    }
+
+    private fun setUserProfile(user: User, userImage: Bitmap) {
+        userProfileDialogFragment = UserProfileDialogFragment.newInstance(object: UserProfileDialogFragment.UserProfileDialogFragmentInterface {
+            override fun onDialogFragmentDestroyed() {
+                userProfileDialogFragment = null
+            }
+        }, user, userImage)
     }
 
     private fun setProgressBar() {
@@ -188,6 +199,7 @@ class EventFragment : Fragment() {
                 if (activity?.supportFragmentManager?.findFragmentByTag(favoriteEventsMenuTag) == null) {
                     val favoriteEventsMenu = FavoriteEventsMenu.newInstance(object: FavoriteEventsMenu.FavoriteEventsMenuInterface {
                         override fun favoriteEventClicked() {
+                            if (progressBarFragmentDialog == null) setProgressBar()
                             progressBarFragmentDialog?.show(fragmentManager ?: return, null)
                             downloadEventSpecificInformationAndUpdateViewModel()
                         }
@@ -264,7 +276,6 @@ class EventFragment : Fragment() {
         viewModel.currentUserImage.observeOnce(activity!!) {
             viewToBeCreated?.eventFeedFounderImageView?.setImageBitmap(it)
         }
-
 
         viewModel.eventsArray.observe(activity!!, Observer<ArrayList<Event>> { retrievedEventsArray ->
             if (retrievedEventsArray.size == eventsArray.size + 1) {
@@ -399,6 +410,8 @@ class EventFragment : Fragment() {
                 recyclerView,
                 object : RecyclerItemClickListener.OnItemClickListener {
                     override fun onItemClick(view: View, position: Int) {
+                        if (progressBarFragmentDialog == null) setProgressBar()
+
                         if (progressBarFragmentDialog?.isLoadingInProgress == false) {
                             progressBarFragmentDialog?.show(fragmentManager ?: return, null)
                             downloadEventSpecificInformationAndUpdateViewModel(position)
@@ -479,12 +492,23 @@ class EventFragment : Fragment() {
                             val isEvent = combinedSearchResult[1] as ArrayList<Boolean> // true if it is event
                             val searchedEventID = combinedSearchResult[2] as ArrayList<String>
 
-                            if (!isEvent[position]) return
+                            if (!isEvent[position]) {
+                                if (progressBarFragmentDialog == null) setProgressBar()
+                                progressBarFragmentDialog?.show(fragmentManager ?: return, null)
+                                User.downloadUserInfo(searchedEventID[position]) { user, userImage ->
+                                    setUserProfile(user, userImage)
+                                    progressBarFragmentDialog?.dismiss()
+                                    userProfileDialogFragment?.show(fragmentManager ?: return@downloadUserInfo, null)
+                                }
+
+                                return
+                            }
 
                             searchRecyclerView.clearFocus()
 
                             Event.downloadEventInformation(searchedEventID[position]) {
                                 viewModel.assertWhichViewToBeShowed(it)
+                                if (progressBarFragmentDialog == null) setProgressBar()
                                 progressBarFragmentDialog?.show(fragmentManager ?: return@downloadEventInformation, null)
                                 downloadEventSpecificInformationAndUpdateViewModel()
 
@@ -532,6 +556,7 @@ class EventFragment : Fragment() {
                     val searchedEventID = combinedSearchResult[2] as ArrayList<String>
 
                     if (isEvent.run { isNotEmpty() && first() }) {
+                        if (progressBarFragmentDialog == null) setProgressBar()
                         progressBarFragmentDialog?.show(fragmentManager ?: return true, null)
                         Event.downloadEventInformation(searchedEventID.first()) {
                             viewModel.assertWhichViewToBeShowed(it)

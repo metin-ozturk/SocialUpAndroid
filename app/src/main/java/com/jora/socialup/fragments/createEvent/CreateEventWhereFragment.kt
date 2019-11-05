@@ -49,9 +49,8 @@ import kotlin.properties.Delegates
 
 // LINE 370 - BE TIDY
 
-private const val LOCATION_PERMISSION_REQUEST_CODE = 1
 
-class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMarkerClickListener{
+class CreateEventWhereFragment : Fragment(){
 
     private var viewToBeCreated : View? = null
 
@@ -59,77 +58,59 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
         ViewModelProviders.of(activity!!).get(CreateEventViewModel::class.java)
     }
 
-    private var fusedLocationClient : FusedLocationProviderClient? = null
-    private var lastLocation : Location? = null
-    private var googleMap : GoogleMap? = null
-
-    private var eventToBePassed : Event? = null
-
-    private var mapView : MapView? = null
-
-    private var latLongOfEventLocation : LatLng? = null
-
     private var customSearchAdapter : LocationSearchRecyclerViewAdapter? = null
-
     private var searchedLocations = ArrayList<LocationInfo>()
 
-    private var locationDetailDialogFragment : LocationDetailDialogFragment? = null
+    private var lastLocation : Location? = null
 
-    private val locationDetailDialogListener: LocationDetailDialogFragment.LocationDetailDialogFragmentInterface by lazy {
-        object: LocationDetailDialogFragment.LocationDetailDialogFragmentInterface {
-            override fun onConfirmed(locationToBePassed: LocationInfo) {
-                updateEventToBePassedByLocationDetailDialogData(locationToBePassed)
-                placeMarkerOnMap(
-                    LatLng(
-                        locationToBePassed.latitude?.toDouble() ?: 0.0,
-                        locationToBePassed.longitude?.toDouble() ?: 0.0
-                    )
-                )
-                locationDetailDialogFragment?.dismiss()
-            }
+    private var eventMapFragment : EventMapFragment? = null
 
-            override fun onDialogFragmentDestroyed() {
-                locationDetailDialogFragment = null
-            }
-        }
-    }
-
-    private var locationSelectionStatus = LocationSelectionStatus.NotSelected
-
-    private var markers = ArrayList<Marker>()
-    private var customMarker : Marker? = null
-
-    private val confirmInterfaceFadeInFadeOutAnimation = 750L
-
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(activity!!)
-
-    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_where, container, false)
-        eventToBePassed = createEventViewModel.event.value?.copy() ?: Event()
-
-        locationSelectionStatus = createEventViewModel.locationSelectionStatus.value ?: LocationSelectionStatus.NotSelected
 
         setSearchView()
         setSearchViewListeners()
-        setMapView(savedInstanceState)
         setSearchRecyclerView()
         setSwipeGestures()
+        setEventMapFragment()
 
         return viewToBeCreated
     }
 
+    private fun setEventMapFragment(){
+        eventMapFragment = EventMapFragment.newInstance(object: EventMapFragment.EventMapFragmentInterface {
 
+            override fun lastLocationRetrieved(lastLocation: Location?) {
+                this@CreateEventWhereFragment.lastLocation = lastLocation
+            }
+
+            override fun updateEventData(updateTo: Event) {
+                createEventViewModel.updateEventData(updateTo)
+            }
+
+            override fun updateLocationSelectionStatus(updateTo: LocationSelectionStatus) {
+                createEventViewModel.updateLocationSelectionStatus(updateTo)
+            }
+
+            override fun onFragmentDestroyed() {
+                eventMapFragment = null
+            }
+        }, createEventViewModel.event.value?.copy(),
+            createEventViewModel.locationSelectionStatus.value)
+
+        val transaction = activity?.supportFragmentManager?.beginTransaction()
+        transaction?.add(R.id.createEventWhereFrameLayout, eventMapFragment ?: return)
+        transaction?.commit()
+    }
+ 
 
     private fun setSwipeGestures() {
         viewToBeCreated?.createEventWhereRootConstraintLayout?.setOnTouchListener( OnGestureTouchListener(activity!!,
             object: OnGestureTouchListener.OnGestureInitiated {
                 override fun swipedLeft() {
 
-                    createEventViewModel.updateEventData(eventToBePassed)
+                    createEventViewModel.updateEventData(createEventViewModel.event.value?.copy())
 
                     val createEventWhenFragment = CreateEventWhenFragment()
                     val transaction = activity?.supportFragmentManager?.beginTransaction()
@@ -140,56 +121,6 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
         )
     }
 
-    override fun onMapReady(googleMapRetrieved: GoogleMap?) {
-        googleMap = googleMapRetrieved
-        googleMap?.setOnMarkerClickListener(this)
-
-        if (locationSelectionStatus == LocationSelectionStatus.AboutToBeConfirmed) {
-            placeMarkerOnMap(LatLng(eventToBePassed?.locationLatitude?.toDouble() ?: return, eventToBePassed?.locationLongitude?.toDouble() ?: return), false)
-        } else {
-
-            if (locationSelectionStatus == LocationSelectionStatus.SettingNameAndDescription) {
-                locationDetailDialogFragment = eventToBePassed?.run {
-                    LocationDetailDialogFragment.newInstance(LocationInfo(locationName, locationDescription, locationLatitude.toString(),
-                        locationLongitude.toString(), locationAddress, null), locationDetailDialogListener)
-                }
-                locationDetailDialogFragment?.show(fragmentManager ?: return, null)
-
-            }
-
-            // Check if user grants permission to access fine location and if not, ask for it. Then go to current location.
-            if (checkFineLocationPermission()) {
-                goToCurrentLocationAndUpdateMapViewDetails()
-            } else {
-                requestPermissions(arrayOf(Manifest.permission.ACCESS_FINE_LOCATION), LOCATION_PERMISSION_REQUEST_CODE)
-            }
-        }
-
-
-        googleMap?.setOnMapLongClickListener {
-            latLongOfEventLocation = it
-            locationDetailDialogFragment = LocationDetailDialogFragment.newInstance(LocationInfo(null, null,
-                latLongOfEventLocation?.latitude.toString(), latLongOfEventLocation?.longitude.toString(), null, null),
-                locationDetailDialogListener)
-            locationDetailDialogFragment?.show(fragmentManager ?: return@setOnMapLongClickListener, null)
-        }
-
-    }
-
-    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<out String>, grantResults: IntArray) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-
-        if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED && requestCode == LOCATION_PERMISSION_REQUEST_CODE) {
-            goToCurrentLocationAndUpdateMapViewDetails()
-        }
-    }
-
-    private fun setMapView(savedInstanceState: Bundle?) {
-        mapView = viewToBeCreated?.createEventWhereMapView
-
-        mapView?.onCreate(savedInstanceState)
-        mapView?.getMapAsync(this)
-    }
 
     private fun setSearchView() {
         viewToBeCreated?.createEventWhereSearchView?.apply {
@@ -244,6 +175,7 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
                         return false
                     }
 
+
                     getAutoCompletePredictions(newText)
 
                     // Put android:windowSoftInputMode="adjustNothing" to activity's field in manifest, if you like to disable auto resize when keyboard appears.
@@ -280,9 +212,6 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
 
     }
 
-    private fun checkFineLocationPermission():Boolean {
-        return ContextCompat.checkSelfPermission(activity!!, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
-    }
 
     private fun getAutoCompletePredictions(query: String) {
         Places.initialize(activity!!.applicationContext, "AIzaSyBm3I6KSFsi_usniA7PC9JALxiIBtCw1JA")
@@ -306,6 +235,7 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
             .setSessionToken(token)
             .setQuery(query)
             .build()
+
 
 //        val autoCompletePredictions =  placesClient.findAutocompletePredictions(request)
 //
@@ -344,13 +274,7 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
             customSearchAdapter?.updateSearchedLocations(arrayListOf())
             searchedLocations = arrayListOf()
             viewToBeCreated?.createEventWhereSearchView?.clearFocus()
-
-            locationDetailDialogFragment = it.run {
-                LocationDetailDialogFragment.newInstance(LocationInfo(place.name,
-                        place.address, place.latLng?.latitude.toString(), place.latLng?.longitude.toString(), place.address, placeID), locationDetailDialogListener)
-            }
-
-            locationDetailDialogFragment?.show(fragmentManager ?: return@addOnSuccessListener, null)
+            eventMapFragment?.showLocationDetailDialogFragment(it, placeID)
         }.addOnFailureListener {
             if (it is ApiException)
                 Log.d("CreateEventWhereFrag","PLACE NOT FOUND" , it)
@@ -358,243 +282,5 @@ class CreateEventWhereFragment : Fragment(), OnMapReadyCallback, GoogleMap.OnMar
     }
 
 
-    private fun updateEventToBePassedByLocationDetailDialogData(locationToBePassed: LocationInfo) {
-        eventToBePassed?.apply {
-            locationName = locationToBePassed.name
-            locationDescription = locationToBePassed.description
-            locationLatitude = locationToBePassed.latitude
-            locationLongitude = locationToBePassed.longitude
-            locationAddress = locationToBePassed.address
-        }
 
-        createEventViewModel.updateEventData(eventToBePassed)
-
-    }
-
-    private fun clearEventToBeCreated() {
-        eventToBePassed?.apply {
-            locationName = null
-            locationDescription = null
-            locationLatitude = null
-            locationLongitude = null
-            locationAddress = null
-        }
-
-        createEventViewModel.updateEventData(eventToBePassed)
-    }
-
-
-    private fun goToCurrentLocationAndUpdateMapViewDetails() {
-        if (!checkFineLocationPermission()) return
-
-        googleMap?.apply {
-            uiSettings?.isZoomControlsEnabled = true
-            isMyLocationEnabled = true
-        }
-
-
-        fusedLocationClient?.lastLocation?.addOnSuccessListener { retrievedLocation ->
-            if (retrievedLocation == null) {
-                // If there is no know last location, request current location
-                val locationRequest = LocationRequest.create().setPriority(LocationRequest.PRIORITY_HIGH_ACCURACY).setInterval(10000).setFastestInterval(1000)
-
-                val locationCallback = object: LocationCallback() {
-                    override fun onLocationResult(locationResult: LocationResult?) {
-                        super.onLocationResult(locationResult)
-
-                        if (locationResult == null) {
-                            fusedLocationClient?.removeLocationUpdates(this)
-                            return
-                        }
-
-                        lastLocation = locationResult.lastLocation.also { location ->
-                            googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(location.latitude, location.longitude), 12f))
-                        }
-
-                        fusedLocationClient?.removeLocationUpdates(this)
-                    }
-                }
-
-                fusedLocationClient?.requestLocationUpdates(locationRequest, locationCallback, null)
-            } else {
-                lastLocation = retrievedLocation.also { location ->
-                    googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(location.latitude, location.longitude), 12f))
-                }
-            }
-
-
-        }
-
-    }
-
-
-    private fun placeMarkerOnMap(location: LatLng, animateCamera: Boolean = true) {
-        if (animateCamera)
-            googleMap?.animateCamera(CameraUpdateFactory.newLatLngZoom(LatLng(location.latitude, location.longitude), 12f))
-        else
-            googleMap?.moveCamera(CameraUpdateFactory.newLatLngZoom(LatLng(location.latitude, location.longitude), 12f))
-
-        val markerOptions = MarkerOptions().position(location)
-
-        when(markers.size) {
-            0 -> {
-                markerOptions.icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-                markerOptions.alpha(0.8f)
-            }
-
-            else -> {
-                markers.forEach { it.remove() }
-                markers = ArrayList()
-
-                placeMarkerOnMap(location)
-                return
-            }
-        }
-
-        customMarker = googleMap?.addMarker(markerOptions) ?: return
-        markers.add(customMarker ?: return)
-
-        setConfirmInterface()
-
-    }
-
-    private fun setConfirmInterface() {
-        locationSelectionStatus = LocationSelectionStatus.AboutToBeConfirmed
-
-        val confirmLocation = TextView(context!!)
-        confirmLocation.text = "Confirm?"
-        confirmLocation.textSize = 20f
-        confirmLocation.typeface = Typeface.DEFAULT_BOLD
-        confirmLocation.measure(0, 0)
-
-        val confirmLocationTick = ImageView(context!!)
-        confirmLocationTick.setImageResource(R.drawable.tick)
-        confirmLocationTick.scaleType = ImageView.ScaleType.CENTER_CROP
-
-        val confirmLocationCancel = ImageView(context!!)
-        confirmLocationCancel.setImageResource(R.drawable.cancel)
-        confirmLocationCancel.scaleType = ImageView.ScaleType.CENTER_CROP
-
-        arrayOf(confirmLocation, confirmLocationTick, confirmLocationCancel).forEach {
-            it.id = View.generateViewId()
-            it.alpha = 0f
-            viewToBeCreated?.createEventWhereRootConstraintLayout?.addView(it)
-            it.animate().alpha(1f).duration = confirmInterfaceFadeInFadeOutAnimation // Fade-In animation for Confirm Interface
-        }
-
-        val constraintSet = ConstraintSet()
-
-        constraintSet.connect(confirmLocation.id, ConstraintSet.START, viewToBeCreated?.createEventWhereMapView?.id ?: return, ConstraintSet.START, (viewToBeCreated?.createEventWhereMapView?.measuredWidth ?: 0 ) / 2 - confirmLocation.measuredWidth / 2 )
-        constraintSet.connect(confirmLocation.id, ConstraintSet.TOP, viewToBeCreated?.createEventWhereMapView?.id ?: return, ConstraintSet.TOP, (viewToBeCreated?.createEventWhereMapView?.measuredHeight ?: 0 ) / 2)
-        constraintSet.constrainHeight(confirmLocation.id, ConstraintSet.WRAP_CONTENT)
-        constraintSet.constrainWidth(confirmLocation.id, ConstraintSet.WRAP_CONTENT)
-
-        constraintSet.connect(confirmLocationTick.id, ConstraintSet.START, confirmLocation.id, ConstraintSet.START, 0)
-        constraintSet.connect(confirmLocationTick.id, ConstraintSet.TOP, confirmLocation.id, ConstraintSet.BOTTOM, 0 )
-        constraintSet.constrainHeight(confirmLocationTick.id, 100)
-        constraintSet.constrainWidth(confirmLocationTick.id, 100)
-
-        constraintSet.connect(confirmLocationCancel.id, ConstraintSet.END, confirmLocation.id, ConstraintSet.END, 0)
-        constraintSet.connect(confirmLocationCancel.id, ConstraintSet.TOP, confirmLocation.id, ConstraintSet.BOTTOM, 0 )
-        constraintSet.constrainHeight(confirmLocationCancel.id, 100)
-        constraintSet.constrainWidth(confirmLocationCancel.id, 100)
-
-        constraintSet.applyTo(viewToBeCreated?.createEventWhereRootConstraintLayout)
-
-        setConfirmInterfaceListeners(confirmLocationTick, confirmLocationCancel, confirmLocation)
-
-    }
-
-    private fun setConfirmInterfaceListeners(confirmLocationTick: ImageView, confirmLocationCancel: ImageView, confirmLocation: TextView) {
-
-        confirmLocationTick.setOnClickListener {
-            val createEventSummaryFragment = CreateEventSummaryFragment()
-            val transaction = activity?.supportFragmentManager?.beginTransaction()
-            transaction?.replace(R.id.eventCreateFrameLayout, createEventSummaryFragment)
-            transaction?.commit()
-        }
-
-        confirmLocationCancel.setOnClickListener {
-            locationSelectionStatus = LocationSelectionStatus.NotSelected
-            clearEventToBeCreated()
-
-            arrayOf(confirmLocation, confirmLocationCancel, confirmLocationTick, customMarker).forEach {viewToBeRemoved ->
-
-                val fadeOutAnimation = ObjectAnimator.ofFloat(viewToBeRemoved, "alpha", 1f, 0f).setDuration(confirmInterfaceFadeInFadeOutAnimation)
-                fadeOutAnimation.addListener(object: AnimatorListenerAdapter() {
-                    override fun onAnimationEnd(animation: Animator?) {
-                        super.onAnimationEnd(animation)
-
-                        if (viewToBeRemoved != customMarker ) {
-                            ((viewToBeRemoved as View).parent as ViewGroup).removeView(viewToBeRemoved)
-                        } else {
-                            (viewToBeRemoved as Marker).remove()
-                        }
-                    }
-                })
-                fadeOutAnimation.start()
-            }
-        }
-    }
-
-
-    override fun onMarkerClick(marker: Marker?) : Boolean {
-
-        marker?.title = eventToBePassed?.locationName
-        marker?.setIcon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED))
-        marker?.alpha = 0.8f
-        return false
-    }
-
-
-    override fun onStart() {
-        super.onStart()
-        mapView?.onStart()
-    }
-
-    override fun onResume() {
-        super.onResume()
-        mapView?.onResume()
-    }
-
-    override fun onPause() {
-        super.onPause()
-        mapView?.onPause()
-
-        if (locationDetailDialogFragment?.isAdded == true) {
-            locationSelectionStatus = LocationSelectionStatus.SettingNameAndDescription
-            createEventViewModel.updateEventData(locationDetailDialogFragment?.returnEventWithUpdatedLocation(eventToBePassed ?: return) ?: return)
-            locationDetailDialogFragment?.dismiss()
-        }
-
-        if ( locationSelectionStatus == LocationSelectionStatus.NotSelected
-            && eventToBePassed?.locationLatitude != null) {
-
-            clearEventToBeCreated()
-        }
-
-        createEventViewModel.updateLocationSelectionStatus(locationSelectionStatus)
-
-    }
-
-    override fun onStop() {
-        super.onStop()
-        mapView?.onStop()
-    }
-
-
-    override fun onDestroy() {
-        super.onDestroy()
-        mapView?.onDestroy()
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        mapView?.onSaveInstanceState(outState)
-    }
-
-    override fun onLowMemory() {
-        super.onLowMemory()
-        mapView?.onLowMemory()
-    }
 }

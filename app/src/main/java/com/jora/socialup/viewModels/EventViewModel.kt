@@ -2,6 +2,7 @@ package com.jora.socialup.viewModels
 
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -76,9 +77,10 @@ class EventViewModel : ViewModel() {
 
 
     fun downloadCurrentUserProfilePhoto(userID : String) {
-
         FirebaseStorage.getInstance().reference.child("Images/Users/$userID/profilePhoto.jpeg").getBytes(1024 * 1024).addOnSuccessListener {
             currentUserImageData.value = BitmapFactory.decodeByteArray(it, 0, it.size)
+        }.addOnFailureListener {
+            Log.d("OSMAN", "ERROR WHILE GETTING PROFILE PHOTO")
         }
     }
 

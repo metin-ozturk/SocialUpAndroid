@@ -3,11 +3,17 @@ package com.jora.socialup.fragments.authentication
 import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.ImageDecoder
+import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
+import androidx.core.graphics.decodeBitmap
 import androidx.core.view.drawToBitmap
 import androidx.fragment.app.DialogFragment
 import com.google.firebase.auth.FirebaseAuth
@@ -17,6 +23,8 @@ import com.jora.socialup.R
 import com.jora.socialup.models.User
 import kotlinx.android.synthetic.main.fragment_dialog_sign_up_complete_information.view.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.tasks.await
+import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.net.URL
@@ -47,6 +55,8 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
     private var nameToBeRetrieved = ""
     private var birthdayToBeRetrieved = ""
     private var urlToBeRetrieved = ""
+
+    private var uploadedProfilePhoto : Bitmap? = null
 
     companion object {
         fun newInstance(listener: SignUpCompleteInformationDialogFragmentInterface) : SignUpCompleteInformationDialogFragment {
@@ -150,7 +160,7 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
                 val gender = when {
                     fragmentDialogSignUpCompleteInformationGenderPicker.value == 0 -> "Male"
                     fragmentDialogSignUpCompleteInformationGenderPicker.value == 1 -> "Female"
-                    else -> "Other"
+                    else -> "Error"
                 }
 
                 val twoDecimalFormat = DecimalFormat("00")
@@ -164,6 +174,7 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
 
                 uploadUserInformationToFirestore()
 
+
             }
         }
     }
@@ -173,15 +184,24 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
         val userReference = FirebaseFirestore.getInstance().collection("users").document(userID)
         val userProfilePhotoReference = FirebaseStorage.getInstance().reference.child("Images/Users/$userID/profilePhoto.jpeg")
 
-        val userImageToBeUploadedAsBitmap = viewToBeCreated?.fragmentDialogSignUpCompleteInformationPhotoImageView?.drawToBitmap() ?: return
-        val outputStream = ByteArrayOutputStream()
-        userImageToBeUploadedAsBitmap.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
-        val userImageToBeUploadedAsJPEG = outputStream.toByteArray()
 
-        userProfilePhotoReference.putBytes(userImageToBeUploadedAsJPEG)
-        userReference.set(userToBeCreated?.returnUserInformation() as Map<String, Any>)
+        val bgScope = CoroutineScope(Dispatchers.IO)
+        bgScope.launch {
+            var userImageToBeUploadedAsBitmap = uploadedProfilePhoto
 
-        listener?.onFinish()
+            if (userImageToBeUploadedAsBitmap == null && urlToBeRetrieved.isNotEmpty())
+                userImageToBeUploadedAsBitmap = BitmapFactory.decodeStream(URL(urlToBeRetrieved).content as InputStream)
+
+            val outputStream = ByteArrayOutputStream()
+            userImageToBeUploadedAsBitmap?.compress(Bitmap.CompressFormat.JPEG, 100, outputStream)
+            val userImageToBeUploadedAsJPEG = outputStream.toByteArray()
+
+            userProfilePhotoReference.putBytes(userImageToBeUploadedAsJPEG).await()
+            userReference.set(userToBeCreated?.returnUserInformation() as Map<String, Any>).await()
+            listener?.onFinish()
+
+            bgScope.cancel()
+        }
 
     }
 
@@ -199,8 +219,16 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
         super.onActivityResult(requestCode, resultCode, data)
 
         if (requestCode == 1) {
-            val selectedImage = data?.data
-                viewToBeCreated?.fragmentDialogSignUpCompleteInformationPhotoImageView?.setImageURI(selectedImage)
+            val selectedImage = data?.data ?: return
+
+            uploadedProfilePhoto = if (Build.VERSION.SDK_INT < 28) {
+                MediaStore.Images.Media.getBitmap(activity!!.contentResolver, selectedImage)
+            } else {
+                val imageSource = ImageDecoder.createSource(activity!!.contentResolver, selectedImage)
+                ImageDecoder.decodeBitmap(imageSource)
+            }
+
+            viewToBeCreated?.fragmentDialogSignUpCompleteInformationPhotoImageView?.setImageURI(selectedImage)
         }
 
 
@@ -208,10 +236,10 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
 
     private fun setGenderPicker() {
         viewToBeCreated?.fragmentDialogSignUpCompleteInformationGenderPicker?.apply {
-            displayedValues = arrayOf("Male", "Female", "Other")
+            displayedValues = arrayOf("Male", "Female")
             minValue = 0
-            maxValue = 2
-            value = 1
+            maxValue = 1
+            value = 0
         }
     }
     private fun setYears() {

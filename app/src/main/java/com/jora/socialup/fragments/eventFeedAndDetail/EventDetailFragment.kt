@@ -47,6 +47,7 @@ class EventDetailFragment : Fragment() {
 
     private var finalizeEvenDateDialogFragment : FinalizeEventDateDialogFragment? = null
     private var inviteFriendsDialogFragment : InviteFriendsDialogFragment? = null
+    private var getDirectionsToEventDialogFragment: GetDirectionsToEventDialogFragment? = null
 
     private var viewToBeCreated: View? = null
     private var isInviteFriendMenuAdded : Boolean? = null
@@ -88,6 +89,7 @@ class EventDetailFragment : Fragment() {
         setDeleteEventImageView()
         setFinalizeEventDateImageView()
         setInviteFriendsImageView()
+        setGetDirectionsToEventImageView()
 
         setEventResponseStatusToButtons()
         setProgressBar()
@@ -112,7 +114,6 @@ class EventDetailFragment : Fragment() {
         super.onSaveInstanceState(outState)
         outState.putBoolean("isInviteFriendMenuAdded", isInviteFriendMenuAdded ?: false)
     }
-
 
     private fun getDataFromViewModel() {
         event = viewModel.event.value?.copy()
@@ -460,6 +461,21 @@ class EventDetailFragment : Fragment() {
             setInviteFriendsDialogFragment()
             inviteFriendsDialogFragment?.show(fragmentManager ?: return, null)
             isInviteFriendMenuAdded = false
+        }
+    }
+
+    private fun setGetDirectionsToEventDialogFragment() {
+        getDirectionsToEventDialogFragment = GetDirectionsToEventDialogFragment.newInstance(object: GetDirectionsToEventDialogFragment.GetDirectionsToEventDialogFragmentInterface {
+            override fun onDialogFragmentDestroyed() {
+                getDirectionsToEventDialogFragment = null
+            }
+        })
+    }
+
+    private fun setGetDirectionsToEventImageView() {
+        viewToBeCreated?.eventDetailLandmarkImageView?.setOnClickListener {
+            setGetDirectionsToEventDialogFragment()
+            getDirectionsToEventDialogFragment?.show(fragmentManager ?: return@setOnClickListener, null)
         }
     }
 

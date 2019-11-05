@@ -76,7 +76,7 @@ class HomeActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        if (firebaseAuthentication?.currentUser != null) startActivity(Intent(this, HomeFeedActivity::class.java))
+//        if (firebaseAuthentication?.currentUser != null) startActivity(Intent(this, HomeFeedActivity::class.java))
 
     }
 

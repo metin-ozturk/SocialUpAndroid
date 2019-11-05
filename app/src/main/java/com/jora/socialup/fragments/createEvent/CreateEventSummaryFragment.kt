@@ -173,7 +173,7 @@ class CreateEventSummaryFragment : Fragment() {
                 withContext(Dispatchers.Main) {
                     progressBarFragmentDialog?.dismiss()
                     startActivity(Intent(activity!!, HomeActivity::class.java))
-                    cancel()
+                    bgScope.cancel()
                 }
             }
 

@@ -8,6 +8,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
+import com.jora.socialup.helpers.HelperFunctions
 import com.jora.socialup.models.Event
 import kotlinx.android.synthetic.main.fragment_dialog_location_detail.*
 import kotlinx.android.synthetic.main.fragment_dialog_location_detail.view.*
@@ -61,7 +62,6 @@ class LocationDetailDialogFragment : DialogFragment() {
 
             if (locationInfo?.address.isNullOrEmpty()) {
                 val bgScope = CoroutineScope(Dispatchers.IO)
-
                 bgScope.launch {
                     address = getAddress(locationInfo?.latitude?.toDouble() ?: 0.0,
                         locationInfo?.longitude?.toDouble() ?: 0.0)
@@ -81,6 +81,8 @@ class LocationDetailDialogFragment : DialogFragment() {
                     )
 
                     listener?.onConfirmed(locationToBePassed)
+                } else {
+                    HelperFunctions.showMessage(activity!!, "Warning", "Couldn't get the address for location.\nPlease try again later.")
                 }
             }
         }
