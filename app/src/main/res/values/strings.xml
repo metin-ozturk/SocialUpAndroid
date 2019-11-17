@@ -8,4 +8,8 @@
     <string name="google_sign_in_server_client_id">600844983013-hbtdqhedmfbudf9d30qavb2faf1akefk.apps.googleusercontent.com</string>
     <string name="facebook_app_id">1988725054548859</string>
     <string name="fb_login_protocol_scheme">fb1988725054548859</string>
+
+    <string name="friendship_channel_name">Friendship Requests</string>
+    <string name="friendship_channel_description">Notification That is Shown When A User Requests To Be Your Friend</string>
+    <string name="friendship_channel_id">SocialUpFriendshipRequest</string>
 </resources>

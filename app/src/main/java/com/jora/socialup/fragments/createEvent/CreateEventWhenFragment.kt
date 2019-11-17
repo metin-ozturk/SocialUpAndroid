@@ -1,24 +1,18 @@
 package com.jora.socialup.fragments.createEvent
 
-import android.app.AlertDialog
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.GridLayoutManager
-import com.google.rpc.Help
 import com.jora.socialup.R
 import com.jora.socialup.adapters.CalendarAdapter
-import com.jora.socialup.helpers.*
+import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
 import com.jora.socialup.viewModels.CreateEventViewModel
-import java.text.SimpleDateFormat
-import java.util.*
 import kotlinx.android.synthetic.main.fragment_create_event_when.view.*
-import kotlin.collections.ArrayList
 
 
 class CreateEventWhenFragment : Fragment() {
@@ -42,13 +36,15 @@ class CreateEventWhenFragment : Fragment() {
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_when, container, false)
-        eventToBePassed = createEventViewModel.event.value ?: Event()
+
+        createEventViewModel.event.observe(viewLifecycleOwner, androidx.lifecycle.Observer {
+            eventToBePassed = it
+        })
 
         setCalendarRecyclerView()
         updateMonthTitle()
         goToNextOrPreviousMonth()
         setCalendarRecyclerViewListeners()
-        setSwipeGestures()
 
         // Persist Checked and Selected Dates and Times
         if (createEventViewModel.eventDateTime.value != null) {
@@ -62,20 +58,30 @@ class CreateEventWhenFragment : Fragment() {
             }
         }
 
+
         return viewToBeCreated
     }
 
     override fun onPause() {
         super.onPause()
-        // Persist Checked and Selected Dates and Times
-        createEventViewModel.updateEventDateTime(customCalendarAdapter?.dateTime ?: arrayListOf())
 
         if (timePickerDialogFragment?.isAdded == true){
             initialFinalHoursMinutes = timePickerDialogFragment?.getInitialAndFinalHoursMinutes()
             timePickerDialogFragment?.dismiss()
         } else initialFinalHoursMinutes = null
 
+
+        // Persist Checked and Selected Dates and Times
+        createEventViewModel.updateEventDateTime(customCalendarAdapter?.dateTime ?: arrayListOf())
+
+        val dateToBePassed = customCalendarAdapter?.showResults() as ArrayList<String>
+        eventToBePassed?.date = dateToBePassed
+        eventToBePassed?.dateVote = dateToBePassed.map { "0" } as ArrayList<String> // Initialize vote as 0
+
+        createEventViewModel.updateEventData(eventToBePassed)
+
     }
+
 
     override fun onSaveInstanceState(outState: Bundle) {
         super.onSaveInstanceState(outState)
@@ -100,48 +106,6 @@ class CreateEventWhenFragment : Fragment() {
         })
     }
 
-    private fun setSwipeGestures() {
-        viewToBeCreated?.createEventWhenRootConstraintLayout?.setOnTouchListener(
-            OnGestureTouchListener(activity!!,
-                object: OnGestureTouchListener.OnGestureInitiated {
-                    override fun swipedLeft() {
-                        super.swipedLeft()
-
-                        createEventViewModel.updateEventDateTime(customCalendarAdapter?.dateTime ?: arrayListOf())
-
-                        val createEventWhoFragment = CreateEventWhoFragment()
-                        val transaction = activity?.supportFragmentManager?.beginTransaction()
-                        transaction?.replace(R.id.eventCreateFrameLayout, createEventWhoFragment)
-                        transaction?.commit()
-                    }
-
-                    override fun swipedRight() {
-                        super.swipedRight()
-
-                        val dateToBePassed = customCalendarAdapter?.showResults() as ArrayList<String>
-
-                        if (dateToBePassed.isEmpty()) {
-                            HelperFunctions.showMessage(activity!!,
-                                "ERROR",
-                                "You didn't select a time for your event.")
-                            return
-                        }
-
-                        eventToBePassed?.date = dateToBePassed
-                        eventToBePassed?.dateVote = dateToBePassed.map { "0" } as ArrayList<String> // Initialize vote as 0
-
-                        createEventViewModel.updateEventData(eventToBePassed)
-
-                        val createEventWhereFragment = CreateEventWhereFragment()
-                        val transaction = activity?.supportFragmentManager?.beginTransaction()
-                        transaction?.replace(R.id.eventCreateFrameLayout, createEventWhereFragment)
-                        transaction?.commit()
-
-
-                    }
-                })
-        )
-    }
 
     private fun setCalendarRecyclerView() {
         val layoutManager = GridLayoutManager(activity!!, 7)
@@ -193,22 +157,6 @@ class CreateEventWhenFragment : Fragment() {
                 updateMonthTitle()
             }
         }
-
-    }
-
-
-    private fun getCurrentDateAndSixMonthsLater() {
-        val currentDateToBeConverted = Calendar.getInstance().timeInMillis
-        val defaultLocale = Locale(Locale.getDefault().language, Locale.getDefault().country)
-        val currentDate = SimpleDateFormat("ddMMyyyy", defaultLocale ).format(currentDateToBeConverted)
-
-
-        // Set maximum date to be six months from now on
-        val getSixMonthsLaterInCalendar = Calendar.getInstance()
-        getSixMonthsLaterInCalendar.add(Calendar.MONTH, 6)
-        val sixMonthsLaterDate = SimpleDateFormat("ddMMyyyy", defaultLocale ).format(getSixMonthsLaterInCalendar.timeInMillis)
-
-
 
     }
 }

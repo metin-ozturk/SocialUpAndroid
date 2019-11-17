@@ -1,16 +1,14 @@
 package com.jora.socialup.viewModels
 
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
-import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.models.Event
 import com.jora.socialup.models.EventResponseStatus
 import com.jora.socialup.models.FriendInfo
-import kotlin.collections.ArrayList
+import com.jora.socialup.models.User
 
 
 class EventViewModel : ViewModel() {
@@ -36,6 +34,10 @@ class EventViewModel : ViewModel() {
     private val currentUserImageData = MutableLiveData<Bitmap>()
     val currentUserImage : LiveData<Bitmap>
         get() = currentUserImageData
+
+    private val currentUserInfoData = MutableLiveData<User>()
+    val currentUserInfo : LiveData<User>
+        get() = currentUserInfoData
 
     private val votedForDatesData = MutableLiveData<MutableMap<String, Boolean>>()
     val votedForDates : LiveData<MutableMap<String, Boolean>>
@@ -75,16 +77,24 @@ class EventViewModel : ViewModel() {
         eventsArrayData.value  = updateTo
     }
 
+    fun updateUserInfo(updateTo: User) {
+        currentUserInfoData.value = updateTo
+    }
 
-    fun downloadCurrentUserProfilePhoto(userID : String) {
-        FirebaseStorage.getInstance().reference.child("Images/Users/$userID/profilePhoto.jpeg").getBytes(1024 * 1024).addOnSuccessListener {
-            currentUserImageData.value = BitmapFactory.decodeByteArray(it, 0, it.size)
-        }.addOnFailureListener {
-            Log.d("OSMAN", "ERROR WHILE GETTING PROFILE PHOTO")
+    fun updateUserImage(updateTo: Bitmap) {
+        currentUserImageData.value = updateTo
+    }
+
+
+    fun downloadCurrentUserInfo(userID : String) {
+        User.downloadUserInfo(userID) { userInfo, userImage ->
+            currentUserImageData.value = userImage
+            currentUserInfoData.value = userInfo
         }
     }
 
     fun downloadEvents(startIndex: Int, endIndex: Int) {
+        Log.d("OSMAN", "DOWNLOADING")
         isDownloadingMoreEventsData.value = true
         Event.downloadEventIDs { docIDs ->
             val lastItemIndexToBeDownloaded = if (docIDs.size < endIndex) docIDs.size else endIndex

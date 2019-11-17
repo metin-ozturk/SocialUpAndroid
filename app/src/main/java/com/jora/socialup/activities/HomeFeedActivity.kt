@@ -1,10 +1,13 @@
 package com.jora.socialup.activities
 
-import androidx.appcompat.app.AppCompatActivity
+import android.content.Intent
 import android.os.Bundle
-import com.jora.socialup.fragments.eventFeedAndDetail.EventFragment
+import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.ViewModelProviders
+import com.google.firebase.auth.FirebaseAuth
 import com.jora.socialup.R
-import kotlin.collections.ArrayList
+import com.jora.socialup.fragments.eventFeedAndDetail.EventFragment
+import com.jora.socialup.viewModels.EventViewModel
 
 // When activities are changes, it is downloading events again - FIX
 
@@ -27,19 +30,23 @@ class ObservableList<Element>(private val base: MutableList<Element>, private va
 class HomeFeedActivity : AppCompatActivity() {
     private val tag = "MainActivityLog"
 
+    private val viewModel : EventViewModel by lazy {
+        ViewModelProviders.of(this).get(EventViewModel::class.java)
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home_feed)
 
-        if (savedInstanceState == null) {
-            val eventFragment = EventFragment()
-            val transaction = supportFragmentManager.beginTransaction()
-            transaction.replace(R.id.homeRootFrameLayout, eventFragment, "eventFragment")
-            transaction.commit()
-        }
 
+        if (FirebaseAuth.getInstance().currentUser == null)
+            startActivity(Intent(this, HomeActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_NO_HISTORY })
+
+
+        val eventFragment = EventFragment()
+        val transaction = supportFragmentManager.beginTransaction()
+        transaction.replace(R.id.homeRootFrameLayout, eventFragment, "eventFragment")
+        transaction.commit()
     }
-
-
 
 }

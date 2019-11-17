@@ -5,7 +5,6 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import com.jora.socialup.models.DateTimeInfo
 import com.jora.socialup.models.Event
-import com.jora.socialup.models.FriendInfo
 import com.jora.socialup.models.LocationSelectionStatus
 
 class CreateEventViewModel : ViewModel() {
@@ -21,14 +20,14 @@ class CreateEventViewModel : ViewModel() {
     val eventDateTime : LiveData<ArrayList<DateTimeInfo>>
         get() = eventDateTimeData
 
-    private var friendsData = MutableLiveData<ArrayList<FriendInfo>>()
-    val friends : LiveData<ArrayList<FriendInfo>>
-        get() = friendsData
 
     private var locationSelectionStatusData = MutableLiveData<LocationSelectionStatus>()
     val locationSelectionStatus : LiveData<LocationSelectionStatus>
         get() = locationSelectionStatusData
 
+    private var isPagingEnabledData = MutableLiveData<Boolean>(true)
+    val isPagingEnabled : LiveData<Boolean>
+        get() = isPagingEnabledData
 
 
     fun updateEventDateTime(updateTo: ArrayList<DateTimeInfo>) {
@@ -43,9 +42,8 @@ class CreateEventViewModel : ViewModel() {
         updateTo?.let { eventData.value = it }
     }
 
-    fun updateFriendsData(updateTo: ArrayList<FriendInfo>?) {
-        updateTo?.let { friendsData.value = it }
+    fun updateIsPagingEnabled(updateTo: Boolean) {
+        isPagingEnabledData.value = updateTo
     }
-
 
 }

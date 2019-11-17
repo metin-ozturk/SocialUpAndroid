@@ -1,48 +1,37 @@
 package com.jora.socialup.fragments.createEvent
 
 
-import android.Manifest
-import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
-import android.animation.ObjectAnimator
 import android.app.SearchManager
 import android.content.Context
-import android.content.pm.PackageManager
-import android.graphics.*
 import android.location.Location
 import android.os.Bundle
 import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.view.inputmethod.EditorInfo
 import android.widget.ImageView
 import android.widget.SearchView
-import android.widget.TextView
-import androidx.constraintlayout.widget.ConstraintSet
-import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.gms.common.api.ApiException
-import com.google.android.gms.location.*
-import com.google.android.gms.maps.*
-import com.google.android.gms.maps.model.*
-import com.google.android.gms.tasks.Task
+import com.google.android.gms.maps.model.LatLng
 import com.google.android.libraries.places.api.Places
 import com.google.android.libraries.places.api.model.AutocompleteSessionToken
 import com.google.android.libraries.places.api.model.Place
-import com.jora.socialup.models.Event
-import com.jora.socialup.viewModels.CreateEventViewModel
-import kotlinx.android.synthetic.main.fragment_create_event_where.view.*
 import com.google.android.libraries.places.api.model.RectangularBounds
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.jora.socialup.R
 import com.jora.socialup.adapters.LocationSearchRecyclerViewAdapter
-import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.RecyclerItemClickListener
+import com.jora.socialup.models.Event
 import com.jora.socialup.models.LocationSelectionStatus
-import kotlin.properties.Delegates
+import com.jora.socialup.viewModels.CreateEventViewModel
+import kotlinx.android.synthetic.main.fragment_create_event_where.view.*
 
 // DEAL WITH "windowSoftInputMode" in MANIFEST
 // FIX IT WHEN IT UPLOADS FROM A PAST EVENT
@@ -64,62 +53,79 @@ class CreateEventWhereFragment : Fragment(){
     private var lastLocation : Location? = null
 
     private var eventMapFragment : EventMapFragment? = null
+    private val eventMapFragmentListener = object: EventMapFragment.EventMapFragmentInterface {
+
+        override fun lastLocationRetrieved(lastLocation: Location?) {
+            this@CreateEventWhereFragment.lastLocation = lastLocation
+        }
+
+        override fun updateEventData(updateTo: Event) {
+            createEventViewModel.updateEventData(updateTo)
+        }
+
+        override fun updateLocationSelectionStatus(updateTo: LocationSelectionStatus) {
+            createEventViewModel.updateLocationSelectionStatus(updateTo)
+        }
+
+        override fun mapViewTouched() {
+            super.mapViewTouched()
+            createEventViewModel.updateIsPagingEnabled(false)
+        }
+
+        override fun onFragmentDestroyed() {
+            eventMapFragment = null
+        }
+    }
 
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_where, container, false)
 
+        createEventViewModel.event.observe(viewLifecycleOwner, Observer {
+            eventMapFragment?.eventToBePassed = it
+        })
+
+        createEventViewModel.locationSelectionStatus.observe(viewLifecycleOwner, Observer {
+            eventMapFragment?.locationSelectionStatus = it
+        })
+
+        if (childFragmentManager.fragments.size > 0 ){
+            eventMapFragment =
+                (childFragmentManager.fragments.first() as EventMapFragment).apply {
+                    listener = eventMapFragmentListener
+                }
+        } else {
+            setEventMapFragment()
+        }
+
         setSearchView()
         setSearchViewListeners()
         setSearchRecyclerView()
-        setSwipeGestures()
-        setEventMapFragment()
+
+        arrayOf(viewToBeCreated?.createEventWhereSearchView, viewToBeCreated?.createEventWhereRootConstraintLayout,
+            viewToBeCreated?.createEventWhereSearchRecyclerView).forEach {
+
+            it?.setOnTouchListener { v, event ->
+                createEventViewModel.updateIsPagingEnabled(true)
+                false
+            }
+        }
+
 
         return viewToBeCreated
     }
 
+
     private fun setEventMapFragment(){
-        eventMapFragment = EventMapFragment.newInstance(object: EventMapFragment.EventMapFragmentInterface {
-
-            override fun lastLocationRetrieved(lastLocation: Location?) {
-                this@CreateEventWhereFragment.lastLocation = lastLocation
-            }
-
-            override fun updateEventData(updateTo: Event) {
-                createEventViewModel.updateEventData(updateTo)
-            }
-
-            override fun updateLocationSelectionStatus(updateTo: LocationSelectionStatus) {
-                createEventViewModel.updateLocationSelectionStatus(updateTo)
-            }
-
-            override fun onFragmentDestroyed() {
-                eventMapFragment = null
-            }
-        }, createEventViewModel.event.value?.copy(),
+        eventMapFragment = EventMapFragment.newInstance(eventMapFragmentListener,
+            createEventViewModel.event.value?.copy(),
             createEventViewModel.locationSelectionStatus.value)
 
-        val transaction = activity?.supportFragmentManager?.beginTransaction()
-        transaction?.add(R.id.createEventWhereFrameLayout, eventMapFragment ?: return)
-        transaction?.commit()
+        val transaction = childFragmentManager.beginTransaction()
+        transaction.add(R.id.createEventWhereFrameLayout, eventMapFragment ?: return)
+        transaction.commit()
     }
- 
 
-    private fun setSwipeGestures() {
-        viewToBeCreated?.createEventWhereRootConstraintLayout?.setOnTouchListener( OnGestureTouchListener(activity!!,
-            object: OnGestureTouchListener.OnGestureInitiated {
-                override fun swipedLeft() {
-
-                    createEventViewModel.updateEventData(createEventViewModel.event.value?.copy())
-
-                    val createEventWhenFragment = CreateEventWhenFragment()
-                    val transaction = activity?.supportFragmentManager?.beginTransaction()
-                    transaction?.replace(R.id.eventCreateFrameLayout, createEventWhenFragment)
-                    transaction?.commit()
-                }
-            })
-        )
-    }
 
 
     private fun setSearchView() {

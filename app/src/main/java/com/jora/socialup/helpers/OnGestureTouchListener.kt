@@ -1,7 +1,6 @@
 package com.jora.socialup.helpers
 
 import android.content.Context
-import android.util.Log
 import android.view.GestureDetector
 import android.view.MotionEvent
 import android.view.View
@@ -13,8 +12,8 @@ class OnGestureTouchListener(context: Context, private val listener: OnGestureIn
 
     companion object {
 
-        private val SWIPE_THRESHOLD = 100
-        private val SWIPE_VELOCITY_THRESHOLD = 100
+        private const val SWIPE_THRESHOLD = 100
+        private const val SWIPE_VELOCITY_THRESHOLD = 100
     }
 
     interface OnGestureInitiated {

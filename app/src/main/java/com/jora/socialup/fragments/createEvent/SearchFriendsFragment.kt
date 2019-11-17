@@ -2,10 +2,7 @@ package com.jora.socialup.fragments.createEvent
 
 import android.app.SearchManager
 import android.content.Context
-import android.graphics.BitmapFactory
-import android.graphics.Color
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,16 +10,17 @@ import android.view.inputmethod.EditorInfo
 import android.widget.ImageView
 import android.widget.SearchView
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.ViewModelProviders
 import androidx.recyclerview.widget.DefaultItemAnimator
 import androidx.recyclerview.widget.DividerItemDecoration
 import androidx.recyclerview.widget.LinearLayoutManager
+import com.google.firebase.auth.FirebaseAuth
 import com.jora.socialup.R
 import com.jora.socialup.adapters.SearchFriendsRecyclerViewAdapter
 import com.jora.socialup.helpers.RecyclerItemClickListener
-import com.jora.socialup.models.Event
 import com.jora.socialup.models.FriendInfo
 import com.jora.socialup.models.FriendInviteStatus
-import com.jora.socialup.models.User
+import com.jora.socialup.viewModels.FriendInfoViewModel
 import kotlinx.android.synthetic.main.fragment_search_friends.view.*
 import java.util.*
 import kotlin.collections.ArrayList
@@ -30,31 +28,52 @@ import kotlin.collections.ArrayList
 class SearchFriendsFragment : Fragment() {
 
     interface SearchFriendsFragmentInterface {
-        fun onPause(friends: ArrayList<FriendInfo>)
+        fun onPause(friends: ArrayList<FriendInfo>) {}
+        fun updateFriendInfoIfPastEventIsLoaded() {}
         fun onFragmentDestroyed()
     }
 
+    private val friendInfoViewModel : FriendInfoViewModel by lazy {
+        ViewModelProviders.of(this).get(FriendInfoViewModel::class.java)
+    }
+
+    private var invitedPersonsIDs = arrayListOf<String>()
     private var searchAfterEventCreated = false
     private var viewToBeCreated : View? = null
-    var friends = ArrayList<FriendInfo>()
+
+    var downloadedFriends = ArrayList<FriendInfo>()
 
     var listener : SearchFriendsFragmentInterface? = null
 
+    private val userID : String? by lazy {
+        FirebaseAuth.getInstance().currentUser?.uid
+    }
+
+
     val customSearchAdapter : SearchFriendsRecyclerViewAdapter by lazy {
-        SearchFriendsRecyclerViewAdapter(friends)
+        SearchFriendsRecyclerViewAdapter(downloadedFriends)
     }
 
     companion object {
-        fun newInstance(listener: SearchFriendsFragmentInterface, searchAfterEventCreated: Boolean = false) : SearchFriendsFragment {
+        fun newInstance(listener: SearchFriendsFragmentInterface, searchAfterEventCreated: Boolean = false,
+                        invitedPersonsIDs : ArrayList<String>?) : SearchFriendsFragment {
             val fragment = SearchFriendsFragment()
             fragment.listener = listener
             fragment.searchAfterEventCreated = searchAfterEventCreated
+            fragment.invitedPersonsIDs = invitedPersonsIDs ?: ArrayList()
             return fragment
         }
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_search_friends, container, false)
+
+        friendInfoViewModel.friends.observe(viewLifecycleOwner, androidx.lifecycle.Observer {
+            downloadedFriends = it
+            customSearchAdapter.dataUpdated(downloadedFriends)
+        })
+
+        friendInfoViewModel.downloadFriendInfo(userID, invitedPersonsIDs)
 
         setSearchView()
         setRecyclerView()
@@ -64,15 +83,37 @@ class SearchFriendsFragment : Fragment() {
         return viewToBeCreated
     }
 
+    override fun onResume() {
+        super.onResume()
+
+        if (friendInfoViewModel.isFriendInfoDownloadCompleted.value == true) {
+            listener?.updateFriendInfoIfPastEventIsLoaded()
+        }
+    }
 
     override fun onPause() {
         super.onPause()
-        listener?.onPause(friends)
+        listener?.onPause(downloadedFriends)
     }
+
 
     override fun onDestroy() {
         super.onDestroy()
         listener?.onFragmentDestroyed()
+    }
+
+    fun updateSelectedFriends(selectedFriendsIDs: ArrayList<String>) {
+        val updatedFriendInfo = ArrayList<FriendInfo>()
+
+        friendInfoViewModel.friends.value?.forEach {
+            if (selectedFriendsIDs.contains(it.iD)) it.friendInviteStatus = FriendInviteStatus.Selected
+            else it.friendInviteStatus = FriendInviteStatus.NotSelected
+            updatedFriendInfo.add(it)
+        }
+
+        friendInfoViewModel.updateFriendInfo(updatedFriendInfo)
+
+        customSearchAdapter.dataUpdated(updatedFriendInfo)
     }
 
     private fun setSearchView() {
@@ -114,11 +155,11 @@ class SearchFriendsFragment : Fragment() {
                 override fun onQueryTextChange(newText: String?): Boolean {
                     if (newText?.isEmpty() == true) {
                         searchFriendsSearchView.clearFocus()
-                        customSearchAdapter.dataUpdated(friends)
+                        customSearchAdapter.dataUpdated(downloadedFriends)
                         return false
                     }
 
-                    val searchedFriends = friends.filter { retrievedFriend ->
+                    val searchedFriends = downloadedFriends.filter { retrievedFriend ->
                         val retrievedFriendName = retrievedFriend.name ?: return false
                         retrievedFriendName.toLowerCase(Locale("tr", "TR")).contains(newText?.toLowerCase(Locale("tr", "TR")).toString())
                     } as ArrayList<FriendInfo>
@@ -150,75 +191,25 @@ class SearchFriendsFragment : Fragment() {
                         super.onItemClick(view, position)
 
                         if (searchAfterEventCreated) {
-                            when (friends[position].friendInviteStatus) {
-                                FriendInviteStatus.NotSelected -> friends[position].friendInviteStatus = FriendInviteStatus.AboutToBeSelected
-                                FriendInviteStatus.AboutToBeSelected -> friends[position].friendInviteStatus = FriendInviteStatus.NotSelected
+                            when (downloadedFriends[position].friendInviteStatus) {
+                                FriendInviteStatus.NotSelected -> downloadedFriends[position].friendInviteStatus = FriendInviteStatus.AboutToBeSelected
+                                FriendInviteStatus.AboutToBeSelected -> downloadedFriends[position].friendInviteStatus = FriendInviteStatus.NotSelected
                                 else -> return
                             }
                         } else {
-                            when (friends[position].friendInviteStatus) {
-                                FriendInviteStatus.NotSelected -> friends[position].friendInviteStatus = FriendInviteStatus.Selected
-                                FriendInviteStatus.Selected -> friends[position].friendInviteStatus = FriendInviteStatus.NotSelected
+                            when (downloadedFriends[position].friendInviteStatus) {
+                                FriendInviteStatus.NotSelected -> downloadedFriends[position].friendInviteStatus = FriendInviteStatus.Selected
+                                FriendInviteStatus.Selected -> downloadedFriends[position].friendInviteStatus = FriendInviteStatus.NotSelected
                                 else -> return
                             }
                         }
 
-                        customSearchAdapter.notifyItemChanged(position)
+                        customSearchAdapter.dataUpdated(downloadedFriends)
                     }
                 }
             )
         )
     }
 
-    fun downloadFriendsNamesAndImagesAndNotifyRecyclerView(userID: String?, eventToBePassed: Event?) {
-        var friend : FriendInfo
 
-        User.downloadFriendsIDs(userID ?: return) { friendIDs ->
-            if (friendIDs.isEmpty()) customSearchAdapter.updateDefaultHolderText("You don't any have friends")
-
-            friendIDs.forEach {friendID ->
-                User.downloadFriendsNamesAndImages(friendID) { friendName, friendImage ->
-
-
-                    if (friendName == null || friendImage == null) {
-                        friend = FriendInfo(
-                            friendID,
-                            "ERROR",
-                            BitmapFactory.decodeResource(activity!!.resources, R.drawable.imageplaceholder),
-                            FriendInviteStatus.NotSelected
-                        )
-
-                    } else {
-                        friend = if (eventToBePassed?.eventWithWhomID?.contains(friendID) == true) {
-                            FriendInfo(
-                                friendID,
-                                friendName,
-                                BitmapFactory.decodeByteArray(friendImage, 0, friendImage.size),
-                                FriendInviteStatus.Selected
-                            )
-                        } else {
-                            FriendInfo(
-                                friendID,
-                                friendName,
-                                BitmapFactory.decodeByteArray(friendImage, 0, friendImage.size),
-                                FriendInviteStatus.NotSelected
-                            )
-                        }
-
-                    }
-
-                    friends.add(friend)
-                    friends.sortWith(compareBy( { it.friendInviteStatus?.value} , {it.name}))
-                    customSearchAdapter.notifyDataSetChanged()
-
-                }
-
-            }
-        }
-    }
-
-    fun retrieveFriendsData() {
-        if (friends.size == 0) customSearchAdapter.updateDefaultHolderText("You don't any have friends")
-        customSearchAdapter.notifyDataSetChanged()
-    }
 }

@@ -4,7 +4,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.Point
 import android.os.Bundle
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -12,29 +11,26 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.constraintlayout.widget.ConstraintSet
 import androidx.core.view.drawToBitmap
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FieldValue
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
 import com.jora.socialup.R
 import com.jora.socialup.activities.HomeActivity
-import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import com.jora.socialup.helpers.isInPortraitMode
 import com.jora.socialup.models.Event
 import com.jora.socialup.models.EventStatus
+import com.jora.socialup.models.LocationSelectionStatus
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_summary.view.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.asDeferred
-import kotlinx.coroutines.tasks.await
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
-import java.io.InputStream
-import kotlin.system.measureTimeMillis
 
 class CreateEventSummaryFragment : Fragment() {
     private var viewToBeCreated : View? = null
@@ -51,24 +47,43 @@ class CreateEventSummaryFragment : Fragment() {
 
     private var progressBarFragmentDialog: ProgressBarFragmentDialog? = null
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        fillEventFields()
+
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_summary, container, false)
 
-        fillEventFields()
-        setEventImage()
+        createEventViewModel.event.observe(viewLifecycleOwner, Observer<Event> {
+            fillEventFields()
+            fillSummaryTexts()
+        })
+
+        createEventViewModel.locationSelectionStatus.observe(viewLifecycleOwner, Observer {
+            if (it == LocationSelectionStatus.Confirmed) {
+                viewToBeCreated?.apply {
+                    createEventSummaryLocationNameInput.text = eventToBePassed?.locationName
+                    createEventSummaryLocationDescriptionInput.text =
+                        eventToBePassed?.locationDescription
+                    createEventSummaryLocationAddressInput.text = eventToBePassed?.locationAddress
+                }
+            }
+        })
+
         fillSummaryTexts()
+        setEventImage()
         setConfirmEventFunction()
         setFavoriteEventButton()
-        setSwipeGestures()
-
+        setFavoriteEventButtonImage()
 
         return viewToBeCreated
     }
 
+
     override fun onResume() {
         super.onResume()
-
-        setFavoriteEventButtonImage()
 
         if (activity!!.window.isInPortraitMode()) {
             viewToBeCreated?.createEventSummaryScrollView?.layoutParams?.height = ConstraintSet.MATCH_CONSTRAINT_SPREAD
@@ -77,20 +92,11 @@ class CreateEventSummaryFragment : Fragment() {
         }
     }
 
-    private fun setSwipeGestures() {
-        viewToBeCreated?.createEventSummaryRootConstraintLayout?.setOnTouchListener( OnGestureTouchListener(activity!!,
-            object: OnGestureTouchListener.OnGestureInitiated {
-                override fun swipedLeft() {
-                    createEventViewModel.updateEventData(eventToBePassed)
-
-                    val createEventWhereFragment = CreateEventWhereFragment()
-                    val transaction = activity?.supportFragmentManager?.beginTransaction()
-                    transaction?.replace(R.id.eventCreateFrameLayout, createEventWhereFragment)
-                    transaction?.commit()
-                }
-            })
-        )
+    override fun onPause() {
+        super.onPause()
+        createEventViewModel.updateEventData(eventToBePassed)
     }
+
 
     private fun setProgressBar() {
         progressBarFragmentDialog = ProgressBarFragmentDialog.newInstance(object: ProgressBarFragmentDialog.ProgressBarFragmentDialogInterface {
@@ -109,6 +115,23 @@ class CreateEventSummaryFragment : Fragment() {
         eventToBePassed?.status = EventStatus.Default.value
         eventToBePassed?.founderID = userID
         eventToBePassed?.founderName = FirebaseAuth.getInstance().currentUser?.displayName
+    }
+
+    private fun fillSummaryTexts() {
+        viewToBeCreated?.apply {
+            createEventSummaryEventNameInput?.text = eventToBePassed?.name
+            createEventSummaryDescriptionInput.text = eventToBePassed?.description
+            createEventSummaryPrivacyInput.text = if (eventToBePassed?.isPrivate == true) "True" else "False"
+            createEventSummaryWhoInvitedInput.text = eventToBePassed?.eventWithWhomNames?.toString()
+            if (createEventViewModel.locationSelectionStatus.value == LocationSelectionStatus.Confirmed) {
+                createEventSummaryLocationNameInput.text = eventToBePassed?.locationName
+                createEventSummaryLocationDescriptionInput.text = eventToBePassed?.locationDescription
+                createEventSummaryLocationAddressInput.text = eventToBePassed?.locationAddress
+            }
+            var dateAsString = ""
+            eventToBePassed?.date?.map {  Event.convertDateToReadableFormat(it) }?.forEach { dateAsString += it}
+            createEventSummaryWhenInput.text = dateAsString
+        }
     }
 
 
@@ -200,20 +223,6 @@ class CreateEventSummaryFragment : Fragment() {
         }
     }
 
-    private fun fillSummaryTexts() {
-        viewToBeCreated?.apply {
-            createEventSummaryEventNameInput?.text = eventToBePassed?.name
-            createEventSummaryDescriptionInput.text = eventToBePassed?.description
-            createEventSummaryPrivacyInput.text = if (eventToBePassed?.isPrivate == true) "True" else "False"
-            createEventSummaryWhoInvitedInput.text = eventToBePassed?.eventWithWhomNames?.toString()
-            createEventSummaryLocationNameInput.text = eventToBePassed?.locationName
-            createEventSummaryLocationDescriptionInput.text = eventToBePassed?.locationDescription
-            createEventSummaryLocationAddressInput.text = eventToBePassed?.locationAddress
-            var dateAsString = ""
-            eventToBePassed?.date?.map {  Event.convertDateToReadableFormat(it) }?.forEach { dateAsString += it}
-            createEventSummaryWhenInput.text = dateAsString
-        }
-    }
 
     private fun setEventImage() {
         val point = Point()

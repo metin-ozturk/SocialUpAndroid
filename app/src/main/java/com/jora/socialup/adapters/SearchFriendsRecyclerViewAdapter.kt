@@ -1,11 +1,9 @@
 package com.jora.socialup.adapters
 
 import android.graphics.Color
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.View.GONE
-import android.view.View.INVISIBLE
 import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
@@ -40,7 +38,11 @@ class SearchFriendsRecyclerViewAdapter(private var friends: ArrayList<FriendInfo
 
         if (friends.size > 0) {
             castedHolder.friendName.text = friends[position].name
-            castedHolder.friendImage.setImageBitmap(friends[position].image)
+
+            if (friends[position].image != null)
+                castedHolder.friendImage.setImageBitmap(friends[position].image)
+            else
+                castedHolder.friendImage.setImageResource(R.drawable.imageplaceholder)
 
             when(friends[position].friendInviteStatus) {
                 FriendInviteStatus.Selected -> castedHolder.itemView.setBackgroundColor(Color.GREEN)

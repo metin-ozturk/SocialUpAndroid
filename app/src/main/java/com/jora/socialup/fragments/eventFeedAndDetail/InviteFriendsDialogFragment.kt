@@ -1,16 +1,13 @@
 package com.jora.socialup.fragments.eventFeedAndDetail
 
 import android.os.Bundle
-import android.util.Log
 import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import androidx.lifecycle.ViewModelProviders
-import com.google.firebase.auth.FirebaseAuth
 import com.jora.socialup.fragments.createEvent.SearchFriendsFragment
-import com.jora.socialup.models.Event
 import com.jora.socialup.models.FriendInfo
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_dialog_invite_friends.view.*
@@ -30,7 +27,6 @@ class InviteFriendsDialogFragment : DialogFragment() {
     private val viewModel : EventViewModel by lazy {
         ViewModelProviders.of(activity!!).get(EventViewModel::class.java)
     }
-    private val userID : String? by lazy { FirebaseAuth.getInstance().currentUser?.uid }
     private var searchFriendsFragment : SearchFriendsFragment? = null
 
 
@@ -46,16 +42,9 @@ class InviteFriendsDialogFragment : DialogFragment() {
         viewToBeCreated = inflater.inflate(com.jora.socialup.R.layout.fragment_dialog_invite_friends, container, false)
         setSearchFriendsFragment()
 
-        if (viewModel.friends == null && savedInstanceState == null) {
-            searchFriendsFragment?.downloadFriendsNamesAndImagesAndNotifyRecyclerView(userID, viewModel.event.value)
-        } else {
-            searchFriendsFragment?.friends = viewModel.friends ?: ArrayList()
-            searchFriendsFragment?.friends?.sortWith(compareBy( { it.friendInviteStatus?.value} , {it.name}))
-            searchFriendsFragment?.retrieveFriendsData()
-        }
 
         viewToBeCreated?.inviteFriendsDialogFragmentConfirmButton?.setOnClickListener {
-            listener?.onFinish(searchFriendsFragment?.friends ?: return@setOnClickListener)
+            listener?.onFinish(searchFriendsFragment?.downloadedFriends ?: return@setOnClickListener)
             dismiss()
         }
 
@@ -87,7 +76,7 @@ class InviteFriendsDialogFragment : DialogFragment() {
             override fun onFragmentDestroyed() {
                 searchFriendsFragment = null
             }
-        }, true)
+        }, true, viewModel.event.value?.eventWithWhomID)
 
         val transaction = this.childFragmentManager.beginTransaction()
         transaction.add(com.jora.socialup.R.id.inviteFriendsDialogFragmentFrameLayout, searchFriendsFragment ?: return)

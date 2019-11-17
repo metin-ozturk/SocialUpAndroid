@@ -1,13 +1,14 @@
 package com.jora.socialup.fragments.eventFeedAndDetail
 
 import android.app.AlertDialog
-import android.content.DialogInterface
 import android.graphics.Color
 import android.graphics.Point
 import android.os.Bundle
 import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
 import android.view.View.GONE
+import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProviders
@@ -16,19 +17,16 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.SetOptions
 import com.google.firebase.functions.FirebaseFunctions
-import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.R
 import com.jora.socialup.adapters.EventDatesVoteRecyclerViewAdapter
+import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.helpers.observeOnce
 import com.jora.socialup.models.*
 import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event_detail.view.*
-import kotlinx.coroutines.tasks.asDeferred
-import java.lang.Exception
 
 class EventDetailFragment : Fragment() {
     private val eventDetailTag = "EventDetailTag"

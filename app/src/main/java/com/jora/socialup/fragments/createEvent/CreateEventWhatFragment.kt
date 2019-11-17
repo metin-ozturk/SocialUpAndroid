@@ -7,12 +7,11 @@ import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.Point
 import android.os.Bundle
-import android.os.Handler
 import android.provider.MediaStore
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
-import android.view.View.*
+import android.view.View.GONE
+import android.view.View.VISIBLE
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.core.content.ContextCompat.checkSelfPermission
@@ -25,18 +24,15 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import com.jora.socialup.R
-import com.jora.socialup.activities.HomeFeedActivity
 import com.jora.socialup.adapters.EventHistoryRecyclerViewAdapter
 import com.jora.socialup.helpers.OnGestureTouchListener
 import com.jora.socialup.helpers.RecyclerItemClickListener
 import com.jora.socialup.models.Event
-import com.jora.socialup.models.FriendInviteStatus
 import com.jora.socialup.models.LocationSelectionStatus
 import com.jora.socialup.viewModels.CreateEventViewModel
 import kotlinx.android.synthetic.main.fragment_create_event_what.*
 import kotlinx.android.synthetic.main.fragment_create_event_what.view.*
 import kotlinx.coroutines.*
-import kotlin.coroutines.CoroutineContext
 
 
 private const val MY_PERMISSION_REQUEST_CAMERA = 2
@@ -63,7 +59,7 @@ class CreateEventWhatFragment : Fragment() {
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
         viewToBeCreated = inflater.inflate(R.layout.fragment_create_event_what, container, false)
-        eventToBePassed = createEventViewModel.event.value ?: Event()
+        eventToBePassed = createEventViewModel.event.value?.copy() ?: Event()
         historyEvents = createEventViewModel.eventHistory.value
 
         reloadViewModelDataToViews()
@@ -79,7 +75,6 @@ class CreateEventWhatFragment : Fragment() {
         setHistoryRecyclerView()
         setHistoryImageViewListener()
         setHistoryRecyclerViewListener()
-        setSwipeRightGesture()
 
         if (eventToBePassed?.hasImage == true) eventHasImage = true
 
@@ -91,21 +86,6 @@ class CreateEventWhatFragment : Fragment() {
         super.onPause()
 
         createEventToBeTransferredAndUpdateViewModel()
-    }
-
-    private fun setSwipeRightGesture() {
-        viewToBeCreated?.createEventWhatRootConstraintLayout?.setOnTouchListener(OnGestureTouchListener(activity!!,
-            object: OnGestureTouchListener.OnGestureInitiated {
-                override fun swipedRight() {
-                    super.swipedRight()
-                    goToWhoFragment()
-                }
-
-                override fun swipedLeft() {
-                    super.swipedLeft()
-                    startActivity(Intent(activity!!, HomeFeedActivity::class.java))
-                }
-            }))
     }
 
 
@@ -133,14 +113,6 @@ class CreateEventWhatFragment : Fragment() {
 
         createEventViewModel.updateEventData(eventToBePassed)
     }
-
-    private fun goToWhoFragment() {
-        val createEventWhoFragment = CreateEventWhoFragment()
-        val transaction = activity?.supportFragmentManager?.beginTransaction()
-        transaction?.replace(R.id.eventCreateFrameLayout, createEventWhoFragment)
-        transaction?.commit()
-    }
-
 
 
     private fun downloadLastFiveEventsCreatedByUser() {
@@ -221,19 +193,17 @@ class CreateEventWhatFragment : Fragment() {
                                 createEventWhatImageView.setImageBitmap(eventToBePassed?.image)
                             }
 
-                            // Select loaded past event's Invited Friends at the current friends list
-                            createEventViewModel.friends.value?.forEach { friend ->
-                                if (eventToBePassed?.eventWithWhomID?.contains(friend.iD) == true) friend.friendInviteStatus = FriendInviteStatus.Selected
-                            }
 
                             // Changed Selected past event's location status as AboutToBeConfirmed
-                            createEventViewModel.updateLocationSelectionStatus(LocationSelectionStatus.AboutToBeConfirmed)
+                            createEventViewModel.updateLocationSelectionStatus(LocationSelectionStatus.ReloadingPastEvent)
 
                             createEventWhatIsPublic.isChecked = eventToBePassed?.isPrivate ?: false
                             createEventWhatName.text.clear()
                             createEventWhatName.text.insert(0, eventToBePassed?.name)
                             createEventWhatDescription.text.clear()
                             createEventWhatDescription.text.insert(0, eventToBePassed?.description)
+
+                            createEventViewModel.updateEventData(eventToBePassed)
 
                         }
 
@@ -280,11 +250,6 @@ class CreateEventWhatFragment : Fragment() {
                     }
                 }
 
-                override fun swipedRight() {
-                    super.swipedRight()
-
-                    goToWhoFragment()
-                }
             }))
     }
 
@@ -317,7 +282,6 @@ class CreateEventWhatFragment : Fragment() {
     }
 
     private fun setCreateEventWhatImageView() {
-
         val point = Point()
         activity?.windowManager?.defaultDisplay?.getSize(point)
 

@@ -5,6 +5,11 @@ apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
 android {
+//    // For enabling Dataclass to be Parcelable in FriendInfo
+//    androidExtensions {
+//        experimental = true
+//    }
+
     compileSdkVersion 29
     defaultConfig {
         applicationId "com.jora.socialup"
@@ -14,6 +19,7 @@ android {
         versionName "1.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
         multiDexEnabled true
+        android.defaultConfig.vectorDrawables.useSupportLibrary = true
     }
     buildTypes {
         release {
@@ -33,8 +39,8 @@ dependencies {
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'androidx.test:runner:1.2.0'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.2.0'
-    implementation 'com.google.firebase:firebase-core:17.2.0'
-    implementation 'com.google.firebase:firebase-firestore:21.2.0'
+    implementation 'com.google.firebase:firebase-core:17.2.1'
+    implementation 'com.google.firebase:firebase-firestore:21.3.0'
     implementation 'com.google.firebase:firebase-storage:19.1.0'
     implementation 'androidx.recyclerview:recyclerview:1.0.0'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:1.3.0"
@@ -51,10 +57,10 @@ dependencies {
     // GoogleMaps
     implementation 'com.google.android.gms:play-services-maps:17.0.0'
     implementation 'com.google.android.gms:play-services-location:17.0.0'
-    implementation 'com.google.android.libraries.places:places:2.0.0'
+    implementation 'com.google.android.libraries.places:places:2.1.0'
 
     // Cloud Messaging
-    implementation 'com.google.firebase:firebase-messaging:20.0.0'
+    implementation 'com.google.firebase:firebase-messaging:20.0.1'
 
     // Firebase Auth
     implementation 'com.google.firebase:firebase-auth:19.1.0'
@@ -79,6 +85,13 @@ dependencies {
 
     // IMMUTABLE LIBRARY
     implementation 'org.jetbrains.kotlinx:kotlinx-collections-immutable:0.2'
+
+    // Viewpager2
+    implementation "androidx.viewpager2:viewpager2:1.0.0-rc01"
+
+    // Includes TabLayoutMediator
+
+    implementation "com.google.android.material:material:1.2.0-alpha01"
 }
 
 apply plugin: 'com.google.gms.google-services'

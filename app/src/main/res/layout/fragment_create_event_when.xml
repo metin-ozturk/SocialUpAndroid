@@ -1,22 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
         xmlns:app="http://schemas.android.com/apk/res-auto"
+        xmlns:tools="http://schemas.android.com/tools"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:fillViewport="true">
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:tools="http://schemas.android.com/tools" android:orientation="vertical"
+<androidx.constraintlayout.widget.ConstraintLayout
+        android:orientation="vertical"
                                                    android:layout_width="match_parent"
                                                    android:layout_height="wrap_content"
                                                    android:id="@+id/createEventWhenRootConstraintLayout">
 
-    <TextView
-            android:text="When"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content" android:id="@+id/createEventWhenTitle"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" android:textSize="80dp" android:gravity="center"
-            android:layout_marginTop="8dp"/>
     <androidx.recyclerview.widget.RecyclerView
             android:layout_width="0dp"
             android:layout_height="wrap_content" android:id="@+id/createEventWhenCalendarRecyclerView"
@@ -34,15 +28,19 @@
             android:gravity="center"
             app:layout_constraintStart_toStartOf="parent" android:layout_marginStart="8dp"
             app:layout_constraintEnd_toEndOf="parent" android:layout_marginEnd="8dp" android:textSize="30sp"/>
+
     <ImageView
+            android:id="@+id/createEventWhenPastArrow"
             android:layout_width="40dp"
-            android:layout_height="40dp" app:srcCompat="@drawable/past_arrow"
+            android:layout_height="40dp"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="8dp"
+            android:layout_marginEnd="8dp"
+            app:layout_constraintEnd_toStartOf="@+id/createEventWhenMonthTitle"
+            app:layout_constraintHorizontal_bias="1.0"
             app:layout_constraintStart_toStartOf="parent"
-            android:id="@+id/createEventWhenPastArrow" android:layout_marginStart="8dp"
-            app:layout_constraintTop_toBottomOf="@+id/createEventWhenTitle"
-            android:layout_marginTop="20dp"
-            app:layout_constraintEnd_toStartOf="@+id/createEventWhenMonthTitle" android:layout_marginEnd="8dp"
-            app:layout_constraintHorizontal_bias="1.0"/>
+            app:layout_constraintTop_toTopOf="parent"
+            app:srcCompat="@drawable/past_arrow" />
     <ImageView
             android:layout_width="40dp"
             android:layout_height="40dp" app:srcCompat="@drawable/future_arrow"

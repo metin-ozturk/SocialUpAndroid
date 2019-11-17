@@ -1,7 +1,10 @@
 package com.jora.socialup.activities
 
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.DialogInterface
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.MotionEvent
@@ -9,13 +12,12 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import com.facebook.*
 import com.facebook.login.LoginManager
+import com.facebook.login.LoginResult
 import com.google.android.gms.auth.api.signin.GoogleSignIn
 import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
-import kotlinx.android.synthetic.main.activity_home.*
-import com.facebook.login.LoginResult
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.*
 import com.google.firebase.firestore.FirebaseFirestore
@@ -24,9 +26,12 @@ import com.jora.socialup.fragments.authentication.SignInDialogFragment
 import com.jora.socialup.fragments.authentication.SignUpCompleteInformationDialogFragment
 import com.jora.socialup.fragments.authentication.SignUpDialogFragment
 import com.jora.socialup.helpers.ProgressBarFragmentDialog
-import kotlinx.coroutines.*
+import kotlinx.android.synthetic.main.activity_home.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
-import java.lang.ref.WeakReference
 
 private const val googleSignInRequestCode = 1
 private const val googleSignInTag = "GoogleSignInTag"
@@ -67,17 +72,17 @@ class HomeActivity : AppCompatActivity() {
 
         setProgressBar()
 
+
+        val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+        if (Build.VERSION.SDK_INT >= 26 && notificationManager.getNotificationChannel(getString(R.string.friendship_channel_id)) == null) {
+            createNotificationChannel()
+        }
     }
+
+
 
     override fun onTouchEvent(event: MotionEvent?): Boolean {
         return true
-    }
-
-
-    override fun onStart() {
-        super.onStart()
-//        if (firebaseAuthentication?.currentUser != null) startActivity(Intent(this, HomeFeedActivity::class.java))
-
     }
 
 
@@ -85,6 +90,22 @@ class HomeActivity : AppCompatActivity() {
         super.onPause()
         if (progressBarFragmentDialog?.isLoadingInProgress == true) progressBarFragmentDialog?.dismiss()
     }
+
+    private fun createNotificationChannel() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            // Create the NotificationChannel
+            val name = getString(R.string.friendship_channel_name)
+            val descriptionText = getString(R.string.friendship_channel_description)
+            val importance = NotificationManager.IMPORTANCE_DEFAULT
+            val mChannel = NotificationChannel(getString(R.string.friendship_channel_id), name, importance)
+            mChannel.description = descriptionText
+            // Register the channel with the system; you can't change the importance
+            // or other notification behaviors after this
+            val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+            notificationManager.createNotificationChannel(mChannel)
+        }
+    }
+
 
     private fun setProgressBar() {
         progressBarFragmentDialog = ProgressBarFragmentDialog.newInstance(
@@ -104,7 +125,7 @@ class HomeActivity : AppCompatActivity() {
 
         signInDialogFragment = SignInDialogFragment.newInstance(object: SignInDialogFragment.SignInDialogFragmentInterface {
             override fun onFinish() {
-                startActivity(Intent(this@HomeActivity, HomeFeedActivity::class.java))
+               finish()
             }
 
             override fun informationMissing(email: String) {
@@ -157,7 +178,7 @@ class HomeActivity : AppCompatActivity() {
     private fun setSignUpCompleteInformationDialogFragment() {
         signUpCompleteInformationDialogFragment = SignUpCompleteInformationDialogFragment.newInstance(object: SignUpCompleteInformationDialogFragment.SignUpCompleteInformationDialogFragmentInterface {
             override fun onFinish() {
-                startActivity(Intent(this@HomeActivity, HomeFeedActivity::class.java))
+                finish()
                 signUpCompleteInformationDialogFragment?.dismiss()
             }
 
@@ -461,7 +482,7 @@ class HomeActivity : AppCompatActivity() {
                 if (!FirebaseFirestore.getInstance().collection("users").document(it).get().await().exists())
                     ifInfoNotExist()
                 else {
-                    startActivity(Intent(this@HomeActivity, HomeFeedActivity::class.java))
+                    finish()
                     progressBarFragmentDialog?.dismiss()
                 }
             }

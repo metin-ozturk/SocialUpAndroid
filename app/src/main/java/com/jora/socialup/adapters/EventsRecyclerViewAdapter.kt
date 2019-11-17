@@ -1,6 +1,5 @@
 package com.jora.socialup.adapters
 
-import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -9,10 +8,8 @@ import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import com.jora.socialup.R
 import com.jora.socialup.models.Event
-import java.lang.IllegalArgumentException
 
-open class BaseViewHolder(view: View) : RecyclerView.ViewHolder(view) {
-}
+abstract class BaseViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
 
 class EventsRecyclerViewAdapter(private val eventList : List<Event>?, private val height: Int) : RecyclerView.Adapter<BaseViewHolder>() {
