@@ -38,7 +38,6 @@ import com.google.firebase.iid.FirebaseInstanceId
 import com.jora.socialup.R
 import com.jora.socialup.activities.EventCreateActivity
 import com.jora.socialup.activities.HomeActivity
-import com.jora.socialup.activities.HomeFeedActivity
 import com.jora.socialup.adapters.EventSearchRecyclerViewAdapter
 import com.jora.socialup.adapters.EventsRecyclerViewAdapter
 import com.jora.socialup.fragments.UserProfileDialogFragment
@@ -66,7 +65,9 @@ class EventFragment : Fragment() {
     }
     private var eventsRecyclerViewAdapter : EventsRecyclerViewAdapter? =  null
 
-    private var eventsArray = ArrayList<Event>()
+    private val eventArray : ArrayList<Event>
+        get() = viewModel.eventsArray.value ?: ArrayList()
+
     private var combinedSearchResult = ArrayList<ArrayList<Any>>()
     private var feedLayoutManager : LinearLayoutManager? = null
     private val eventsNumberToDownloadPerRefresh = 5
@@ -82,12 +83,6 @@ class EventFragment : Fragment() {
 
     private var firestoreProfileNotificationListener : ListenerRegistration? = null
 
-    override fun onAttach(context: Context) {
-        super.onAttach(context)
-
-        if (context !is HomeFeedActivity)
-            throw RuntimeException(context.toString() + " must implement an Activity")
-    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
         viewToBeCreated = inflater.inflate(R.layout.fragment_event, container,false)
@@ -129,12 +124,7 @@ class EventFragment : Fragment() {
         if (viewModel.currentUserInfo.value?.ID != signedInUserID) {
             //CLEAR VIEWMODEL DATA ABOUT USER
             viewModel.updateUserInfo(User())
-            viewModel.updateUserImage(
-                BitmapFactory.decodeResource(
-                    resources,
-                    R.drawable.imageplaceholder
-                )
-            )
+            viewModel.updateUserImage(BitmapFactory.decodeResource(resources, R.drawable.imageplaceholder))
 
             // CLEAR VIEWMODEL DATA ABOUT EVENTS
             viewModel.assertEventsArray(ArrayList())
@@ -325,25 +315,16 @@ class EventFragment : Fragment() {
 
 
         viewModel.eventsArray.observe(viewLifecycleOwner, Observer<ArrayList<Event>> { retrievedEventsArray ->
-            if (retrievedEventsArray.size == eventsArray.size + 1) {
-                Log.d("OSMAN", "DOWNLOADED NEW")
-                // if a new event is downloaded, add it to the events array
-                eventsArray.add(retrievedEventsArray.last())
-                eventsRecyclerViewAdapter?.notifyItemChanged(eventsArray.count() - 1)
 
-            } else if (retrievedEventsArray.size == 0) {
-                Log.d("OSMAN", "RETRIEVED ARRAY EMPTY")
+            when (retrievedEventsArray.size) {
+                0 -> eventsRecyclerViewAdapter?.emptyEventData()
+                (eventsRecyclerViewAdapter?.itemCount ?: 0) + 1 -> eventsRecyclerViewAdapter?.addSingleEventData(retrievedEventsArray.last())
+                else -> { eventsRecyclerViewAdapter?.addMultipleEventData(retrievedEventsArray)}
             }
-            else {
-                Log.d("OSMAN", "RELOADED")
-                retrievedEventsArray.forEach {
-                    eventsArray.add(it)
-                    eventsRecyclerViewAdapter?.notifyItemChanged(eventsArray.count() - 1)
-                }
 
-                // When returning to the feed, display last focused row at top
-                val positionToBeScrolled = viewModel.lastFocusedRow.value ?: 0
-                viewToBeCreated?.eventFeedRecyclerView?.scrollToPosition(positionToBeScrolled)
+            // When returning to the feed, display last focused row at top
+            viewModel.lastFocusedRow.value?.also {
+                viewToBeCreated?.eventFeedRecyclerView?.scrollToPosition(it)
             }
 
         })
@@ -402,17 +383,16 @@ class EventFragment : Fragment() {
         viewToBeCreated?.eventFeedRecyclerView?.apply {
             layoutManager = feedLayoutManager
             itemAnimator = DefaultItemAnimator()
-            eventsRecyclerViewAdapter =
-                EventsRecyclerViewAdapter(eventsArray, heightOfEventsRecycler)
+            eventsRecyclerViewAdapter = EventsRecyclerViewAdapter(heightOfEventsRecycler)
             adapter = eventsRecyclerViewAdapter
         }
 
         viewToBeCreated?.eventFeedRecyclerView?.addOnScrollListener(object: RecyclerView.OnScrollListener() {
             override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
                 super.onScrolled(recyclerView, dx, dy)
-                if (dy > 0 && viewModel.isDownloadingMoreEvents.value == false && eventsArray.size == (feedLayoutManager?.findLastVisibleItemPosition() ?: 0) + 1) {
+                if (dy > 0 && viewModel.isDownloadingMoreEvents.value == false && eventArray.size == (feedLayoutManager?.findLastVisibleItemPosition() ?: 0) + 1) {
                     // Scrolling Up, No other event is being downloaded and user viewed the bottom event.
-                    viewModel.downloadEvents(eventsArray.size, eventsArray.size + eventsNumberToDownloadPerRefresh)
+                    viewModel.downloadEvents(eventArray.size, eventArray.size + eventsNumberToDownloadPerRefresh)
                     showProgressBarWhenDownloadingMoreEvents()
                 }
             }
@@ -497,7 +477,7 @@ class EventFragment : Fragment() {
         FirebaseFirestore.getInstance().collection("users").document(userID ?: return)
             .collection("events").document(eventID).get().addOnSuccessListener {
                 val data = it.data
-
+                
                 val eventDates = event.date
                 val eventResponseStatusAsInt = (data?.get("EventResponseStatus") as Long?)?.toInt() ?: 0
                 val votedDates = mutableMapOf<String, Boolean>() // [DATE, WHETHER THIS DATE IS VOTED AS BOOLEAN]

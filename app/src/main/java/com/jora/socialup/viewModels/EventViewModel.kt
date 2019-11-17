@@ -1,7 +1,6 @@
 package com.jora.socialup.viewModels
 
 import android.graphics.Bitmap
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -94,7 +93,6 @@ class EventViewModel : ViewModel() {
     }
 
     fun downloadEvents(startIndex: Int, endIndex: Int) {
-        Log.d("OSMAN", "DOWNLOADING")
         isDownloadingMoreEventsData.value = true
         Event.downloadEventIDs { docIDs ->
             val lastItemIndexToBeDownloaded = if (docIDs.size < endIndex) docIDs.size else endIndex

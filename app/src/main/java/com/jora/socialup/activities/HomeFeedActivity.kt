@@ -3,11 +3,9 @@ package com.jora.socialup.activities
 import android.content.Intent
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProviders
 import com.google.firebase.auth.FirebaseAuth
 import com.jora.socialup.R
 import com.jora.socialup.fragments.eventFeedAndDetail.EventFragment
-import com.jora.socialup.viewModels.EventViewModel
 
 // When activities are changes, it is downloading events again - FIX
 
@@ -29,10 +27,6 @@ class ObservableList<Element>(private val base: MutableList<Element>, private va
 
 class HomeFeedActivity : AppCompatActivity() {
     private val tag = "MainActivityLog"
-
-    private val viewModel : EventViewModel by lazy {
-        ViewModelProviders.of(this).get(EventViewModel::class.java)
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)

@@ -12,12 +12,14 @@ import com.jora.socialup.models.Event
 abstract class BaseViewHolder(view: View) : RecyclerView.ViewHolder(view)
 
 
-class EventsRecyclerViewAdapter(private val eventList : List<Event>?, private val height: Int) : RecyclerView.Adapter<BaseViewHolder>() {
+class EventsRecyclerViewAdapter(private val height: Int) : RecyclerView.Adapter<BaseViewHolder>() {
 
     companion object {
         private const val TYPE_WITHIMAGE = 0
         private const val TYPE_WITHOUTIMAGE = 1
     }
+
+    private var eventList : ArrayList<Event> = ArrayList()
 
 
     inner class EventsItemWithImageHolder(view: View) : BaseViewHolder(view) {
@@ -45,8 +47,7 @@ class EventsRecyclerViewAdapter(private val eventList : List<Event>?, private va
     }
 
     override fun getItemViewType(position: Int): Int {
-        val nonNullEventList = eventList ?: return TYPE_WITHOUTIMAGE
-        val event = nonNullEventList[position]
+        val event = eventList[position]
 
         return if (event.image == null) TYPE_WITHOUTIMAGE else TYPE_WITHIMAGE
     }
@@ -70,7 +71,7 @@ class EventsRecyclerViewAdapter(private val eventList : List<Event>?, private va
 
 
     override fun getItemCount(): Int {
-        return eventList?.size ?: 0
+        return eventList.size
     }
 
     override fun onBindViewHolder(holderRetrieved: BaseViewHolder, position: Int) {
@@ -117,6 +118,21 @@ class EventsRecyclerViewAdapter(private val eventList : List<Event>?, private va
             }
         }
 
+    }
+
+    fun addSingleEventData(updateWith: Event) {
+        eventList.add(updateWith)
+        notifyItemChanged(eventList.size - 1)
+    }
+
+    fun addMultipleEventData(updateTo: ArrayList<Event>) {
+        eventList = updateTo
+        notifyDataSetChanged()
+    }
+
+    fun emptyEventData() {
+        eventList = ArrayList()
+        notifyDataSetChanged()
     }
 }
 
