@@ -23,64 +23,76 @@ class User(var ID: String? = null, var name: String? = null, var email : String?
     }
 
     companion object {
-        fun downloadUserInfoForProfileViewing(userID: String, signedInUserID: String, returnUserInfo: (User, Bitmap, User) -> Unit) {
-            var downloadedUser : User? = null
+        suspend fun downloadUserInfoForProfileViewing(
+            userID: String,
+            signedInUserID: String,
+            returnUserInfo: (User, Bitmap, User, Int) -> Unit
+        ) {
+            var downloadedUser: User? = null
             var downloadedUserImage: Bitmap? = null
-            var signedInUser : User? = null
+            var signedInUser: User? = null
+            var friendshipRequestStatusRetrieved: Int? = null
 
             val getUserInfo = FirebaseFirestore.getInstance().collection("users")
                 .document(userID).get().asDeferred()
-            val getUserImage = FirebaseStorage.getInstance().reference.child("Images/Users/$userID/profilePhoto.jpeg")
+            val getUserImage = FirebaseStorage.getInstance()
+                .reference.child("Images/Users/$userID/profilePhoto.jpeg")
                 .getBytes(1024 * 1024).asDeferred()
-            val getSignedInUserInfo = FirebaseFirestore.getInstance().collection("users").document(signedInUserID)
-                .get().asDeferred()
+            val getSignedInUserInfo =
+                FirebaseFirestore.getInstance().collection("users").document(signedInUserID)
+                    .get().asDeferred()
+            val friendshipRequestStatusPromise = FirebaseFirestore.getInstance().collection("users")
+                .document(signedInUserID).collection("friendshipRequests").document(userID).get()
+                .asDeferred()
 
-            val bgScope = CoroutineScope(Dispatchers.IO)
+            try {
+                val userInfoData = getUserInfo.await() as DocumentSnapshot
 
-            bgScope.launch {
-                try {
-                    val userInfoData = getUserInfo.await() as DocumentSnapshot
-
-                    downloadedUser = User().apply {
-                        userInfoData.data?.also {
-                            birthday = it["Birthday"] as String
-                            name = it["Name"] as String
-                            email = it["Email"] as String
-                            gender = it["Gender"] as String
-                            friends = it["FriendList"] as ArrayList<String>
-                            ID = it["ID"] as String
-                            hasActiveNotification = it["HasActiveNotification"] as Boolean
-                        }
+                downloadedUser = User().apply {
+                    userInfoData.data?.also {
+                        birthday = it["Birthday"] as String
+                        name = it["Name"] as String
+                        email = it["Email"] as String
+                        gender = it["Gender"] as String
+                        friends = it["FriendList"] as ArrayList<String>
+                        ID = it["ID"] as String
+                        hasActiveNotification = it["HasActiveNotification"] as Boolean
                     }
-
-                    val userImageAsByteArray = getUserImage.await() as ByteArray
-                    downloadedUserImage = BitmapFactory.decodeByteArray(userImageAsByteArray, 0, userImageAsByteArray.size)
-
-
-                    val signedInUserInfoData = getSignedInUserInfo.await() as DocumentSnapshot
-                    signedInUser = User().apply {
-                        signedInUserInfoData.data?.also {
-                            birthday = it["Birthday"] as String
-                            name = it["Name"] as String
-                            email = it["Email"] as String
-                            gender = it["Gender"] as String
-                            friends = it["FriendList"] as ArrayList<String>
-                            ID = it["ID"] as String
-                            hasActiveNotification = it["HasActiveNotification"] as Boolean
-                        }
-                    }
-
-                } catch (e: Exception) {
-                    Log.d(userTag, "USER INFO DOWNLOAD FAILED WITH: ", e)
                 }
 
-                withContext(Dispatchers.Main) {
-                    returnUserInfo(downloadedUser ?: return@withContext, downloadedUserImage ?: return@withContext, signedInUser ?:return@withContext)
+                val userImageAsByteArray = getUserImage.await() as ByteArray
+                downloadedUserImage = BitmapFactory.decodeByteArray(
+                    userImageAsByteArray,
+                    0,
+                    userImageAsByteArray.size
+                )
 
-                    bgScope.cancel()
+
+                friendshipRequestStatusRetrieved = (friendshipRequestStatusPromise.await().data?.get("FriendshipRequestStatus") as? Long)?.toInt()
+
+
+                val signedInUserInfoData = getSignedInUserInfo.await() as DocumentSnapshot
+                signedInUser = User().apply {
+                    signedInUserInfoData.data?.also {
+                        birthday = it["Birthday"] as String
+                        name = it["Name"] as String
+                        email = it["Email"] as String
+                        gender = it["Gender"] as String
+                        friends = it["FriendList"] as ArrayList<String>
+                        ID = it["ID"] as String
+                        hasActiveNotification = it["HasActiveNotification"] as Boolean
+                    }
                 }
 
+            } catch (e: Exception) {
+                Log.d(userTag, "USER INFO DOWNLOAD FAILED WITH: ", e)
             }
+
+            returnUserInfo(downloadedUser ?: return, downloadedUserImage ?: return,
+                signedInUser ?: return, friendshipRequestStatusRetrieved ?: 0)
+
+
+
         }
 
         fun downloadUserInfo(userID: String, returnUserInfo: (User, Bitmap) -> Unit) {

@@ -18,9 +18,11 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount
 import com.google.android.gms.auth.api.signin.GoogleSignInClient
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions
 import com.google.android.gms.common.api.ApiException
+import com.google.android.gms.tasks.OnCompleteListener
 import com.google.android.gms.tasks.Task
 import com.google.firebase.auth.*
 import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.iid.FirebaseInstanceId
 import com.jora.socialup.R
 import com.jora.socialup.fragments.authentication.SignInDialogFragment
 import com.jora.socialup.fragments.authentication.SignUpCompleteInformationDialogFragment
@@ -37,7 +39,7 @@ private const val googleSignInRequestCode = 1
 private const val googleSignInTag = "GoogleSignInTag"
 private const val facebookSignInTag = "FacebookSignInTag"
 
-
+// firebaseAuthWithGoogle - DO ERROR HANDLING
 // At onPause(), we dismiss progressBar when orientation changes - better way to do it? (Also At EventDetail and Event)
 
 class HomeActivity : AppCompatActivity() {
@@ -72,7 +74,6 @@ class HomeActivity : AppCompatActivity() {
 
         setProgressBar()
 
-
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         if (Build.VERSION.SDK_INT >= 26 && notificationManager.getNotificationChannel(getString(R.string.friendship_channel_id)) == null) {
             createNotificationChannel()
@@ -90,6 +91,25 @@ class HomeActivity : AppCompatActivity() {
         super.onPause()
         if (progressBarFragmentDialog?.isLoadingInProgress == true) progressBarFragmentDialog?.dismiss()
     }
+
+    private fun receiveCloudMessagingToken() {
+        FirebaseInstanceId.getInstance().instanceId
+            .addOnCompleteListener(OnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    Log.w("HomeActivity", "getInstanceId failed", task.exception)
+                    return@OnCompleteListener
+                }
+
+                // Get new Instance ID token
+                task.result?.token?.also {
+                    FirebaseFirestore.getInstance().collection("users")
+                        .document( FirebaseAuth.getInstance().currentUser?.uid ?: return@also)
+                        .update("CloudMessagingToken", it)
+                }
+
+            })
+    }
+
 
     private fun createNotificationChannel() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -125,6 +145,7 @@ class HomeActivity : AppCompatActivity() {
 
         signInDialogFragment = SignInDialogFragment.newInstance(object: SignInDialogFragment.SignInDialogFragmentInterface {
             override fun onFinish() {
+                receiveCloudMessagingToken()
                finish()
             }
 
@@ -178,6 +199,7 @@ class HomeActivity : AppCompatActivity() {
     private fun setSignUpCompleteInformationDialogFragment() {
         signUpCompleteInformationDialogFragment = SignUpCompleteInformationDialogFragment.newInstance(object: SignUpCompleteInformationDialogFragment.SignUpCompleteInformationDialogFragmentInterface {
             override fun onFinish() {
+                receiveCloudMessagingToken()
                 finish()
                 signUpCompleteInformationDialogFragment?.dismiss()
             }
@@ -424,7 +446,6 @@ class HomeActivity : AppCompatActivity() {
                 }
 
             } else {
-                progressBarFragmentDialog?.setCancelAlertDialog()
                 // If sign in fails, display a message to the user.
                 Log.w(googleSignInTag, "signInWithCredential:failure", task.exception)
             }
@@ -482,6 +503,7 @@ class HomeActivity : AppCompatActivity() {
                 if (!FirebaseFirestore.getInstance().collection("users").document(it).get().await().exists())
                     ifInfoNotExist()
                 else {
+                    receiveCloudMessagingToken()
                     finish()
                     progressBarFragmentDialog?.dismiss()
                 }

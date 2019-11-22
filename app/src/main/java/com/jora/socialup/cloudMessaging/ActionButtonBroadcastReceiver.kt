@@ -4,39 +4,37 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.util.Log
+import android.widget.Toast
 import androidx.core.app.NotificationManagerCompat
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.firestore.FirebaseFirestore
+import com.google.firebase.functions.FirebaseFunctions
 
 class ActionButtonBroadcastReceiver : BroadcastReceiver() {
+    private val broadcastReceiverTag = "ActionBroadReceiver"
 
     override fun onReceive(context: Context?, intent: Intent?) {
+
         val actionContent = intent?.action
         val notificationID = intent?.extras?.get("notificationID") as? Int
 
+        val notificationReceiverID = FirebaseAuth.getInstance().currentUser?.uid ?: return
+        val notificationSenderID = intent?.getStringExtra("senderID") ?: return
+
+        val data = hashMapOf("userID" to (notificationReceiverID), "senderID" to (notificationSenderID))
+
         if (actionContent == friendshipRequestApprovedNotificationActionConstant) {
-            val firestoreInstance = FirebaseFirestore.getInstance()
-
-            val notificationReceiverID = FirebaseAuth.getInstance().currentUser?.uid ?: return
-            val notificationSenderID = intent.getStringExtra("senderID") ?: return
-
-            firestoreInstance.runTransaction {
-                val receiverReference = firestoreInstance.collection("users").document(notificationReceiverID)
-                val senderReference = firestoreInstance.collection("users").document(notificationSenderID)
-
-                val receiverFriendsListSnap = it.get(receiverReference)
-                val senderFriendsListSnap = it.get(senderReference)
-
-                val newReceiverFriendsList = (receiverFriendsListSnap["FriendList"] as ArrayList<String>).apply { add(notificationSenderID) }
-                val newSenderFriendsList = (senderFriendsListSnap["FriendList"] as ArrayList<String>).apply { add(notificationReceiverID) }
-
-                it.update(receiverReference, "FriendList", newReceiverFriendsList)
-                it.update(senderReference, "FriendList", newSenderFriendsList)
-            }
+            callFriendshipCloudFunctionByName("addFriend",
+                "Added Friend Successfully",
+                "Couldn't Add Friend",
+                data, context)
 
 
         } else if (actionContent == friendshipRequestRejectedNotificationActionConstant) {
-            Log.d("OSMAN", "REJECTED")
+
+            callFriendshipCloudFunctionByName("removeFriendshipRequest",
+                "Rejected Friendship Request",
+                "Couldn't Reject Friendship Request",
+                data, context)
         }
 
         // Remove Notification
@@ -45,5 +43,19 @@ class ActionButtonBroadcastReceiver : BroadcastReceiver() {
         // Close Notification Tray
         val intentToCloseNotificationTray = Intent(Intent.ACTION_CLOSE_SYSTEM_DIALOGS)
         context.sendBroadcast(intentToCloseNotificationTray)
+
+
+    }
+
+    private fun callFriendshipCloudFunctionByName(cloudFunctionName: String, toastMessageSuccess: String, toastMessageFailure : String,
+                                                  data: HashMap<String, String> ,context: Context?) {
+        FirebaseFunctions.getInstance().getHttpsCallable(cloudFunctionName)
+            .call(data)
+            .addOnSuccessListener {
+                Toast.makeText(context, toastMessageSuccess, Toast.LENGTH_SHORT).show()
+            }.addOnFailureListener {
+                Toast.makeText(context, toastMessageFailure, Toast.LENGTH_SHORT).show()
+                Log.d(broadcastReceiverTag, "Error While Calling $cloudFunctionName Cloud Function", it)
+            }
     }
 }

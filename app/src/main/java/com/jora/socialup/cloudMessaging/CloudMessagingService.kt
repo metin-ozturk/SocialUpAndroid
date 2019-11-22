@@ -25,50 +25,9 @@ class CloudMessagingService : FirebaseMessagingService() {
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
 
-        if (message.data["notificationType"] == NotificationType.FriendshipRequest.value.toString()) {
+        if (message.data["notificationType"] == NotificationType.FriendshipRequest.value.toString())
+            friendshipRequestReceived(message)
 
-            FirebaseStorage.getInstance().reference.child("Images/Users/${message.data["senderID"]}/profilePhoto.jpeg")
-                .getBytes(1024 * 1024).addOnSuccessListener {
-
-
-                    val notificationID = System.currentTimeMillis().toInt()
-
-                    val intent = Intent(this, EventCreateActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
-                    }
-                    val pendingIntent: PendingIntent = PendingIntent.getActivity(this, 0, intent, 0)
-
-                    val approveButtonIntent = Intent(this, ActionButtonBroadcastReceiver::class.java).apply {
-                        putExtra("notificationID", notificationID)
-                        putExtra("senderID", message.data["senderID"])
-                        action = friendshipRequestApprovedNotificationActionConstant
-                    }
-                    val pendingApproveButtonIntent = PendingIntent.getBroadcast(this, 0, approveButtonIntent, PendingIntent.FLAG_UPDATE_CURRENT)
-
-
-                    val rejectButtonIntent = Intent(this, ActionButtonBroadcastReceiver::class.java).apply {
-                        putExtra("notificationID", notificationID)
-                        action = friendshipRequestRejectedNotificationActionConstant
-                    }
-                    val pendingRejectButtonIntent = PendingIntent.getBroadcast(this, 0, rejectButtonIntent, PendingIntent.FLAG_UPDATE_CURRENT)
-
-                    val builder =
-                        NotificationCompat.Builder(this, getString(R.string.friendship_channel_id))
-                            .setSmallIcon(R.drawable.friend)
-                            .setLargeIcon(BitmapFactory.decodeByteArray(it, 0, it.size))
-                            .setContentTitle("Friendship Request")
-                            .setContentText("${message.data["senderName"]} sent you a friendship request.")
-                            .setPriority(NotificationCompat.PRIORITY_DEFAULT)
-                            .setAutoCancel(true)
-                            .setContentIntent(pendingIntent)
-                            .addAction(R.drawable.tick, "Approve", pendingApproveButtonIntent)
-                            .addAction(R.drawable.cancel, "Reject", pendingRejectButtonIntent)
-
-                    NotificationManagerCompat.from(this)
-                        .notify(notificationID, builder.build())
-            }
-
-        }
     }
 
     override fun onNewToken(token: String) {
@@ -82,6 +41,48 @@ class CloudMessagingService : FirebaseMessagingService() {
             FirebaseFirestore.getInstance().collection("users").document(it)
                 .update("CloudMessagingToken", token)
         }
+    }
+
+    private fun friendshipRequestReceived(message: RemoteMessage) {
+        FirebaseStorage.getInstance().reference.child("Images/Users/${message.data["senderID"]}/profilePhoto.jpeg")
+            .getBytes(1024 * 1024).addOnSuccessListener {
+                val notificationID = System.currentTimeMillis().toInt()
+
+                val intent = Intent(this, EventCreateActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                }
+                val pendingIntent: PendingIntent = PendingIntent.getActivity(this, 0, intent, 0)
+
+                val approveButtonIntent = Intent(this, ActionButtonBroadcastReceiver::class.java).apply {
+                    putExtra("notificationID", notificationID)
+                    putExtra("senderID", message.data["senderID"])
+                    action = friendshipRequestApprovedNotificationActionConstant
+                }
+                val pendingApproveButtonIntent = PendingIntent.getBroadcast(this, 0, approveButtonIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+
+                val rejectButtonIntent = Intent(this, ActionButtonBroadcastReceiver::class.java).apply {
+                    putExtra("notificationID", notificationID)
+                    putExtra("senderID", message.data["senderID"])
+                    action = friendshipRequestRejectedNotificationActionConstant
+                }
+                val pendingRejectButtonIntent = PendingIntent.getBroadcast(this, 0, rejectButtonIntent, PendingIntent.FLAG_UPDATE_CURRENT)
+
+                val builder =
+                    NotificationCompat.Builder(this, getString(R.string.friendship_channel_id))
+                        .setSmallIcon(R.drawable.friend)
+                        .setLargeIcon(BitmapFactory.decodeByteArray(it, 0, it.size))
+                        .setContentTitle("Friendship Request")
+                        .setContentText("${message.data["senderName"]} sent you a friendship request.")
+                        .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                        .setAutoCancel(true)
+                        .setContentIntent(pendingIntent)
+                        .addAction(R.drawable.cancel, "Reject", pendingRejectButtonIntent)
+                        .addAction(R.drawable.tick, "Approve", pendingApproveButtonIntent)
+
+                NotificationManagerCompat.from(this)
+                    .notify(notificationID, builder.build())
+            }
     }
 
 }
