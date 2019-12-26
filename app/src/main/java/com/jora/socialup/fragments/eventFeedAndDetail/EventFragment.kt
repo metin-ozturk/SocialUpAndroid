@@ -39,6 +39,8 @@ import com.jora.socialup.activities.EventCreateActivity
 import com.jora.socialup.activities.HomeActivity
 import com.jora.socialup.adapters.EventSearchRecyclerViewAdapter
 import com.jora.socialup.adapters.EventsRecyclerViewAdapter
+import com.jora.socialup.fragments.UserNotificationList
+import com.jora.socialup.fragments.UserNotificationListFragTag
 import com.jora.socialup.fragments.UserProfileDialogFragment
 import com.jora.socialup.fragments.UserProfileDialogFragmentTag
 import com.jora.socialup.helpers.*
@@ -87,6 +89,12 @@ class EventFragment : Fragment() {
         }
     }
 
+    private var userNotificationList : UserNotificationList? = null
+    private var userNotificationListListener = object : UserNotificationList.UserNotificationListInterface {
+        override fun onDialogFragmentDestroyed() {
+            userNotificationList = null
+        }
+    }
 
     private var userProfileDialogFragment : UserProfileDialogFragment? = null
     private val userProfileDialogFragmentListener = object : UserProfileDialogFragment.UserProfileDialogFragmentInterface {
@@ -155,6 +163,10 @@ class EventFragment : Fragment() {
         super.onResume()
         setFirestoreProfileNotificationListener()
 
+        fragmentManager?.findFragmentByTag(UserNotificationListFragTag)?.also {
+            userNotificationList = it as UserNotificationList
+            userNotificationList?.listener = userNotificationListListener
+        }
 
         fragmentManager?.findFragmentByTag(UserProfileDialogFragmentTag)?.also {
             userProfileDialogFragment = it as UserProfileDialogFragment
@@ -206,6 +218,10 @@ class EventFragment : Fragment() {
 
     private suspend fun setUserProfile(userID: String, signedInUserID: String) {
         userProfileDialogFragment = UserProfileDialogFragment.newInstance(userProfileDialogFragmentListener, userID, signedInUserID)
+    }
+
+    private suspend fun setUserNotification(userID: String) {
+        userNotificationList = UserNotificationList.newInstance(userNotificationListListener, userID)
     }
 
     private fun setProgressBar() {
@@ -269,28 +285,48 @@ class EventFragment : Fragment() {
         viewToBeCreated?.eventFeedFounderImageView?.setOnTouchListener(OnGestureTouchListener(activity!!, object: OnGestureTouchListener.OnGestureInitiated {
             override fun longPressed() {
                 super.longPressed()
+
                 // Nullify Cloud Messaging Token
                 FirebaseFirestore.getInstance().collection("users")
                     .document(FirebaseAuth.getInstance().currentUser?.uid ?: return)
-                    .update("CloudMessagingToken", "")
+                    .update("CloudMessagingToken", "").addOnSuccessListener {
+                        // SIGN OUT FROM GOOGLE
+                        val googleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                            .requestIdToken(getString(R.string.google_sign_in_server_client_id))
+                            .requestEmail()
+                            .build()
+                        GoogleSignIn.getClient(activity!!, googleSignInOptions).signOut()
 
-                // SIGN OUT FROM GOOGLE
-                val googleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                    .requestIdToken(getString(R.string.google_sign_in_server_client_id))
-                    .requestEmail()
-                    .build()
-                GoogleSignIn.getClient(activity!!, googleSignInOptions).signOut()
+                        // SIGN OUT FROM FACEBOOK
+                        LoginManager.getInstance().logOut()
 
-                // SIGN OUT FROM FACEBOOK
-                LoginManager.getInstance().logOut()
-
-                // SIGN OUT FROM FIREBASE
-                FirebaseAuth.getInstance().signOut()
+                        // SIGN OUT FROM FIREBASE
+                        FirebaseAuth.getInstance().signOut()
 
 
-                startActivity(Intent(activity, HomeActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_NO_HISTORY })
+                        startActivity(Intent(activity, HomeActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_NO_HISTORY })
+                    }
+
             }
 
+            override fun singleTappedConfirmed() {
+                super.singleTappedConfirmed()
+
+                if (progressBarFragmentDialog == null) setProgressBar()
+                progressBarFragmentDialog?.show(childFragmentManager, ProgressBarFragmentTag)
+
+                val bgScope = CoroutineScope(Dispatchers.IO)
+                bgScope.launch {
+                    setUserNotification(userID ?: return@launch)
+
+                    withContext(Dispatchers.Main) {
+                        progressBarFragmentDialog?.dismiss()
+                        userNotificationList?.show(fragmentManager ?: return@withContext, UserNotificationListFragTag)
+                        bgScope.cancel()
+                    }
+                }
+
+            }
         }))
 
     }
@@ -485,7 +521,6 @@ class EventFragment : Fragment() {
         viewModel.assertWhichRowToBeFocused(position ?: -1)
 
         val eventID = event?.iD ?: return
-
 
         FirebaseFirestore.getInstance().collection("users").document(userID ?: return)
             .collection("events").document(eventID).get().addOnSuccessListener {

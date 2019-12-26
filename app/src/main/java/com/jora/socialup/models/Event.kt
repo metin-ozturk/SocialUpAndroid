@@ -269,12 +269,12 @@ class Event(parcel: Parcel? = null) : Parcelable {
 
             if (event.hasImage == true) {
                 downloadEventImage = storageReference.child("Images/Events/${event.iD}/eventPhoto.jpeg")
-                    .getBytes(1024 * 1024).asDeferred()
+                    .getBytes(2048 * 2048).asDeferred()
             }
 
             val downloadFounderImage =
                 storageReference.child("Images/Users/${event.founderID}/profilePhoto.jpeg")
-                    .getBytes(1024 * 1024).asDeferred()
+                    .getBytes(2048 * 2048).asDeferred()
 
             var eventImage: ByteArray?
             var founderImage: ByteArray?

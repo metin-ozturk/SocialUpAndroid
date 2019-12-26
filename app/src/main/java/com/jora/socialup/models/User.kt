@@ -6,8 +6,10 @@ import android.util.Log
 import com.google.firebase.firestore.DocumentSnapshot
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
+import io.grpc.Context
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.asDeferred
+import kotlinx.coroutines.tasks.await
 
 private const val userTag = "User"
 
@@ -23,6 +25,43 @@ class User(var ID: String? = null, var name: String? = null, var email : String?
     }
 
     companion object {
+        suspend fun downloadUserNotificationInfo(receiverID: String, completion: (ArrayList<UserNotification>) -> Unit) {
+            val userNotifications = ArrayList<UserNotification>()
+
+           val friendshipRequestDocuments =  FirebaseFirestore.getInstance().collection("users")
+                .document(receiverID).collection("friendshipRequests").get().await()
+
+            friendshipRequestDocuments.forEach {
+                val downloadUserImage = FirebaseStorage.getInstance().reference
+                    .child("Images/Users/${it.id}/profilePhoto.jpeg")
+                    .getBytes( 2048 * 2048).asDeferred()
+                val downloadUserName = FirebaseFirestore.getInstance().collection("users")
+                    .document(it.id).get().asDeferred()
+
+                val userImageAsByteArray = downloadUserImage.await() as ByteArray
+                val userImageAsBitmap = BitmapFactory.decodeByteArray(userImageAsByteArray, 0, userImageAsByteArray.size)
+
+                val downloadedUserName = (downloadUserName.await() as DocumentSnapshot).data?.get("Name") as String
+
+                val userNotification = UserNotification(NotificationType.FriendshipRequest,
+                    FriendshipRequestStatus.getFriendshipRequestStatusByValue((it.data.get("FriendshipRequestStatus") as? Long)?.toInt() ?: 0),
+                    it.id,
+                    receiverID,
+                    userImageAsBitmap,
+                    downloadedUserName)
+
+                userNotifications.add(userNotification)
+
+                if (userNotifications.count() == friendshipRequestDocuments.count()) {
+                    completion(userNotifications)
+                }
+            }
+
+
+
+        }
+
+
         suspend fun downloadUserInfoForProfileViewing(
             userID: String,
             signedInUserID: String,

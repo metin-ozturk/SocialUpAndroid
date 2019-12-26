@@ -12,6 +12,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.fragment.app.DialogFragment
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.auth.UserProfileChangeRequest
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.R
@@ -23,6 +24,8 @@ import java.io.ByteArrayOutputStream
 import java.io.InputStream
 import java.net.URL
 import java.text.DecimalFormat
+
+// CHECK LINE 200
 
 
 class SignUpCompleteInformationDialogFragment : DialogFragment() {
@@ -195,6 +198,10 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
 
             userProfilePhotoReference.putBytes(userImageToBeUploadedAsJPEG).await()
             userReference.set(userToBeCreated?.returnUserInformation() as Map<String, Any>).await()
+
+            val profileChangeRequest = UserProfileChangeRequest.Builder().setDisplayName(userToBeCreated?.name).build()
+            FirebaseAuth.getInstance().currentUser?.updateProfile(profileChangeRequest)?.await()
+
             listener?.onFinish()
 
             bgScope.cancel()

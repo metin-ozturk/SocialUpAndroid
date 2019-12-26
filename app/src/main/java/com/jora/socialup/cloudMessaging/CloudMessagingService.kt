@@ -12,10 +12,9 @@ import com.google.firebase.messaging.RemoteMessage
 import com.google.firebase.storage.FirebaseStorage
 import com.jora.socialup.R
 import com.jora.socialup.activities.EventCreateActivity
+import com.jora.socialup.activities.HomeFeedActivity
+import com.jora.socialup.models.NotificationType
 
-enum class NotificationType(val value: Int) {
-    FriendshipRequest(1)
-}
 
 const val friendshipRequestApprovedNotificationActionConstant = "friendshipRequestApproved"
 const val friendshipRequestRejectedNotificationActionConstant = "friendshipRequestRejected"
@@ -48,7 +47,7 @@ class CloudMessagingService : FirebaseMessagingService() {
             .getBytes(1024 * 1024).addOnSuccessListener {
                 val notificationID = System.currentTimeMillis().toInt()
 
-                val intent = Intent(this, EventCreateActivity::class.java).apply {
+                val intent = Intent(this, HomeFeedActivity::class.java).apply {
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
                 }
                 val pendingIntent: PendingIntent = PendingIntent.getActivity(this, 0, intent, 0)

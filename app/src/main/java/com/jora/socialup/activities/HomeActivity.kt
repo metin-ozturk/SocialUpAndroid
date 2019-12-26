@@ -41,6 +41,7 @@ private const val facebookSignInTag = "FacebookSignInTag"
 
 // firebaseAuthWithGoogle - DO ERROR HANDLING
 // At onPause(), we dismiss progressBar when orientation changes - better way to do it? (Also At EventDetail and Event)
+// FIX: WHEN TRY TO UPLOAD A USER IMAGE, IT AUTOMATICALLY GOES TO EVENT FEED FRAGMENT
 
 class HomeActivity : AppCompatActivity() {
 
@@ -92,7 +93,7 @@ class HomeActivity : AppCompatActivity() {
         if (progressBarFragmentDialog?.isLoadingInProgress == true) progressBarFragmentDialog?.dismiss()
     }
 
-    private fun receiveCloudMessagingToken() {
+    private fun receiveCloudMessagingToken(completion: () -> Unit) {
         FirebaseInstanceId.getInstance().instanceId
             .addOnCompleteListener(OnCompleteListener { task ->
                 if (!task.isSuccessful) {
@@ -104,7 +105,9 @@ class HomeActivity : AppCompatActivity() {
                 task.result?.token?.also {
                     FirebaseFirestore.getInstance().collection("users")
                         .document( FirebaseAuth.getInstance().currentUser?.uid ?: return@also)
-                        .update("CloudMessagingToken", it)
+                        .update("CloudMessagingToken", it).addOnSuccessListener {
+                            completion()
+                        }
                 }
 
             })
@@ -145,8 +148,9 @@ class HomeActivity : AppCompatActivity() {
 
         signInDialogFragment = SignInDialogFragment.newInstance(object: SignInDialogFragment.SignInDialogFragmentInterface {
             override fun onFinish() {
-                receiveCloudMessagingToken()
-               finish()
+                receiveCloudMessagingToken {
+                    finish()
+                }
             }
 
             override fun informationMissing(email: String) {
@@ -199,9 +203,10 @@ class HomeActivity : AppCompatActivity() {
     private fun setSignUpCompleteInformationDialogFragment() {
         signUpCompleteInformationDialogFragment = SignUpCompleteInformationDialogFragment.newInstance(object: SignUpCompleteInformationDialogFragment.SignUpCompleteInformationDialogFragmentInterface {
             override fun onFinish() {
-                receiveCloudMessagingToken()
-                finish()
-                signUpCompleteInformationDialogFragment?.dismiss()
+                receiveCloudMessagingToken {
+                    finish()
+                    signUpCompleteInformationDialogFragment?.dismiss()
+                }
             }
 
             override fun onDialogFragmentDestroyed() {
@@ -240,6 +245,7 @@ class HomeActivity : AppCompatActivity() {
 
     private fun signInWithGoogle() {
         val signInIntent = googleSignInClient?.signInIntent
+
         startActivityForResult(signInIntent, googleSignInRequestCode)
 
     }
@@ -284,11 +290,11 @@ class HomeActivity : AppCompatActivity() {
 
     public override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
-
         // Result returned from launching the Intent from GoogleSignInClient.getSignInIntent(...);
         if (requestCode == googleSignInRequestCode) {
             // The Task returned from this call is always completed, no need to attach
             // a listener.
+
             val task = GoogleSignIn.getSignedInAccountFromIntent(data)
 
             try {
@@ -297,6 +303,7 @@ class HomeActivity : AppCompatActivity() {
                 checkOtherThanGoogleAuthProvidersPresent(signedInAccount ?: return)
                 progressBarFragmentDialog?.show(supportFragmentManager, null)
             } catch (e: ApiException) {
+
                 // Google Sign In failed, update UI appropriately
                 Log.w(googleSignInTag, "Google sign in failed", e)
             }
@@ -503,9 +510,10 @@ class HomeActivity : AppCompatActivity() {
                 if (!FirebaseFirestore.getInstance().collection("users").document(it).get().await().exists())
                     ifInfoNotExist()
                 else {
-                    receiveCloudMessagingToken()
-                    finish()
-                    progressBarFragmentDialog?.dismiss()
+                    receiveCloudMessagingToken {
+                        finish()
+                        progressBarFragmentDialog?.dismiss()
+                    }
                 }
             }
 
