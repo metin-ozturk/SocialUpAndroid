@@ -51,6 +51,7 @@ import com.jora.socialup.viewModels.EventViewModel
 import kotlinx.android.synthetic.main.fragment_event.view.*
 import kotlinx.coroutines.*
 
+const val EventCreationFinishedRequestCode = 31
 
 class EventFragment : Fragment() {
     private val eventTag = "EventTag"
@@ -196,6 +197,14 @@ class EventFragment : Fragment() {
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == EventCreationFinishedRequestCode) {
+            viewModel.assertEventsArray(ArrayList())
+            viewModel.downloadEvents(0,5)
+        }
+    }
+
 
     private fun setFirestoreProfileNotificationListener(){
         firestoreProfileNotificationListener = FirebaseFirestore.getInstance().collection("users").document(userID ?: return )
@@ -260,7 +269,7 @@ class EventFragment : Fragment() {
 
             override fun singleTappedConfirmed() {
                 super.singleTappedConfirmed()
-                startActivity(Intent(activity!!, EventCreateActivity::class.java))
+                startActivityForResult(Intent(activity!!, EventCreateActivity::class.java), EventCreationFinishedRequestCode)
             }
         }))
     }
@@ -289,7 +298,7 @@ class EventFragment : Fragment() {
                 // Nullify Cloud Messaging Token
                 FirebaseFirestore.getInstance().collection("users")
                     .document(FirebaseAuth.getInstance().currentUser?.uid ?: return)
-                    .update("CloudMessagingToken", "").addOnSuccessListener {
+                    .update("CloudMessagingToken", "").addOnCompleteListener {
                         // SIGN OUT FROM GOOGLE
                         val googleSignInOptions = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                             .requestIdToken(getString(R.string.google_sign_in_server_client_id))
@@ -303,8 +312,7 @@ class EventFragment : Fragment() {
                         // SIGN OUT FROM FIREBASE
                         FirebaseAuth.getInstance().signOut()
 
-
-                        startActivity(Intent(activity, HomeActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_NO_HISTORY })
+                        startActivity(Intent(activity, HomeActivity::class.java))
                     }
 
             }

@@ -157,15 +157,41 @@ class EventDetailFragment : Fragment() {
         val eventID = event?.iD ?: return
 
         FirebaseFirestore.getInstance().runTransaction { transaction ->
-            var whenDocumentSnapshot : DocumentSnapshot? = null
+            var eventDocumentSnapshot : DocumentSnapshot? = null
 
             try {
-                whenDocumentSnapshot = transaction.get(FirebaseFirestore.getInstance().collection("events").document(eventID))
+                eventDocumentSnapshot = transaction.get(FirebaseFirestore.getInstance().collection("events").document(eventID))
             } catch (e: Exception) {
                 e.printStackTrace()
             }
 
-            val readEventDateData = whenDocumentSnapshot?.data?.get("When") as ArrayList<String>?
+            val readEventDateData = eventDocumentSnapshot?.data?.get("When") as? ArrayList<String>
+            val willComeList = eventDocumentSnapshot?.data?.get("WithWhomWillCome") as? ArrayList<String>
+            val wontComeList = eventDocumentSnapshot?.data?.get("WithWhomWontCome") as? ArrayList<String>
+            val mayComeList = eventDocumentSnapshot?.data?.get("WithWhomMayCome") as? ArrayList<String>
+            val userID = FirebaseAuth.getInstance().currentUser?.uid ?: return@runTransaction
+
+            val eventResponseStatusAsInt = when(eventResponseStatus) {
+                EventResponseStatus.NotResponded -> {
+                    arrayListOf(willComeList, wontComeList, mayComeList).forEach { it?.remove(userID) }
+                    0
+                }
+                EventResponseStatus.NotGoing -> {
+                    if (wontComeList?.contains(userID) == false) wontComeList.add(userID)
+                    arrayListOf(willComeList, mayComeList).forEach { it?.remove(userID) }
+                    1
+                }
+                EventResponseStatus.Maybe -> {
+                    if (mayComeList?.contains(userID) == false) mayComeList.add(userID)
+                    arrayListOf(willComeList, wontComeList).forEach { it?.remove(userID) }
+                    2
+                }
+                EventResponseStatus.Going -> {
+                    if (willComeList?.contains(userID) == false) willComeList.add(userID)
+                    arrayListOf(mayComeList, wontComeList).forEach { it?.remove(userID) }
+                    3
+                }
+            }
 
             val updatedReadEventDateData = readEventDateData?.zip(dateVotesChangedBy)?.map { zippedPair ->
                 val eventDateData = zippedPair.first
@@ -178,14 +204,9 @@ class EventDetailFragment : Fragment() {
             } as ArrayList<String>
 
             transaction.update(FirebaseFirestore.getInstance().collection("events").document(eventID),
-                mapOf( "When" to updatedReadEventDateData, "FinalizedDate" to event?.finalizedDate, "EventStatus" to event?.status))
+                mapOf( "When" to updatedReadEventDateData, "FinalizedDate" to event?.finalizedDate, "EventStatus" to event?.status,
+                    "WithWhomWillCome" to willComeList, "WithWhomWontCome" to wontComeList, "WithWhomMayCome" to mayComeList))
 
-            val eventResponseStatusAsInt = when(eventResponseStatus) {
-                EventResponseStatus.NotResponded -> 0
-                EventResponseStatus.NotGoing -> 1
-                EventResponseStatus.Maybe -> 2
-                EventResponseStatus.Going -> 3
-            }
 
             val eventSpecificPath = FirebaseFirestore.getInstance().collection("users").document(FirebaseAuth.getInstance().currentUser?.uid ?: "")
                 .collection("events").document(eventID)
@@ -417,33 +438,48 @@ class EventDetailFragment : Fragment() {
                 }
 
                 override fun onFinish(friends: ArrayList<FriendInfo>) {
+                    progressBarFragmentDialog?.show(fragmentManager ?: return, null)
                     updateEventAtEventsArray {eventAtEventsArray ->
                         var invitedFriendCount = 0
+                        val invitedFriendIDs = ArrayList<String>()
+                        val invitedFriendNames = ArrayList<String>()
+
                         friends.forEach { friend ->
                             if (friend.friendInviteStatus != FriendInviteStatus.AboutToBeSelected) return@forEach
+                            invitedFriendIDs.add(friend.iD ?: return@forEach)
+                            invitedFriendNames.add(friend.name ?: return@forEach)
+
                             friend.friendInviteStatus = FriendInviteStatus.Selected
                             invitedFriendCount += 1
                         }
 
-                        val invitedFriends = friends.filter { it.friendInviteStatus == FriendInviteStatus.Selected }
-                        val invitedFriendIDs = invitedFriends.map { it.iD ?: return@updateEventAtEventsArray}
-                        val invitedFriendNames = invitedFriends.map { it.name ?: return@updateEventAtEventsArray}
 
+                        val userSpecificEventData = mutableMapOf("EventResponseStatus" to 0,
+                            "EventIsFavorite" to false)
 
-                        FirebaseFirestore.getInstance().collection("events")
-                            .document(eventAtEventsArray.iD ?: return@updateEventAtEventsArray)
-                            .update(mapOf("WithWhomInvited" to invitedFriendIDs,
-                                "WithWhomInvitedNames" to invitedFriendNames))
-                            .addOnCompleteListener {
-                                if (it.isSuccessful) {
-                                    eventAtEventsArray.eventWithWhomNames?.addAll(invitedFriendNames)
-                                    eventAtEventsArray.eventWithWhomID?.addAll(invitedFriendIDs)
-                                    Toast.makeText(context, "Invited $invitedFriendCount more friends to the event", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    Log.d(eventDetailTag, "ERROR WHILE UPDATING INVITED LIST", it.exception)
-                                }
+                        eventAtEventsArray.date?.forEach { userSpecificEventData[it] = false }
+
+                        FirebaseFirestore.getInstance().runBatch {batch ->
+                            invitedFriendIDs.forEach {friendID ->
+                                batch.set(FirebaseFirestore.getInstance().collection("users")
+                                    .document(friendID).collection("events").document(eventAtEventsArray.iD ?: return@forEach), userSpecificEventData)
                             }
 
+                             val allInvitedFriends = friends.filter { it.friendInviteStatus == FriendInviteStatus.Selected }
+
+                            batch.update(FirebaseFirestore.getInstance().collection("events")
+                                .document(eventAtEventsArray.iD ?: return@runBatch), mapOf("WithWhomInvited" to
+                                    allInvitedFriends.map { it.iD }, "WithWhomInvitedNames" to allInvitedFriends.map { it.name }))
+                        }.addOnCompleteListener {
+                            if (it.exception != null) {
+                                Log.d(eventDetailTag, "ERROR While Inviting friends", it.exception)
+                                return@addOnCompleteListener
+                            }
+
+                            eventAtEventsArray.eventWithWhomID?.addAll(invitedFriendIDs)
+                            eventAtEventsArray.eventWithWhomNames?.addAll(invitedFriendNames)
+                            progressBarFragmentDialog?.dismiss()
+                        }
                     }
                 }
             })

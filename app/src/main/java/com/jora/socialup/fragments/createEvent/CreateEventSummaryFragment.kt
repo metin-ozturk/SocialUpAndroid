@@ -19,7 +19,9 @@ import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.UploadTask
 import com.jora.socialup.R
+import com.jora.socialup.activities.EventCreateActivity
 import com.jora.socialup.activities.HomeActivity
+import com.jora.socialup.fragments.eventFeedAndDetail.EventCreationFinishedRequestCode
 import com.jora.socialup.helpers.ProgressBarFragmentDialog
 import com.jora.socialup.helpers.isInPortraitMode
 import com.jora.socialup.models.Event
@@ -115,6 +117,8 @@ class CreateEventSummaryFragment : Fragment() {
         eventToBePassed?.status = EventStatus.Default.value
         eventToBePassed?.founderID = userID
         eventToBePassed?.founderName = FirebaseAuth.getInstance().currentUser?.displayName
+        eventToBePassed?.eventWithWhomID?.add(userID ?: return)
+        eventToBePassed?.eventWithWhomNames?.add(FirebaseAuth.getInstance().currentUser?.displayName ?: return)
     }
 
     private fun fillSummaryTexts() {
@@ -195,7 +199,8 @@ class CreateEventSummaryFragment : Fragment() {
 
                 withContext(Dispatchers.Main) {
                     progressBarFragmentDialog?.dismiss()
-                    startActivity(Intent(activity!!, HomeActivity::class.java))
+                    activity!!.setResult(EventCreationFinishedRequestCode)
+                    activity!!.finish()
                     bgScope.cancel()
                 }
             }

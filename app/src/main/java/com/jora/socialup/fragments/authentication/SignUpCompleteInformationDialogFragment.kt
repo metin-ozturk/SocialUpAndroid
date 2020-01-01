@@ -7,6 +7,7 @@ import android.graphics.ImageDecoder
 import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -231,6 +232,9 @@ class SignUpCompleteInformationDialogFragment : DialogFragment() {
                 val imageSource = ImageDecoder.createSource(activity!!.contentResolver, selectedImage)
                 ImageDecoder.decodeBitmap(imageSource)
             }
+
+            // If we don't assign an empty string to urlToBeRetrieved then it will download user image from google or facebook at onResume
+            urlToBeRetrieved = ""
 
             viewToBeCreated?.fragmentDialogSignUpCompleteInformationPhotoImageView?.setImageURI(selectedImage)
         }

@@ -76,7 +76,7 @@ class User(var ID: String? = null, var name: String? = null, var email : String?
                 .document(userID).get().asDeferred()
             val getUserImage = FirebaseStorage.getInstance()
                 .reference.child("Images/Users/$userID/profilePhoto.jpeg")
-                .getBytes(1024 * 1024).asDeferred()
+                .getBytes(2048 * 2048).asDeferred()
             val getSignedInUserInfo =
                 FirebaseFirestore.getInstance().collection("users").document(signedInUserID)
                     .get().asDeferred()
@@ -141,7 +141,7 @@ class User(var ID: String? = null, var name: String? = null, var email : String?
             val getUserInfo = FirebaseFirestore.getInstance().collection("users")
                 .document(userID).get().asDeferred()
             val getUserImage = FirebaseStorage.getInstance().reference.child("Images/Users/$userID/profilePhoto.jpeg")
-                .getBytes(1024 * 1024).asDeferred()
+                .getBytes(2048 * 2048).asDeferred()
 
             val bgScope = CoroutineScope(Dispatchers.IO)
             bgScope.launch {
@@ -195,7 +195,7 @@ class User(var ID: String? = null, var name: String? = null, var email : String?
                     FirebaseFirestore.getInstance().collection("users").document(friendID).get().asDeferred()
                 val downloadFriendImage =
                     FirebaseStorage.getInstance().reference.child("Images/Users/$friendID/profilePhoto.jpeg")
-                        .getBytes(1024 * 1024).asDeferred()
+                        .getBytes(2048 * 2048).asDeferred()
 
 
                 try {

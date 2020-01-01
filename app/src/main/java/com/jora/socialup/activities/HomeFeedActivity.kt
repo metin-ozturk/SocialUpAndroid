@@ -35,8 +35,7 @@ class HomeFeedActivity : AppCompatActivity() {
 
 
         if (FirebaseAuth.getInstance().currentUser == null)
-            startActivity(Intent(this, HomeActivity::class.java).apply { flags = Intent.FLAG_ACTIVITY_NO_HISTORY })
-
+            startActivity(Intent(this, HomeActivity::class.java))
 
         val eventFragment = EventFragment()
         val transaction = supportFragmentManager.beginTransaction()

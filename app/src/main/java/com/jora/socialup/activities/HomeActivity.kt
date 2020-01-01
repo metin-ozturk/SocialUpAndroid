@@ -41,7 +41,6 @@ private const val facebookSignInTag = "FacebookSignInTag"
 
 // firebaseAuthWithGoogle - DO ERROR HANDLING
 // At onPause(), we dismiss progressBar when orientation changes - better way to do it? (Also At EventDetail and Event)
-// FIX: WHEN TRY TO UPLOAD A USER IMAGE, IT AUTOMATICALLY GOES TO EVENT FEED FRAGMENT
 
 class HomeActivity : AppCompatActivity() {
 
